@@ -7,7 +7,6 @@
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif; }
         
-        /* 1. 심우주 배경 */
         body { 
             background: linear-gradient(to bottom, #0f0c29, #302b63, #24243e); 
             color: #e0e6ed; 
@@ -15,127 +14,168 @@
             flex-direction: column; 
             align-items: center; 
             min-height: 100vh; 
-            padding: 50px 20px; 
+            padding: 30px 20px 60px; 
             overflow-x: hidden;
         }
-        
-        /* 2. 네온 헤더 */
-        .header { text-align: center; margin-bottom: 60px; }
-        .header h1 { 
-            font-size: 42px; 
-            font-weight: 900; 
-            color: #fff; 
-            letter-spacing: 2px; 
-            margin-bottom: 15px;
-            text-shadow: 0 0 20px rgba(0, 240, 255, 0.5); /* 네온 글로우 효과 */
+
+        /* 상단 네비게이션 (언어 스위치) */
+        .top-nav { width: 100%; max-width: 1000px; display: flex; justify-content: flex-end; margin-bottom: 20px; }
+        .lang-btn {
+            background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.2);
+            color: #fff; padding: 8px 16px; border-radius: 20px; font-weight: bold; cursor: pointer;
+            backdrop-filter: blur(5px); transition: all 0.3s ease;
         }
+        .lang-btn:hover { background: rgba(0, 240, 255, 0.2); border-color: #00f0ff; text-shadow: 0 0 10px #00f0ff; }
+        
+        /* 헤더 */
+        .header { text-align: center; margin-bottom: 40px; }
+        .header h1 { font-size: 42px; font-weight: 900; color: #fff; letter-spacing: 2px; margin-bottom: 15px; text-shadow: 0 0 20px rgba(0, 240, 255, 0.5); }
         .header p { font-size: 16px; color: #aeb9cc; letter-spacing: 1px; }
 
+        /* 검색 레이더 UI */
+        .search-container { width: 100%; max-width: 600px; margin-bottom: 50px; position: relative; }
+        .search-input {
+            width: 100%; padding: 15px 25px; font-size: 16px; color: #fff;
+            background: rgba(0, 0, 0, 0.3); border: 1px solid rgba(0, 240, 255, 0.3);
+            border-radius: 30px; outline: none; transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+        .search-input::placeholder { color: #697a98; }
+        .search-input:focus { border-color: #00f0ff; box-shadow: 0 0 20px rgba(0, 240, 255, 0.2); background: rgba(0, 0, 0, 0.5); }
+        .search-icon { position: absolute; right: 20px; top: 50%; transform: translateY(-50%); font-size: 20px; pointer-events: none; opacity: 0.7; }
+
+        /* 게임 그리드 및 카드 */
         .game-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 30px; max-width: 1000px; width: 100%; }
-
-        /* 3. 우주선 홀로그램 패널 (글래스모피즘) */
         .game-card { 
-            background: rgba(255, 255, 255, 0.03); 
-            border: 1px solid rgba(255, 255, 255, 0.1); 
-            backdrop-filter: blur(10px); /* 반투명 블러 효과 */
-            border-radius: 24px; 
-            overflow: hidden; 
-            transition: all 0.4s ease; 
-            text-decoration: none; 
-            color: inherit; 
-            display: flex; 
-            flex-direction: column; 
-            cursor: pointer; 
+            background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.1); 
+            backdrop-filter: blur(10px); border-radius: 24px; overflow: hidden; 
+            transition: all 0.4s ease; text-decoration: none; color: inherit; 
+            display: flex; flex-direction: column; cursor: pointer; 
         }
+        .game-card:hover { transform: translateY(-10px) scale(1.02); border-color: rgba(0, 240, 255, 0.5); box-shadow: 0 15px 40px rgba(0, 240, 255, 0.15); }
         
-        /* 마우스 올렸을 때 워프 준비 효과 */
-        .game-card:hover { 
-            transform: translateY(-10px) scale(1.02); 
-            border-color: rgba(0, 240, 255, 0.5);
-            box-shadow: 0 15px 40px rgba(0, 240, 255, 0.15); 
-        }
-        
-        /* 4. 무중력 행성 애니메이션 */
-        @keyframes float {
-            0% { transform: translateY(0px); }
-            50% { transform: translateY(-12px); }
-            100% { transform: translateY(0px); }
-        }
-
+        /* 행성 애니메이션 */
+        @keyframes float { 0% { transform: translateY(0px); } 50% { transform: translateY(-12px); } 100% { transform: translateY(0px); } }
         .planet-container { height: 180px; display: flex; justify-content: center; align-items: center; position: relative; }
-        
-        .planet { 
-            width: 110px; 
-            height: 110px; 
-            border-radius: 50%; 
-            display: flex; justify-content: center; align-items: center; 
-            font-size: 50px; 
-            animation: float 4s ease-in-out infinite; 
-            box-shadow: inset -15px -15px 30px rgba(0,0,0,0.5), 0 0 20px rgba(255,255,255,0.1); /* 입체감 그림자 */
-        }
-
-        /* 각 행성별 색상 (입체 그라데이션) */
+        .planet { width: 110px; height: 110px; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 50px; animation: float 4s ease-in-out infinite; box-shadow: inset -15px -15px 30px rgba(0,0,0,0.5), 0 0 20px rgba(255,255,255,0.1); }
         .planet-tetris { background: radial-gradient(circle at 30% 30%, #4facfe 0%, #00f2fe 100%); }
         .planet-locked { background: radial-gradient(circle at 30% 30%, #434343 0%, #111 100%); opacity: 0.7; }
-        .planet-unknown { background: radial-gradient(circle at 30% 30%, #2b5876 0%, #4e4376 100%); opacity: 0.8; animation-delay: 1s; } /* 타이밍을 다르게 둥둥거리게 */
+        .planet-unknown { background: radial-gradient(circle at 30% 30%, #2b5876 0%, #4e4376 100%); opacity: 0.8; animation-delay: 1s; }
 
         .card-content { padding: 30px 25px; border-top: 1px solid rgba(255, 255, 255, 0.05); }
         .card-title { font-size: 22px; font-weight: bold; margin-bottom: 10px; color: #fff; }
         .card-desc { font-size: 15px; color: #9ba4b5; line-height: 1.6; word-break: keep-all; }
         
-        /* 사이버펑크 뱃지 */
         .badge { display: inline-block; padding: 6px 12px; font-size: 11px; font-weight: 800; border-radius: 20px; margin-bottom: 15px; letter-spacing: 1px; }
         .badge-active { background-color: rgba(0, 240, 255, 0.2); color: #00f0ff; border: 1px solid #00f0ff; }
         .badge-soon { background-color: rgba(255, 255, 255, 0.05); color: #666; border: 1px solid #444; }
 
         .footer { margin-top: auto; padding-top: 60px; color: #666; font-size: 13px; text-align: center; letter-spacing: 1px; }
+        
+        /* 검색 결과 없을 때 */
+        .no-result { display: none; width: 100%; text-align: center; color: #9ba4b5; padding: 50px 0; font-size: 18px; grid-column: 1 / -1; }
     </style>
 </head>
 <body>
 
-    <div class="header">
-        <h1>SPACE_WARP</h1>
-        <p>은하계에 흩어진 당신의 놀이터를 탐험하세요 🌌</p>
+    <div class="top-nav">
+        <button class="lang-btn" id="langToggleBtn" onclick="toggleLanguage()">🌐 EN</button>
     </div>
 
-    <div class="game-grid">
+    <div class="header">
+        <h1>SPACE_WARP</h1>
+        <p class="lang-text" data-ko="은하계에 흩어진 당신의 놀이터를 탐험하세요 🌌" data-en="Explore your playground scattered across the galaxy 🌌">은하계에 흩어진 당신의 놀이터를 탐험하세요 🌌</p>
+    </div>
+
+    <div class="search-container">
+        <input type="text" id="searchInput" class="search-input" onkeyup="searchGames()" placeholder="행성 레이더 검색..." data-ko-ph="행성 레이더 검색..." data-en-ph="Search planets on radar...">
+        <div class="search-icon">🛰️</div>
+    </div>
+
+    <div class="game-grid" id="gameGrid">
         <a href="tetris.html" class="game-card">
-            <div class="planet-container">
-                <div class="planet planet-tetris">🧩</div>
-            </div>
+            <div class="planet-container"><div class="planet planet-tetris">🧩</div></div>
             <div class="card-content">
-                <span class="badge badge-active">WARP READY</span>
-                <div class="card-title">행성: 집현전</div>
-                <div class="card-desc">세종이 내리는 과제를 줄을 맞춰 없애보자. 직선과 논리의 한글 테트리스.</div>
+                <span class="badge badge-active lang-text" data-ko="WARP READY" data-en="WARP READY">WARP READY</span>
+                <div class="card-title lang-text" data-ko="행성: 집현전 (한글 테트리스)" data-en="Planet: Jiphyeonjeon (Tetris)">행성: 집현전 (테트리스)</div>
+                <div class="card-desc lang-text" data-ko="세종이 내리는 과제를 줄을 맞춰 없애보자. 직선과 논리의 한글 테트리스." data-en="Clear the tasks given by King Sejong. A logical Korean Tetris game.">세종이 내리는 과제를 줄을 맞춰 없애보자. 직선과 논리의 한글 테트리스.</div>
             </div>
         </a>
 
         <div class="game-card" style="cursor: default;">
-            <div class="planet-container">
-                <div class="planet planet-locked" style="animation-delay: 0.5s;">🔒</div>
-            </div>
+            <div class="planet-container"><div class="planet planet-locked" style="animation-delay: 0.5s;">🔒</div></div>
             <div class="card-content">
-                <span class="badge badge-soon">NO SIGNAL</span>
-                <div class="card-title">미개척 행성</div>
-                <div class="card-desc">새로운 인테리어 퍼즐을 위한 테라포밍(공사)이 한창 진행 중입니다.</div>
+                <span class="badge badge-soon lang-text" data-ko="NO SIGNAL" data-en="NO SIGNAL">NO SIGNAL</span>
+                <div class="card-title lang-text" data-ko="미개척 행성 (인테리어)" data-en="Uncharted Planet (Interior)">미개척 행성 (인테리어)</div>
+                <div class="card-desc lang-text" data-ko="새로운 인테리어 퍼즐을 위한 테라포밍(공사)이 한창 진행 중입니다." data-en="Terraforming for a new interior puzzle game is currently in progress.">새로운 인테리어 퍼즐을 위한 테라포밍(공사)이 한창 진행 중입니다.</div>
             </div>
         </div>
         
         <div class="game-card" style="cursor: default;">
-            <div class="planet-container">
-                <div class="planet planet-unknown">🛰️</div>
-            </div>
+            <div class="planet-container"><div class="planet planet-unknown">🚀</div></div>
             <div class="card-content">
-                <span class="badge badge-soon">SCANNING...</span>
-                <div class="card-title">새로운 은하계 탐색 중</div>
-                <div class="card-desc">당신이 요청하는 새로운 미니 게임이 이곳에 배치될 예정입니다.</div>
+                <span class="badge badge-soon lang-text" data-ko="SCANNING..." data-en="SCANNING...">SCANNING...</span>
+                <div class="card-title lang-text" data-ko="새로운 은하계 탐색 중" data-en="Scanning New Galaxy">새로운 은하계 탐색 중</div>
+                <div class="card-desc lang-text" data-ko="당신이 요청하는 새로운 미니 게임이 이곳에 배치될 예정입니다." data-en="New mini-games requested by you will be deployed here.">당신이 요청하는 새로운 미니 게임이 이곳에 배치될 예정입니다.</div>
             </div>
         </div>
+
+        <div class="no-result lang-text" id="noResult" data-ko="레이더에 잡히는 행성이 없습니다. 📡" data-en="No planets detected on radar. 📡">레이더에 잡히는 행성이 없습니다. 📡</div>
     </div>
 
-    <div class="footer">
-        &copy; 2026 SPACEWARP by geunseongroh. All rights reserved.
+    <div class="footer lang-text" data-ko="&copy; 2026 SPACEWARP. 모든 권리 보유." data-en="&copy; 2026 SPACEWARP. All rights reserved.">
+        &copy; 2026 SPACEWARP. 모든 권리 보유.
     </div>
 
+    <script>
+        // 1. 다국어 로컬라이제이션 엔진
+        let currentLang = 'ko';
+
+        function toggleLanguage() {
+            currentLang = currentLang === 'ko' ? 'en' : 'ko';
+            
+            // 버튼 텍스트 변경
+            document.getElementById('langToggleBtn').innerText = currentLang === 'ko' ? '🌐 EN' : '🌐 KO';
+            
+            // 텍스트 변환
+            const texts = document.querySelectorAll('.lang-text');
+            texts.forEach(el => {
+                el.innerText = el.getAttribute(`data-${currentLang}`);
+            });
+
+            // 검색창 Placeholder 변환
+            const searchInput = document.getElementById('searchInput');
+            searchInput.placeholder = searchInput.getAttribute(`data-${currentLang}-ph`);
+            
+            // 언어를 바꾼 후, 현재 입력된 검색어에 맞춰 필터 다시 적용
+            searchGames();
+        }
+
+        // 2. 실시간 레이더(검색) 엔진
+        function searchGames() {
+            const query = document.getElementById('searchInput').value.toLowerCase();
+            const cards = document.querySelectorAll('.game-card');
+            let visibleCount = 0;
+
+            cards.forEach(card => {
+                // 카드 안의 모든 텍스트를 소문자로 가져와서 검색어와 비교
+                const cardText = card.innerText.toLowerCase();
+                if (cardText.includes(query)) {
+                    card.style.display = 'flex';
+                    visibleCount++;
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+
+            // 검색 결과가 하나도 없으면 메시지 띄우기
+            const noResultEl = document.getElementById('noResult');
+            if (visibleCount === 0) {
+                noResultEl.style.display = 'block';
+            } else {
+                noResultEl.style.display = 'none';
+            }
+        }
+    </script>
 </body>
 </html>

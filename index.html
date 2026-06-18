@@ -3,67 +3,132 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>스페이스워프 by geunseongroh</title>
+    <title>SPACE WARP | 우주 오락실</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif; }
-        body { background-color: #f8f9fa; color: #333; display: flex; flex-direction: column; align-items: center; min-height: 100vh; padding: 40px 20px; }
         
-        .header { text-align: center; margin-bottom: 50px; }
-        .header h1 { font-size: 36px; font-weight: 800; color: #111; letter-spacing: -1px; margin-bottom: 10px; }
-        .header p { font-size: 16px; color: #666; }
-
-        .game-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 25px; max-width: 1000px; width: 100%; }
-
-        .game-card { background: #fff; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.05); transition: all 0.3s ease; text-decoration: none; color: inherit; display: flex; flex-direction: column; cursor: pointer; border: 1px solid #eee; }
-        .game-card:hover { transform: translateY(-8px); box-shadow: 0 15px 35px rgba(0,0,0,0.1); border-color: #222; }
+        /* 1. 심우주 배경 */
+        body { 
+            background: linear-gradient(to bottom, #0f0c29, #302b63, #24243e); 
+            color: #e0e6ed; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            min-height: 100vh; 
+            padding: 50px 20px; 
+            overflow-x: hidden;
+        }
         
-        .card-img { height: 160px; background: #e9ecef; display: flex; justify-content: center; align-items: center; font-size: 48px; }
-        .tetris-bg { background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%); }
-        .coming-bg { background: #f1f3f5; color: #adb5bd; }
+        /* 2. 네온 헤더 */
+        .header { text-align: center; margin-bottom: 60px; }
+        .header h1 { 
+            font-size: 42px; 
+            font-weight: 900; 
+            color: #fff; 
+            letter-spacing: 2px; 
+            margin-bottom: 15px;
+            text-shadow: 0 0 20px rgba(0, 240, 255, 0.5); /* 네온 글로우 효과 */
+        }
+        .header p { font-size: 16px; color: #aeb9cc; letter-spacing: 1px; }
 
-        .card-content { padding: 25px; }
-        .card-title { font-size: 20px; font-weight: bold; margin-bottom: 8px; }
-        .card-desc { font-size: 14px; color: #777; line-height: 1.5; }
+        .game-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 30px; max-width: 1000px; width: 100%; }
+
+        /* 3. 우주선 홀로그램 패널 (글래스모피즘) */
+        .game-card { 
+            background: rgba(255, 255, 255, 0.03); 
+            border: 1px solid rgba(255, 255, 255, 0.1); 
+            backdrop-filter: blur(10px); /* 반투명 블러 효과 */
+            border-radius: 24px; 
+            overflow: hidden; 
+            transition: all 0.4s ease; 
+            text-decoration: none; 
+            color: inherit; 
+            display: flex; 
+            flex-direction: column; 
+            cursor: pointer; 
+        }
         
-        .badge { display: inline-block; padding: 5px 10px; font-size: 12px; font-weight: bold; border-radius: 20px; margin-bottom: 15px; }
-        .badge-active { background-color: #111; color: #fff; }
-        .badge-soon { background-color: #e9ecef; color: #666; }
+        /* 마우스 올렸을 때 워프 준비 효과 */
+        .game-card:hover { 
+            transform: translateY(-10px) scale(1.02); 
+            border-color: rgba(0, 240, 255, 0.5);
+            box-shadow: 0 15px 40px rgba(0, 240, 255, 0.15); 
+        }
+        
+        /* 4. 무중력 행성 애니메이션 */
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-12px); }
+            100% { transform: translateY(0px); }
+        }
 
-        .footer { margin-top: auto; padding-top: 50px; color: #aaa; font-size: 13px; text-align: center; }
+        .planet-container { height: 180px; display: flex; justify-content: center; align-items: center; position: relative; }
+        
+        .planet { 
+            width: 110px; 
+            height: 110px; 
+            border-radius: 50%; 
+            display: flex; justify-content: center; align-items: center; 
+            font-size: 50px; 
+            animation: float 4s ease-in-out infinite; 
+            box-shadow: inset -15px -15px 30px rgba(0,0,0,0.5), 0 0 20px rgba(255,255,255,0.1); /* 입체감 그림자 */
+        }
+
+        /* 각 행성별 색상 (입체 그라데이션) */
+        .planet-tetris { background: radial-gradient(circle at 30% 30%, #4facfe 0%, #00f2fe 100%); }
+        .planet-locked { background: radial-gradient(circle at 30% 30%, #434343 0%, #111 100%); opacity: 0.7; }
+        .planet-unknown { background: radial-gradient(circle at 30% 30%, #2b5876 0%, #4e4376 100%); opacity: 0.8; animation-delay: 1s; } /* 타이밍을 다르게 둥둥거리게 */
+
+        .card-content { padding: 30px 25px; border-top: 1px solid rgba(255, 255, 255, 0.05); }
+        .card-title { font-size: 22px; font-weight: bold; margin-bottom: 10px; color: #fff; }
+        .card-desc { font-size: 15px; color: #9ba4b5; line-height: 1.6; word-break: keep-all; }
+        
+        /* 사이버펑크 뱃지 */
+        .badge { display: inline-block; padding: 6px 12px; font-size: 11px; font-weight: 800; border-radius: 20px; margin-bottom: 15px; letter-spacing: 1px; }
+        .badge-active { background-color: rgba(0, 240, 255, 0.2); color: #00f0ff; border: 1px solid #00f0ff; }
+        .badge-soon { background-color: rgba(255, 255, 255, 0.05); color: #666; border: 1px solid #444; }
+
+        .footer { margin-top: auto; padding-top: 60px; color: #666; font-size: 13px; text-align: center; letter-spacing: 1px; }
     </style>
 </head>
 <body>
 
     <div class="header">
-        <h1>SPACE_WARP PLAYGROUND</h1>
-        <p>당신의 빈 시간을 채우는 작은 공간</p>
+        <h1>SPACE_WARP</h1>
+        <p>은하계에 흩어진 당신의 놀이터를 탐험하세요 🌌</p>
     </div>
 
     <div class="game-grid">
         <a href="tetris.html" class="game-card">
-            <div class="card-img tetris-bg">🧩</div>
+            <div class="planet-container">
+                <div class="planet planet-tetris">🧩</div>
+            </div>
             <div class="card-content">
-                <span class="badge badge-active">PLAY NOW</span>
-                <div class="card-title">한글 테트리스</div>
-                <div class="card-desc">집현전에서 세종이 내는 과제를 줄을 맞춰 없애보자.</div>
+                <span class="badge badge-active">WARP READY</span>
+                <div class="card-title">행성: 집현전</div>
+                <div class="card-desc">세종이 내리는 과제를 줄을 맞춰 없애보자. 직선과 논리의 한글 테트리스.</div>
             </div>
         </a>
 
         <div class="game-card" style="cursor: default;">
-            <div class="card-img coming-bg">🔒</div>
+            <div class="planet-container">
+                <div class="planet planet-locked" style="animation-delay: 0.5s;">🔒</div>
+            </div>
             <div class="card-content">
-                <span class="badge badge-soon">COMING SOON</span>
-                <div class="card-title">비밀의 방</div>
-                <div class="card-desc">새로운 인테리어 퍼즐이 현재 열심히 공사 중입니다. 기대해 주세요!</div>
+                <span class="badge badge-soon">NO SIGNAL</span>
+                <div class="card-title">미개척 행성</div>
+                <div class="card-desc">새로운 인테리어 퍼즐을 위한 테라포밍(공사)이 한창 진행 중입니다.</div>
             </div>
         </div>
         
         <div class="game-card" style="cursor: default;">
-            <div class="card-img coming-bg">💡</div>
+            <div class="planet-container">
+                <div class="planet planet-unknown">🛰️</div>
+            </div>
             <div class="card-content">
-                <span class="badge badge-soon">COMING SOON</span>
-                <div class="card-title">당신이 원하는 게임을 준비 중</div>
-                <div class="card-desc"> 당신이 요청하는 새로운 미니 게임이 추가될 예정입니다.</div>
+                <span class="badge badge-soon">SCANNING...</span>
+                <div class="card-title">새로운 은하계 탐색 중</div>
+                <div class="card-desc">당신이 요청하는 새로운 미니 게임이 이곳에 배치될 예정입니다.</div>
             </div>
         </div>
     </div>

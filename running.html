@@ -3,58 +3,68 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>3D K-직장인 퇴근 레이싱</title>
+    <title>칼퇴의 민족 - K-8282</title>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Do+Hyeon&display=swap');
-
-        body { margin: 0; overflow: hidden; background-color: #000; font-family: 'Do Hyeon', sans-serif; user-select: none; }
+        @import url('https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Noto+Sans+KR:wght@700&display=swap');
+        body { margin: 0; overflow: hidden; background-color: #000; font-family: 'Noto Sans KR', sans-serif; user-select: none; }
         canvas { display: block; }
-
-        /* UI 레이어 */
-        #ui-layer {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none;
-        }
-
-        /* 미니맵 & 진척도 */
-        #minimap {
-            position: absolute; top: 20px; left: 50%; transform: translateX(-50%);
-            width: 50%; max-width: 600px; height: 15px; background: rgba(255, 255, 255, 0.3); border-radius: 10px;
-        }
-        #progress-bar { width: 0%; height: 100%; background: linear-gradient(90deg, #00ffcc, #ffcc00); border-radius: 10px; transition: width 0.1s; }
-        #route-icons { position: absolute; top: -30px; width: 100%; display: flex; justify-content: space-between; font-size: 24px; text-shadow: 0 0 5px black; }
-
-        /* 속도계 및 상태 */
-        #speedometer {
-            position: absolute; bottom: 30px; right: 30px; font-size: 50px; font-family: 'Black Han Sans', sans-serif;
-            color: #fff; text-shadow: 0 0 10px #00ffcc; text-align: right;
-        }
-        #speedometer span { font-size: 24px; color: #ccc; }
         
-        #milestone-msg {
-            position: absolute; top: 30%; width: 100%; text-align: center; font-size: 60px; font-family: 'Black Han Sans', sans-serif;
-            color: #ff3366; text-shadow: 3px 3px 0 #fff, 0 0 20px #ff3366; opacity: 0; transition: opacity 0.5s;
+        #ui-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
+        
+        /* 상단 거리 정보 */
+        #distance-info {
+            position: absolute; top: 20px; left: 50%; transform: translateX(-50%);
+            font-size: 28px; font-family: 'Black Han Sans', sans-serif; color: white; text-shadow: 2px 2px 5px black; text-align: center;
+        }
+        #distance-info span { color: #00ffcc; font-size: 45px; }
+
+        /* 좌측 인벤토리 (아이템) */
+        #inventory {
+            position: absolute; top: 30px; left: 30px; width: 120px; height: 120px;
+            background: rgba(0,0,0,0.6); border: 4px solid #ffcc00; border-radius: 15px;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            box-shadow: 0 0 15px rgba(255,204,0,0.5);
+        }
+        #inventory-icon { font-size: 50px; text-shadow: 2px 2px 5px black; }
+        #inventory-hint { color: #fff; font-size: 16px; margin-top: 5px; font-weight: bold; }
+
+        /* 하단 텐션 게이지 */
+        #gauge-container {
+            position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%);
+            width: 400px; height: 30px; background: rgba(0,0,0,0.7); border: 3px solid #555; border-radius: 15px; overflow: hidden;
+        }
+        #tension-bar { width: 0%; height: 100%; background: linear-gradient(90deg, #ff9900, #ff3300); transition: width 0.1s; }
+        #kaltoe-ready {
+            position: absolute; top: -40px; left: 50%; transform: translateX(-50%);
+            font-size: 24px; color: #ff3300; font-family: 'Black Han Sans', sans-serif; opacity: 0; transition: opacity 0.3s;
+        }
+        .ready-glow { opacity: 1 !important; animation: pulse 0.5s infinite alternate; }
+
+        /* 이벤트 팝업 */
+        #event-msg {
+            position: absolute; top: 30%; width: 100%; text-align: center;
+            font-size: 60px; font-family: 'Black Han Sans', sans-serif; color: #fff; text-shadow: 0 0 20px #ff00ff, 2px 2px 0 #000;
+            opacity: 0; transform: scale(0.5); transition: all 0.2s;
         }
 
-        /* 팝업 화면들 (Start, Pause, Help, Game Over) */
+        /* 튜토리얼 화면 */
         .overlay {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0, 0, 0, 0.85); display: flex; flex-direction: column;
-            justify-content: center; align-items: center; z-index: 10; pointer-events: auto;
-            color: white;
+            background: rgba(10, 15, 30, 0.85); display: flex; flex-direction: column;
+            justify-content: center; align-items: center; z-index: 10; pointer-events: auto; color: white;
         }
-        .overlay h1 { font-family: 'Black Han Sans', sans-serif; font-size: 60px; color: #00ffcc; margin-bottom: 20px; }
-        .overlay p { font-size: 24px; margin-bottom: 30px; text-align: center; line-height: 1.5; }
-        .hidden { display: none !important; }
-        
-        button {
-            padding: 15px 40px; font-size: 28px; font-family: 'Do Hyeon', sans-serif;
-            background: #ffcc00; color: #000; border: none; border-radius: 50px; cursor: pointer;
-            box-shadow: 0 5px 15px rgba(255, 204, 0, 0.4); transition: transform 0.1s;
+        .overlay h1 { font-family: 'Black Han Sans', sans-serif; font-size: 70px; color: #00ffcc; margin: 0; }
+        .overlay p { font-size: 20px; text-align: center; line-height: 1.6; margin: 20px 0; color: #ddd; background: rgba(0,0,0,0.5); padding: 20px; border-radius: 10px;}
+        button { padding: 15px 50px; font-size: 30px; font-family: 'Black Han Sans', sans-serif; background: #ffcc00; border: none; border-radius: 10px; cursor: pointer; }
+        button:active { transform: translateY(5px); }
+
+        .kaltoe-fx { animation: shake 0.2s infinite; }
+        @keyframes pulse { from { transform: translateX(-50%) scale(1); } to { transform: translateX(-50%) scale(1.1); } }
+        @keyframes shake {
+            0% { transform: translate(1px, 1px) rotate(0deg); }
+            50% { transform: translate(-3px, 0px) rotate(1deg); }
+            100% { transform: translate(1px, -1px) rotate(-1deg); }
         }
-        button:hover { transform: scale(1.05); background: #ffdb4d; }
-        button:active { transform: scale(0.95); }
-        
-        #controls-hint { position: absolute; bottom: 20px; left: 20px; font-size: 20px; color: #aaa; }
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 </head>
@@ -63,388 +73,504 @@
 <div id="game-container"></div>
 
 <div id="ui-layer">
-    <div id="minimap">
-        <div id="route-icons">
-            <span>🏢회사</span>
-            <span>🌉10km</span>
-            <span>🍜20km</span>
-            <span>🏠집(30km)</span>
-        </div>
-        <div id="progress-bar"></div>
+    <div id="distance-info">집까지 남은 거리<br><span id="dist-val">5.00</span> km</div>
+    
+    <div id="inventory">
+        <div id="inventory-icon">❔</div>
+        <div id="inventory-hint">[ Z ] 사용</div>
     </div>
-    <div id="milestone-msg">서류가방 투척! 스피드 업!</div>
-    <div id="speedometer"><span id="speed-val">0</span> <span>km/h</span></div>
-    <div id="controls-hint">[ESC] 일시정지 | [ i ] 게임 설명</div>
+
+    <div id="gauge-container">
+        <div id="kaltoe-ready">SPACE - 칼퇴 모드 발동!!</div>
+        <div id="tension-bar"></div>
+    </div>
+
+    <div id="event-msg"></div>
 </div>
 
 <div id="start-screen" class="overlay">
-    <h1>K-직장인 빨리빨리 퇴근하기 3D</h1>
-    <p>30km 밖의 집을 향해 질주하세요!<br>달리면서 거추장스러운 양복을 벗어던지면 점점 빨라집니다.</p>
-    <button onclick="startGame()">출근 말고 퇴근 시작!</button>
-</div>
-
-<div id="pause-screen" class="overlay hidden">
-    <h1>일시 정지</h1>
-    <p>퇴근을 멈추시겠습니까?<br>계속하려면 [ESC]를 다시 누르세요.</p>
-    <button onclick="togglePause()">이어 달리기</button>
-</div>
-
-<div id="help-screen" class="overlay hidden">
-    <h1>게임 설명서</h1>
+    <h1>칼퇴의 민족</h1>
     <p>
-        ⬅️ ➡️ 방향키: 좌우 이동 (코너링 & 장애물 회피)<br>
-        🍜 라면(노란 큐브): 부스터 발동!<br>
-        🚧 바리케이드(빨간 벽): 부딪히면 속도 감소<br>
-        🏃‍♂️ 다른 직장인(NPC): 부딪히면 서로 튕겨남<br><br>
-        목표: 30km(30,000m) 완주하여 침대에 눕기
+        [조작법]<br>
+        ⬅️ ➡️ 방향키: 곡선 도로를 따라 차선 이동<br>
+        <strong>[ X ] 키: 어깨빵! (옆에 있는 사람을 한강으로 밀쳐냅니다)</strong><br>
+        <strong>[ Z ] 키: 아이템 사용 (물풍선 던지기, 바나나 깔기)</strong><br>
+        <strong>SPACE BAR</strong>: 텐션 100% 시 칼퇴 모드 (무적+광속)<br><br>
+        목표: 5km 앞의 집까지 3분 안에 도착하세요!
     </p>
-    <button onclick="toggleHelp()">닫기 [ i ]</button>
+    <button onclick="startGame()">퇴근 시작</button>
 </div>
 
-<div id="gameover-screen" class="overlay hidden">
-    <h1 style="color: #ffcc00;">칼퇴근 완주 성공!!</h1>
+<div id="gameover-screen" class="overlay" style="display: none;">
+    <h1 style="color: #ffcc00;">🏠 씻고 침대 눕기 성공!</h1>
     <p style="font-size: 80px; margin: 10px;">🛌📱</p>
-    <p>수고하셨습니다. 이제 유튜브를 켜십시오.</p>
     <button onclick="location.reload()">내일 다시 출근하기</button>
 </div>
 
 <script>
-    // --- 1. 게임 상태 및 글로벌 변수 ---
-    let gameState = 'START'; // START, PLAYING, PAUSED, HELP, GAMEOVER
-    let distance = 0;
-    const maxDistance = 30000; // 30km 목표
-    let milestone1 = false; // 10km (서류가방)
-    let milestone2 = false; // 20km (재킷)
+    // --- 시스템 변수 ---
+    let state = 'START'; 
+    let trackLength = 5000; // 5km
+    let playerU = 0; // 0 ~ 1 (트랙 진행도)
+    let playerSpeed = 0.004; // u/sec (약 20m/s)
+    let playerLane = 0; // -15 to 15 (좌우 위치)
+    let targetLane = 0;
     
+    let tension = 0;
+    let isKaltoeMode = false;
+    let kaltoeTimer = 0;
+    let currentItem = null; // 'banana', 'balloon', 'coffee'
+    let isPunching = false; // X키 어깨빵 상태
+    
+    // --- Three.js 핵심 변수 ---
     let scene, camera, renderer, clock;
-    let playerGroup, playerBody, playerBriefcase;
-    let roadParams = { width: 100, length: 1000 };
-    let objects = []; // 아이템 및 장애물
-    let npcs = []; // 경쟁자 NPC
-    const keys = { ArrowLeft: false, ArrowRight: false };
+    let pathCurve; // 구불구불한 트랙 스플라인
+    let playerGroup, playerBones = {}; 
+    let npcs = [];
+    let itemsOnRoad = [];
+    let activeProjectiles = []; // 날아가는 물풍선 등
+    let environmentProps = [];
 
-    // --- 2. Three.js 초기화 ---
-    function init3D() {
+    const keys = { ArrowLeft: false, ArrowRight: false };
+    const laneLimits = 12;
+
+    // --- 초기화 ---
+    function init() {
         scene = new THREE.Scene();
-        scene.background = new THREE.Color(0x1a1a2e); // 밤하늘 색상
-        scene.fog = new THREE.Fog(0x1a1a2e, 100, 600); // 3D 안개 효과 (원근감)
+        scene.background = new THREE.Color(0x0a0a1a);
+        scene.fog = new THREE.Fog(0x0a0a1a, 50, 300);
 
         camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
         
         renderer = new THREE.WebGLRenderer({ antialias: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.shadowMap.enabled = true;
         document.getElementById('game-container').appendChild(renderer.domElement);
 
         clock = new THREE.Clock();
 
-        // 조명 추가
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
-        scene.add(ambientLight);
-        const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
-        dirLight.position.set(100, 200, 50);
+        const ambient = new THREE.AmbientLight(0xffffff, 0.4);
+        scene.add(ambient);
+        const dirLight = new THREE.DirectionalLight(0xaaccff, 0.8);
+        dirLight.position.set(50, 100, 50);
+        dirLight.castShadow = true;
         scene.add(dirLight);
 
-        createWorld();
-        createPlayer();
-        for(let i=0; i<5; i++) spawnNPC(); // NPC 5명 생성
+        buildWindingTrack();
+        buildPlayer();
+        spawnEntities();
         
-        // 초기 아이템/장애물 맵 생성
-        for(let z = -200; z > -3000; z -= 100) {
-            spawnEnvironmentObject(z);
-        }
-
-        window.addEventListener('resize', onWindowResize, false);
+        window.addEventListener('resize', onResize);
         animate();
     }
 
-    function createWorld() {
-        // 무한 도로 느낌을 주기 위한 거대한 바닥
-        const geo = new THREE.PlaneGeometry(roadParams.width, roadParams.length);
-        const mat = new THREE.MeshLambertMaterial({ color: 0x333344 });
-        const road = new THREE.Mesh(geo, mat);
-        road.rotation.x = -Math.PI / 2;
-        road.position.z = -roadParams.length / 2 + 100;
-        scene.add(road);
-
-        // 차선 그리기
-        const lineGeo = new THREE.PlaneGeometry(2, roadParams.length);
-        const lineMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
-        const line1 = new THREE.Mesh(lineGeo, lineMat);
-        line1.rotation.x = -Math.PI / 2;
-        line1.position.set(-20, 0.1, -roadParams.length / 2);
-        scene.add(line1);
-        const line2 = new THREE.Mesh(lineGeo, lineMat);
-        line2.rotation.x = -Math.PI / 2;
-        line2.position.set(20, 0.1, -roadParams.length / 2);
-        scene.add(line2);
-    }
-
-    // --- 3. 플레이어(K-직장인) 생성 ---
-    function createPlayer() {
-        playerGroup = new THREE.Group();
-        playerGroup.userData = { speed: 0, baseSpeed: 80, maxSpeed: 150, boostTimer: 0 };
-
-        // 몸통 (초기: 검은 정장)
-        const bodyGeo = new THREE.BoxGeometry(4, 6, 2);
-        const bodyMat = new THREE.MeshLambertMaterial({ color: 0x222222 }); // 검정
-        playerBody = new THREE.Mesh(bodyGeo, bodyMat);
-        playerBody.position.y = 3;
-        playerGroup.add(playerBody);
-
-        // 머리
-        const headGeo = new THREE.BoxGeometry(2.5, 2.5, 2.5);
-        const headMat = new THREE.MeshLambertMaterial({ color: 0xffccaa }); // 살구색
-        const head = new THREE.Mesh(headGeo, headMat);
-        head.position.y = 7.5;
-        playerGroup.add(head);
-
-        // 서류가방
-        const bagGeo = new THREE.BoxGeometry(1, 2, 3);
-        const bagMat = new THREE.MeshLambertMaterial({ color: 0x8b4513 }); // 갈색
-        playerBriefcase = new THREE.Mesh(bagGeo, bagMat);
-        playerBriefcase.position.set(3, 2, 0);
-        playerGroup.add(playerBriefcase);
-
-        scene.add(playerGroup);
+    // --- 1. 구불구불한 한강 트랙 생성 (핵심) ---
+    function buildWindingTrack() {
+        const pts = [];
+        const segments = 500;
+        let currentX = 0;
         
-        // 카트라이더 3인칭 시점 세팅
-        camera.position.set(0, 15, 30);
-        camera.lookAt(0, 0, -50);
+        // S자 커브 생성 알고리즘
+        for(let i=0; i<=segments; i++) {
+            let z = -(i / segments) * trackLength;
+            // 사인파를 복합적으로 섞어 불규칙하고 자연스러운 한강 자전거도로 생성
+            currentX = Math.sin(z * 0.003) * 60 + Math.sin(z * 0.001) * 80;
+            pts.push(new THREE.Vector3(currentX, 0, z));
+        }
+        pathCurve = new THREE.CatmullRomCurve3(pts);
+
+        // 1-1. 달리는 도로 (회색 튜브를 납작하게 누름)
+        const trackGeo = new THREE.TubeGeometry(pathCurve, segments, 16, 8, false);
+        trackGeo.scale(1, 0.05, 1); // 납작하게!
+        const trackMat = new THREE.MeshStandardMaterial({ color: 0x333344, roughness: 0.9 });
+        const track = new THREE.Mesh(trackGeo, trackMat);
+        track.receiveShadow = true;
+        scene.add(track);
+
+        // 1-2. 우측 한강 강물 (파란색 거대 튜브를 우측으로 이동시켜 납작하게)
+        const riverGeo = new THREE.TubeGeometry(pathCurve, segments, 150, 8, false);
+        riverGeo.scale(1, 0.05, 1);
+        riverGeo.translate(160, -2, 0); // 도로 우측 아래에 배치
+        const riverMat = new THREE.MeshStandardMaterial({ color: 0x003366, transparent: true, opacity: 0.9 });
+        const river = new THREE.Mesh(riverGeo, riverMat);
+        scene.add(river);
+
+        // 1-3. 주변 배경(나무, 가로등)을 곡선을 따라 배치
+        for(let i=10; i<segments; i+=3) {
+            let u = i / segments;
+            let pPos = pathCurve.getPointAt(u);
+            let pTan = pathCurve.getTangentAt(u);
+            let right = new THREE.Vector3().crossVectors(pTan, new THREE.Vector3(0,1,0)).normalize();
+
+            // 좌측 잔디밭 및 나무
+            if (Math.random() > 0.3) {
+                let treeGeo = new THREE.ConeGeometry(3 + Math.random()*2, 10 + Math.random()*10, 5);
+                let treeMat = new THREE.MeshLambertMaterial({color: 0x005511});
+                let tree = new THREE.Mesh(treeGeo, treeMat);
+                let offset = -20 - Math.random() * 50; // 도로 왼쪽
+                tree.position.copy(pPos).addScaledVector(right, offset);
+                tree.position.y = tree.geometry.parameters.height / 2;
+                scene.add(tree);
+            }
+
+            // 가로등 (주기적으로 우측 도로변)
+            if (i % 12 === 0) {
+                let lamp = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.3, 15), new THREE.MeshStandardMaterial({color: 0xaaaaaa}));
+                lamp.position.copy(pPos).addScaledVector(right, 18);
+                lamp.position.y = 7.5;
+                
+                let light = new THREE.PointLight(0xffddaa, 0.8, 50);
+                light.position.set(0, 7, 0);
+                lamp.add(light);
+                scene.add(lamp);
+            }
+        }
     }
 
-    // --- 4. NPC 및 장애물 생성 ---
-    function spawnNPC() {
-        const npcGroup = new THREE.Group();
+    // --- 2. 사람 관절 3D 모델링 생성 ---
+    function createHumanoid(suitColor, isPlayer = false) {
+        const group = new THREE.Group();
+        const matSuit = new THREE.MeshLambertMaterial({ color: suitColor });
+        const matSkin = new THREE.MeshLambertMaterial({ color: 0xffccaa });
+        const matShirt = new THREE.MeshLambertMaterial({ color: 0xffffff });
+        
+        const bones = {};
+
         // 몸통
-        const bodyGeo = new THREE.BoxGeometry(4, 6, 2);
-        // NPC는 남색, 회색 등 다른 정장
-        const colors = [0x3b4d61, 0x555555, 0x4a3b52];
-        const bodyMat = new THREE.MeshLambertMaterial({ color: colors[Math.floor(Math.random()*colors.length)] });
-        const body = new THREE.Mesh(bodyGeo, bodyMat);
-        body.position.y = 3;
-        npcGroup.add(body);
+        bones.torso = new THREE.Mesh(new THREE.BoxGeometry(3, 4.5, 1.5), matSuit);
+        bones.torso.position.y = 6;
+        group.add(bones.torso);
+
         // 머리
-        const headGeo = new THREE.BoxGeometry(2.5, 2.5, 2.5);
-        const headMat = new THREE.MeshLambertMaterial({ color: 0xffccaa });
-        const head = new THREE.Mesh(headGeo, headMat);
-        head.position.y = 7.5;
-        npcGroup.add(head);
+        bones.head = new THREE.Mesh(new THREE.BoxGeometry(2, 2.5, 2), matSkin);
+        bones.head.position.y = 2.5;
+        bones.torso.add(bones.head);
 
-        // NPC 초기 위치 (플레이어 주변 무작위)
-        npcGroup.position.set(
-            (Math.random() - 0.5) * 80,
-            0,
-            playerGroup.position.z - 50 - Math.random() * 200
-        );
-        
-        npcGroup.userData = {
-            baseSpeed: 70 + Math.random() * 30, // 플레이어와 엎치락뒤치락
-            targetX: (Math.random() - 0.5) * 80
-        };
-        
-        scene.add(npcGroup);
-        npcs.push(npcGroup);
-    }
-
-    function spawnEnvironmentObject(zPos) {
-        const rand = Math.random();
-        let mesh;
-        if(rand < 0.3) {
-            // 장애물: 공사장 바리케이드 (직선 코스를 곡선처럼 피하게 만듦)
-            const geo = new THREE.BoxGeometry(15, 5, 2);
-            const mat = new THREE.MeshLambertMaterial({ color: 0xff3333 });
-            mesh = new THREE.Mesh(geo, mat);
-            mesh.userData = { type: 'obstacle' };
-            mesh.position.set((Math.random() - 0.5) * 80, 2.5, zPos);
-        } else if(rand < 0.4) {
-            // 버프 아이템: 한강 라면 (노란 큐브)
-            const geo = new THREE.BoxGeometry(3, 3, 3);
-            const mat = new THREE.MeshLambertMaterial({ color: 0xffff00 });
-            mesh = new THREE.Mesh(geo, mat);
-            mesh.userData = { type: 'boost' };
-            mesh.position.set((Math.random() - 0.5) * 80, 2, zPos);
+        // 관절 생성 헬퍼
+        function addLimb(w, h, d, x, y, mat) {
+            const pivot = new THREE.Group();
+            pivot.position.set(x, y, 0);
+            const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
+            mesh.position.y = -h/2; 
+            pivot.add(mesh);
+            bones.torso.add(pivot);
+            return pivot;
         }
 
-        if(mesh) {
-            scene.add(mesh);
-            objects.push(mesh);
+        bones.armL = addLimb(1.2, 3.5, 1.2, -2.1, 1.5, matSuit);
+        bones.armR = addLimb(1.2, 3.5, 1.2, 2.1, 1.5, matSuit);
+        bones.legL = addLimb(1.3, 4, 1.3, -0.9, -2.2, matSuit);
+        bones.legR = addLimb(1.3, 4, 1.3, 0.9, -2.2, matSuit);
+
+        // 플레이어 전용: 서류가방
+        if(isPlayer) {
+            bones.bag = new THREE.Mesh(new THREE.BoxGeometry(0.8, 2, 2.5), new THREE.MeshLambertMaterial({color: 0x8b4513}));
+            bones.bag.position.set(0, -2, 0);
+            bones.armR.children[0].add(bones.bag);
+        }
+
+        group.userData = { bones: bones };
+        return group;
+    }
+
+    function buildPlayer() {
+        playerGroup = createHumanoid(0x111122, true);
+        playerBones = playerGroup.userData.bones;
+        scene.add(playerGroup);
+    }
+
+    // --- 3. NPC 및 아이템 스폰 ---
+    function spawnEntities() {
+        // NPC 50명 트랙 곳곳에 배치
+        const colors = [0x334455, 0x443333, 0x222222, 0x555544];
+        for(let i=0; i<50; i++) {
+            let npc = createHumanoid(colors[Math.floor(Math.random()*colors.length)]);
+            npc.userData.u = 0.05 + Math.random() * 0.9; // 트랙 내 무작위 위치
+            npc.userData.lane = (Math.random() - 0.5) * 2 * laneLimits;
+            npc.userData.speed = 0.003 + Math.random() * 0.0015; // 플레이어보다 살짝 느리거나 빠름
+            npc.userData.isDead = false;
+            scene.add(npc);
+            npcs.push(npc);
+        }
+
+        // 아이템 박스 (물음표 큐브)
+        for(let i=0; i<60; i++) {
+            let box = new THREE.Mesh(new THREE.BoxGeometry(2,2,2), new THREE.MeshLambertMaterial({color: 0xffcc00}));
+            box.userData.u = 0.02 + Math.random() * 0.95;
+            box.userData.lane = (Math.random() - 0.5) * 2 * laneLimits;
+            box.userData.type = Math.random() > 0.5 ? 'banana' : 'balloon';
+            scene.add(box);
+            itemsOnRoad.push(box);
         }
     }
 
-    // --- 5. 게임 루프 (핵심 로직) ---
+    // --- 4. 키보드 액션 제어 ---
+    document.addEventListener("keydown", (e) => {
+        if(state !== 'PLAYING') return;
+
+        if (e.code === 'ArrowLeft') targetLane = Math.max(-laneLimits, targetLane - 6);
+        if (e.code === 'ArrowRight') targetLane = Math.min(laneLimits, targetLane + 6);
+        
+        // [X] 어깨빵 (펀치)
+        if (e.code === 'KeyX' && !isPunching) {
+            isPunching = true;
+            setTimeout(() => isPunching = false, 300); // 0.3초간 펀치 판정
+            checkMeleeAttack();
+        }
+
+        // [Z] 아이템 사용
+        if (e.code === 'KeyZ' && currentItem) {
+            useItem(currentItem);
+            currentItem = null;
+            updateInventoryUI();
+        }
+
+        // [SPACE] 칼퇴 부스터
+        if (e.code === 'Space' && tension >= 100 && !isKaltoeMode) {
+            activateKaltoeMode();
+        }
+    });
+
+    // --- 상호작용 및 액션 로직 ---
+    function checkMeleeAttack() {
+        // 플레이어 근처의 NPC를 찾아 한강(우측)으로 날려버림
+        npcs.forEach(npc => {
+            if(npc.userData.isDead) return;
+            let distU = Math.abs(npc.userData.u - playerU) * trackLength;
+            let distLane = Math.abs(npc.userData.lane - playerLane);
+            
+            // 앞뒤 5m, 양옆 5m 이내에 있으면 타격 성공!
+            if (distU < 5 && distLane < 5) {
+                npc.userData.isDead = true;
+                npc.userData.flightVelocity = new THREE.Vector3(30, 20, 0); // 우측(한강) 상단으로 날아감
+                showEvent("어깨빵! 비켜 이 X끼야!!", "#ff3300");
+                addTension(30);
+            }
+        });
+    }
+
+    function useItem(type) {
+        if(type === 'banana') {
+            // 내 위치 바로 뒤에 바나나 생성
+            let banana = new THREE.Mesh(new THREE.CylinderGeometry(0, 1, 3), new THREE.MeshLambertMaterial({color: 0xffff00}));
+            banana.rotation.z = Math.PI/2;
+            banana.userData = { u: playerU - 0.002, lane: playerLane, isTrap: true };
+            scene.add(banana);
+            activeProjectiles.push(banana);
+            showEvent("🍌 바나나 투척!", "#ffff00");
+        } else if(type === 'balloon') {
+            // 앞으로 날아가는 물풍선
+            let balloon = new THREE.Mesh(new THREE.SphereGeometry(1.5), new THREE.MeshLambertMaterial({color: 0x00aaff}));
+            balloon.userData = { u: playerU, lane: playerLane, isProjectile: true, speed: 0.01 };
+            scene.add(balloon);
+            activeProjectiles.push(balloon);
+            showEvent("💧 물풍선 발사!", "#00aaff");
+        }
+    }
+
+    function addTension(amount) {
+        if(isKaltoeMode) return;
+        tension = Math.min(100, tension + amount);
+        document.getElementById('tension-bar').style.width = tension + '%';
+        if(tension === 100) document.getElementById('kaltoe-ready').classList.add('ready-glow');
+    }
+
+    function activateKaltoeMode() {
+        isKaltoeMode = true; kaltoeTimer = 5.0; tension = 0;
+        document.getElementById('tension-bar').style.width = '0%';
+        document.getElementById('kaltoe-ready').classList.remove('ready-glow');
+        showEvent("🔥 칼퇴 모드 발동!! 무적 질주! 🔥", "#ff0000");
+        document.body.classList.add('kaltoe-fx');
+    }
+
+    function updateInventoryUI() {
+        const icon = document.getElementById('inventory-icon');
+        if(!currentItem) icon.innerText = '❔';
+        else if(currentItem === 'banana') icon.innerText = '🍌';
+        else if(currentItem === 'balloon') icon.innerText = '💧';
+    }
+
+    function showEvent(msg, color) {
+        const el = document.getElementById('event-msg');
+        el.innerText = msg; el.style.color = color;
+        el.style.opacity = 1; el.style.transform = 'scale(1.2)';
+        setTimeout(() => { el.style.opacity = 0; el.style.transform = 'scale(0.5)'; }, 1000);
+    }
+
+    // --- 5. 메인 게임 루프 (애니메이션 및 렌더링) ---
     function animate() {
         requestAnimationFrame(animate);
         const delta = clock.getDelta();
 
-        if (gameState !== 'PLAYING') return; // 일시정지, 도움말 등일 때 멈춤
-
-        // 키보드 조작 (좌우 코너링)
-        if (keys.ArrowLeft && playerGroup.position.x > -45) playerGroup.position.x -= 40 * delta;
-        if (keys.ArrowRight && playerGroup.position.x < 45) playerGroup.position.x += 40 * delta;
-
-        // 플레이어 전진
-        let targetSpeed = playerGroup.userData.baseSpeed;
-        if(playerGroup.userData.boostTimer > 0) {
-            targetSpeed = playerGroup.userData.maxSpeed;
-            playerGroup.userData.boostTimer -= delta;
-        }
-        
-        // 부드러운 가감속
-        playerGroup.userData.speed += (targetSpeed - playerGroup.userData.speed) * 2 * delta;
-        playerGroup.position.z -= playerGroup.userData.speed * delta;
-        distance = Math.abs(playerGroup.position.z);
-
-        // 달리는 애니메이션 (몸 갸우뚱)
-        playerGroup.rotation.z = Math.sin(Date.now() / 100) * 0.1;
-
-        // 카메라가 플레이어를 따라감 (3인칭 백뷰)
-        camera.position.z = playerGroup.position.z + 30;
-        camera.position.x += (playerGroup.position.x - camera.position.x) * 0.1;
-
-        // NPC AI 로직 (앞으로 달리며 차선 변경)
-        npcs.forEach(npc => {
-            npc.position.z -= npc.userData.baseSpeed * delta;
-            // 부드러운 차선 변경
-            npc.position.x += (npc.userData.targetX - npc.position.x) * delta;
-            if(Math.random() < 0.01) npc.userData.targetX = (Math.random() - 0.5) * 80;
-            npc.rotation.z = Math.sin(Date.now() / 150) * 0.1; // NPC 뛰는 모션
-
-            // NPC와 플레이어 충돌 처리 (어깨빵)
-            if(Math.abs(playerGroup.position.z - npc.position.z) < 4 && Math.abs(playerGroup.position.x - npc.position.x) < 4) {
-                playerGroup.position.x += (playerGroup.position.x > npc.position.x) ? 2 : -2;
-                playerGroup.userData.speed *= 0.9; // 살짝 감속
+        if (state === 'PLAYING') {
+            // 속도 제어
+            let targetSpeed = 0.005; // 기본 속도
+            if (isKaltoeMode) {
+                targetSpeed = 0.012; // 부스터 속도
+                kaltoeTimer -= delta;
+                if(kaltoeTimer <= 0) { isKaltoeMode = false; document.body.classList.remove('kaltoe-fx'); }
             }
+            playerSpeed += (targetSpeed - playerSpeed) * 5 * delta;
             
-            // NPC가 뒤로 너무 쳐지면 앞으로 재배치 (끝없는 군중 효과)
-            if(npc.position.z > playerGroup.position.z + 50) {
-                npc.position.z = playerGroup.position.z - 200 - Math.random() * 100;
-                npc.position.x = (Math.random() - 0.5) * 80;
-            }
-        });
+            // 트랙 진행도 업데이트
+            playerU += playerSpeed * delta;
+            if (playerU >= 1.0) { state = 'END'; document.getElementById('gameover-screen').style.display = 'flex'; document.body.classList.remove('kaltoe-fx'); return; }
 
-        // 오브젝트 충돌 및 무한 맵 생성
-        for (let i = objects.length - 1; i >= 0; i--) {
-            let obj = objects[i];
+            // 차선 부드러운 이동
+            playerLane += (targetLane - playerLane) * 10 * delta;
+
+            // 곡선(Spline) 위치 및 방향 계산 (핵심 수학)
+            let pPos = pathCurve.getPointAt(playerU);
+            let pTan = pathCurve.getTangentAt(playerU);
+            let up = new THREE.Vector3(0, 1, 0);
+            let right = new THREE.Vector3().crossVectors(pTan, up).normalize();
+
+            // 플레이어 최종 위치 및 회전 적용
+            playerGroup.position.copy(pPos).addScaledVector(right, playerLane);
+            playerGroup.quaternion.setFromUnitVectors(new THREE.Vector3(0,0,-1), pTan); // 도로 방향 보기
+
+            // 달리기 관절 애니메이션
+            let runCycle = Date.now() * 0.015 * (playerSpeed / 0.005);
+            playerBones.armL.rotation.x = Math.sin(runCycle) * 1.5;
+            playerBones.legR.rotation.x = Math.sin(runCycle) * 1.5;
+            playerBones.legL.rotation.x = -Math.sin(runCycle) * 1.5;
             
-            // 충돌 감지
-            if (Math.abs(playerGroup.position.z - obj.position.z) < 4 && Math.abs(playerGroup.position.x - obj.position.x) < (obj.userData.type === 'obstacle' ? 8 : 4)) {
-                if(obj.userData.type === 'boost') {
-                    playerGroup.userData.boostTimer = 2; // 2초간 부스터
-                    showMilestone("라면 부스터 발동!", "#ffff00");
-                } else if(obj.userData.type === 'obstacle') {
-                    playerGroup.userData.speed = 20; // 쾅! 속도 급감소
+            // X키 펀치 애니메이션 오버라이드
+            if(isPunching) {
+                playerBones.armR.rotation.x = -Math.PI / 2; // 팔 뻗기
+                playerBones.armR.rotation.z = -Math.PI / 4; // 옆으로 치기
+            } else {
+                playerBones.armR.rotation.x = -Math.sin(runCycle) * 1.5;
+                playerBones.armR.rotation.z = 0;
+            }
+
+            // 카메라가 등 뒤에서 곡선을 따라 부드럽게 추적
+            let camTargetPos = pPos.clone().addScaledVector(pTan, -25).addScaledVector(up, 12);
+            camera.position.lerp(camTargetPos, 0.1);
+            camera.lookAt(pPos.clone().addScaledVector(pTan, 50)); // 플레이어 앞쪽 도로를 봄
+
+            // --- NPC 업데이트 ---
+            npcs.forEach(npc => {
+                if (npc.userData.isDead) {
+                    // 강으로 날아가는 물리 효과
+                    npc.position.addScaledVector(npc.userData.flightVelocity, delta);
+                    npc.userData.flightVelocity.y -= 50 * delta; // 중력
+                    npc.rotation.x += 10 * delta; // 빙글빙글 돎
+                    return;
                 }
-                scene.remove(obj);
-                objects.splice(i, 1);
-                continue;
+
+                npc.userData.u += npc.userData.speed * delta;
+                if(npc.userData.u > 1) npc.userData.u = 0.05; // 리스폰
+
+                let nPos = pathCurve.getPointAt(npc.userData.u);
+                let nTan = pathCurve.getTangentAt(npc.userData.u);
+                let nRight = new THREE.Vector3().crossVectors(nTan, up).normalize();
+                
+                npc.position.copy(nPos).addScaledVector(nRight, npc.userData.lane);
+                npc.quaternion.setFromUnitVectors(new THREE.Vector3(0,0,-1), nTan);
+
+                // NPC 달리기 애니메이션
+                let nRun = Date.now() * 0.01;
+                npc.userData.bones.armL.rotation.x = Math.sin(nRun) * 1.2;
+                npc.userData.bones.armR.rotation.x = -Math.sin(nRun) * 1.2;
+                npc.userData.bones.legL.rotation.x = -Math.sin(nRun) * 1.2;
+                npc.userData.bones.legR.rotation.x = Math.sin(nRun) * 1.2;
+
+                // 칼퇴 모드일 때 스치기만 해도 날아감
+                if (isKaltoeMode) {
+                    let distU = Math.abs(npc.userData.u - playerU) * trackLength;
+                    let distLane = Math.abs(npc.userData.lane - playerLane);
+                    if (distU < 5 && distLane < 8) {
+                        npc.userData.isDead = true;
+                        npc.userData.flightVelocity = new THREE.Vector3(40, 30, 0); 
+                        showEvent("무적 돌파! 비켜라!", "#ff0000");
+                    }
+                }
+            });
+
+            // --- 아이템 상자 획득 ---
+            for(let i=itemsOnRoad.length-1; i>=0; i--) {
+                let box = itemsOnRoad[i];
+                let bPos = pathCurve.getPointAt(box.userData.u);
+                let bTan = pathCurve.getTangentAt(box.userData.u);
+                let bRight = new THREE.Vector3().crossVectors(bTan, up).normalize();
+                box.position.copy(bPos).addScaledVector(bRight, box.userData.lane);
+                box.position.y = 2 + Math.sin(Date.now()*0.005); // 둥둥 뜸
+                box.rotation.y += 2 * delta;
+
+                let distU = Math.abs(box.userData.u - playerU) * trackLength;
+                let distLane = Math.abs(box.userData.lane - playerLane);
+                if (distU < 3 && distLane < 4) {
+                    if(!currentItem) {
+                        currentItem = box.userData.type;
+                        updateInventoryUI();
+                        showEvent(currentItem === 'banana' ? "바나나 획득!" : "물풍선 획득!", "#00ffcc");
+                    }
+                    scene.remove(box); itemsOnRoad.splice(i, 1);
+                }
             }
 
-            // 카메라 뒤로 넘어간 오브젝트 삭제 및 앞에 새로 생성
-            if (obj.position.z > playerGroup.position.z + 50) {
-                scene.remove(obj);
-                objects.splice(i, 1);
-                spawnEnvironmentObject(playerGroup.position.z - 400 - Math.random() * 100);
+            // --- 발사체(물풍선) 및 트랩(바나나) 업데이트 ---
+            for(let i=activeProjectiles.length-1; i>=0; i--) {
+                let proj = activeProjectiles[i];
+                if(proj.userData.isProjectile) {
+                    proj.userData.u += proj.userData.speed * delta; // 앞으로 날아감
+                    proj.position.y = 2; // 높이 유지
+                }
+
+                let pPos = pathCurve.getPointAt(proj.userData.u);
+                let pTan = pathCurve.getTangentAt(proj.userData.u);
+                let pRight = new THREE.Vector3().crossVectors(pTan, up).normalize();
+                proj.position.copy(pPos).addScaledVector(pRight, proj.userData.lane);
+
+                // NPC와 충돌 검사
+                let hit = false;
+                npcs.forEach(npc => {
+                    if(npc.userData.isDead) return;
+                    if(Math.abs(npc.userData.u - proj.userData.u) * trackLength < 3 && Math.abs(npc.userData.lane - proj.userData.lane) < 4) {
+                        npc.userData.isDead = true;
+                        npc.userData.flightVelocity = new THREE.Vector3((Math.random()-0.5)*20, 20, 20); // 튕겨나감
+                        hit = true;
+                        addTension(20);
+                        showEvent("아이템 명중!! 쾌감 +20", "#ffcc00");
+                    }
+                });
+
+                // 처리된 발사체 삭제
+                if(hit || proj.userData.u > 1.0 || proj.userData.u < playerU - 0.1) {
+                    scene.remove(proj); activeProjectiles.splice(i, 1);
+                }
+            }
+
+            // UI 거리 갱신 (남은 거리 km)
+            let remainKm = ((1.0 - playerU) * trackLength / 1000).toFixed(2);
+            document.getElementById('dist-val').innerText = Math.max(0, remainKm);
+
+            // K-직장인 탈의 시스템 (마일스톤)
+            if(playerU > 0.2 && playerBones.bag.visible) {
+                playerBones.bag.visible = false; showEvent("1km 통과! 서류가방 던짐!", "#fff");
+            }
+            if(playerU > 0.6 && playerBones.torso.material.color.getHex() !== 0xffffff) {
+                playerBones.torso.material.color.set(0xffffff); // 재킷 벗음 (흰 셔츠)
+                showEvent("3km 통과! 재킷 탈의! 광란의 질주", "#fff");
             }
         }
 
-        // --- 마일스톤 (탈의 시스템) 체크 ---
-        checkMilestones();
-
-        updateUI();
         renderer.render(scene, camera);
     }
 
-    // 옷 벗기 및 스피드업 시스템
-    function checkMilestones() {
-        if (distance >= 10000 && !milestone1) {
-            milestone1 = true;
-            playerBriefcase.visible = false; // 서류가방 던짐
-            playerGroup.userData.baseSpeed = 100; // 기본 속도 증가
-            showMilestone("10km! 서류가방 투척! 속도 UP!", "#ff3366");
-        }
-        if (distance >= 20000 && !milestone2) {
-            milestone2 = true;
-            playerBody.material.color.setHex(0xffffff); // 재킷 벗고 흰 셔츠
-            playerGroup.userData.baseSpeed = 130; // 기본 속도 대폭 증가
-            showMilestone("20km! 재킷 탈의! 광란의 질주!", "#00ffcc");
-        }
-        if (distance >= maxDistance && gameState !== 'GAMEOVER') {
-            gameState = 'GAMEOVER';
-            document.getElementById('gameover-screen').classList.remove('hidden');
-        }
-    }
-
-    // UI 업데이트
-    function updateUI() {
-        document.getElementById('speed-val').innerText = Math.floor(playerGroup.userData.speed);
-        let progress = (distance / maxDistance) * 100;
-        document.getElementById('progress-bar').style.width = Math.min(progress, 100) + '%';
-        
-        // 무한 도로 바닥 이동 효과 (텍스처 없이 위치 리셋 꼼수)
-        const road = scene.children.find(c => c.geometry && c.geometry.parameters.height === roadParams.length);
-        if(road && playerGroup.position.z < road.position.z - 200) {
-            road.position.z -= 200;
-        }
-    }
-
-    function showMilestone(msg, color) {
-        const el = document.getElementById('milestone-msg');
-        el.innerText = msg;
-        el.style.color = color;
-        el.style.opacity = 1;
-        setTimeout(() => el.style.opacity = 0, 2000);
-    }
-
-    // --- 6. 입력 및 UI 제어 ---
-    document.addEventListener("keydown", (e) => {
-        if (keys.hasOwnProperty(e.code)) keys[e.code] = true;
-        
-        if (e.code === 'Escape') togglePause();
-        if (e.code === 'KeyI') toggleHelp();
-    });
-    document.addEventListener("keyup", (e) => {
-        if (keys.hasOwnProperty(e.code)) keys[e.code] = false;
-    });
-
-    function onWindowResize() {
+    function onResize() {
         camera.aspect = window.innerWidth / window.innerHeight;
         camera.updateProjectionMatrix();
         renderer.setSize(window.innerWidth, window.innerHeight);
     }
 
-    // UI 버튼 함수들
     function startGame() {
-        document.getElementById('start-screen').classList.add('hidden');
-        gameState = 'PLAYING';
+        document.getElementById('start-screen').style.display = 'none';
+        state = 'PLAYING';
     }
 
-    function togglePause() {
-        if(gameState === 'START' || gameState === 'GAMEOVER') return;
-        if(gameState === 'PLAYING') {
-            gameState = 'PAUSED';
-            document.getElementById('pause-screen').classList.remove('hidden');
-        } else if(gameState === 'PAUSED') {
-            gameState = 'PLAYING';
-            document.getElementById('pause-screen').classList.add('hidden');
-        }
-    }
-
-    function toggleHelp() {
-        if(gameState === 'START' || gameState === 'GAMEOVER') return;
-        const helpScreen = document.getElementById('help-screen');
-        if(helpScreen.classList.contains('hidden')) {
-            let prev = gameState;
-            gameState = 'HELP';
-            helpScreen.dataset.prev = prev; // 이전 상태 기억
-            helpScreen.classList.remove('hidden');
-        } else {
-            gameState = helpScreen.dataset.prev || 'PLAYING';
-            helpScreen.classList.add('hidden');
-        }
-    }
-
-    // 실행
-    init3D();
+    init();
 </script>
 </body>
 </html>

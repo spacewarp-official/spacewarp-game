@@ -58,11 +58,13 @@
         @keyframes float { 0% { transform: translateY(0px); } 50% { transform: translateY(-12px); } 100% { transform: translateY(0px); } }
         .planet-container { height: 180px; display: flex; justify-content: center; align-items: center; position: relative; }
         .planet { width: 110px; height: 110px; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 50px; animation: float 4s ease-in-out infinite; box-shadow: inset -15px -15px 30px rgba(0,0,0,0.5), 0 0 20px rgba(255,255,255,0.1); }
+        
+        /* 행성별 색상 스타일 */
         .planet-tetris { background: radial-gradient(circle at 30% 30%, #4facfe 0%, #00f2fe 100%); }
-        .planet-locked { background: radial-gradient(circle at 30% 30%, #434343 0%, #111 100%); opacity: 0.7; }
+        .planet-run { background: radial-gradient(circle at 30% 30%, #ff0844 0%, #ffb199 100%); animation-delay: 0.3s; }
         .planet-unknown { background: radial-gradient(circle at 30% 30%, #2b5876 0%, #4e4376 100%); opacity: 0.8; animation-delay: 1s; }
 
-        .card-content { padding: 30px 25px; border-top: 1px solid rgba(255, 255, 255, 0.05); }
+        .card-content { padding: 30px 25px; border-top: 1px solid rgba(255, 255, 255, 0.05); flex-grow: 1; }
         .card-title { font-size: 22px; font-weight: bold; margin-bottom: 10px; color: #fff; }
         .card-desc { font-size: 15px; color: #9ba4b5; line-height: 1.6; word-break: keep-all; }
         
@@ -83,8 +85,8 @@
     </div>
 
     <div class="header">
-        <h1>SPACE WARP</h1>
-        <p class="lang-text" data-ko="스페이스_워프 : 은하계에 흩어진 당신의 놀이터를 탐험하세요 🌌" data-en="Explore your playground scattered across the galaxy 🌌">스페이스_워프 : 은하계에 흩어진 당신의 놀이터를 탐험하세요 🌌</p>
+        <h1>SPACE_WARP</h1>
+        <p class="lang-text" data-ko="은하계에 흩어진 당신의 놀이터를 탐험하세요 🌌" data-en="Explore your playground scattered across the galaxy 🌌">은하계에 흩어진 당신의 놀이터를 탐험하세요 🌌</p>
     </div>
 
     <div class="search-container">
@@ -97,19 +99,19 @@
             <div class="planet-container"><div class="planet planet-tetris">🧩</div></div>
             <div class="card-content">
                 <span class="badge badge-active lang-text" data-ko="WARP READY" data-en="WARP READY">WARP READY</span>
-                <div class="card-title lang-text" data-ko="행성: 집현전 (한글 테트리스)" data-en="Planet: Jiphyeonjeon (Tetris)">행성: 집현전 (한글 테트리스)</div>
+                <div class="card-title lang-text" data-ko="행성: 집현전 (테트리스)" data-en="Planet: Jiphyeonjeon (Tetris)">행성: 집현전 (테트리스)</div>
                 <div class="card-desc lang-text" data-ko="세종이 내리는 과제를 줄을 맞춰 없애보자. 직선과 논리의 한글 테트리스." data-en="Clear the tasks given by King Sejong. A logical Korean Tetris game.">세종이 내리는 과제를 줄을 맞춰 없애보자. 직선과 논리의 한글 테트리스.</div>
             </div>
         </a>
 
-        <div class="game-card" style="cursor: default;">
-            <div class="planet-container"><div class="planet planet-locked" style="animation-delay: 0.5s;">🔒</div></div>
+        <a href="running.html" class="game-card">
+            <div class="planet-container"><div class="planet planet-run">🏃‍♂️</div></div>
             <div class="card-content">
-                <span class="badge badge-soon lang-text" data-ko="NO SIGNAL" data-en="NO SIGNAL">NO SIGNAL</span>
-                <div class="card-title lang-text" data-ko="미개척 행성 (인테리어)" data-en="Uncharted Planet (Interior)">미개척 행성 (인테리어)</div>
-                <div class="card-desc lang-text" data-ko="새로운 인테리어 퍼즐을 위한 테라포밍(공사)이 한창 진행 중입니다." data-en="Terraforming for a new interior puzzle game is currently in progress.">새로운 인테리어 퍼즐을 위한 테라포밍(공사)이 한창 진행 중입니다.</div>
+                <span class="badge badge-active lang-text" data-ko="WARP READY" data-en="WARP READY">WARP READY</span>
+                <div class="card-title lang-text" data-ko="행성: 칼퇴의 민족" data-en="Planet: Run to Home">행성: 칼퇴의 민족</div>
+                <div class="card-desc lang-text" data-ko="야근과 상사의 전화를 피해 전력 질주하세요! K-직장인 스피드 러닝." data-en="Sprint away from overtime and your boss's calls! K-Office Worker Speed Runner.">야근과 상사의 전화를 피해 전력 질주하세요! K-직장인 스피드 러닝.</div>
             </div>
-        </div>
+        </a>
         
         <div class="game-card" style="cursor: default;">
             <div class="planet-container"><div class="planet planet-unknown">🚀</div></div>

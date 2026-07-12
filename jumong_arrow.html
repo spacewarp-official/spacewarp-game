@@ -10,39 +10,28 @@ body {
   background: linear-gradient(180deg, #f3f0ea 0%, #eceee9 50%, #e8ecec 100%) !important;
   color: #4a4640; font-family: 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
   display: flex; flex-direction: column; align-items: center; justify-content: center;
-  min-height: 100vh; margin: 0; overflow-x: hidden;
+  min-height: 100vh; margin: 0; overflow-x: hidden; touch-action: manipulation;
 }
 .header-group { text-align: center; margin-bottom: 14px; }
 h1 { margin: 0 0 4px 0; font-size: 28px; letter-spacing: 1px; color: #d97a8e; font-weight: 900; text-shadow: 0 2px 0 #f5f2ec; }
-.pronunciation { font-size: 13px; color: #9a9488; font-weight: bold; }
 .sub-title { font-size: 12px; color: #7fae9a; font-weight: bold; margin-top: 6px; }
 
 .game-container {
   display: flex; flex-direction: row; background: #fdfcfa; padding: 20px; border-radius: 30px;
   box-shadow: 0 15px 40px rgba(0,0,0,0.08), inset 0 0 0 3px #e6e2d8; gap: 18px; align-items: flex-start;
 }
-.board-wrapper { position: relative; }
-#board {
-  display: grid; gap: 5px; background: #f4f1eb; padding: 10px; border-radius: 18px; border: 3px dashed #d9d4c6;
-}
-.cell {
-  width: 42px; height: 42px; background: #ede9df; border-radius: 10px; display: flex; align-items: center; justify-content: center;
-  cursor: pointer; user-select: none; transition: transform 0.15s, background 0.2s; box-shadow: inset 0 -3px 0 rgba(0,0,0,0.05);
-}
-.cell.empty { background: #f7f5f0; box-shadow: none; cursor: default; }
-.cell:active { transform: scale(0.9); }
-.cell.flash-green { background: #b9f2d3 !important; transition: none; }
-.cell.flash-red { background: #ffb4bd !important; transition: none; }
+.board-wrapper { position: relative; background: #f4f1eb; border-radius: 18px; border: 3px dashed #d9d4c6; padding: 10px; overflow: hidden; }
+#game-svg { display: block; overflow: visible; }
 
-/* 길줘진 지렁이 캐릭터 (미로화살표처럼 길게) */
-.worm-wrap { width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; }
-.worm-body { position: relative; width: 34px; height: 15px; }
-.worm-tail { position: absolute; left: 0; top: 2px; width: 21px; height: 11px; border-radius: 6px; box-shadow: inset -2px -2px 0 rgba(0,0,0,0.07); }
-.worm-head { position: absolute; right: 0; top: 0; width: 17px; height: 17px; border-radius: 50%; box-shadow: inset -2px -2px 0 rgba(0,0,0,0.07); }
-.eye { position: absolute; width: 3px; height: 3px; background: #3a2e2a; border-radius: 50%; top: 5px; }
-.eye-l { left: 3px; } .eye-r { left: 10px; }
-.blush { position: absolute; width: 3px; height: 2px; background: rgba(160,120,110,0.5); border-radius: 50%; bottom: 3px; }
-.blush-l { left: 1px; } .blush-r { left: 12px; }
+.worm-group { cursor: pointer; transition: filter 0.2s; }
+.worm-group:active { filter: brightness(0.9); }
+.worm-error rect, .worm-error circle { fill: #ffb4bd !important; transition: fill 0.2s; }
+
+@keyframes slide-out {
+  0% { transform: translate(var(--startX), var(--startY)) rotate(var(--angle)); opacity: 1; }
+  100% { transform: translate(var(--endX), var(--endY)) rotate(var(--angle)); opacity: 0; }
+}
+.escaping { animation: slide-out 0.4s ease-in forwards; pointer-events: none; }
 
 .sidebar { width: 170px; display: flex; flex-direction: column; gap: 10px; }
 .info-box { background: #f8f6f1; padding: 10px; border-radius: 16px; border: 2px solid #e6e2d8; text-align: center; }
@@ -59,9 +48,10 @@ h1 { margin: 0 0 4px 0; font-size: 28px; letter-spacing: 1px; color: #d97a8e; fo
 }
 #start-btn:active { transform: translateY(3px); box-shadow: 0 2px 0 #9aa895; }
 #start-btn:disabled { background: #eee; color: #bbb; box-shadow: none; }
+
 .overlay {
   position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(248,246,240,0.96);
-  display: none; align-items: center; justify-content: center; flex-direction: column; border-radius: 18px; text-align: center; gap: 8px;
+  display: none; align-items: center; justify-content: center; flex-direction: column; border-radius: 15px; text-align: center; gap: 8px; z-index: 10;
 }
 .overlay.show { display: flex; }
 .overlay h2 { color: #b97e8f; margin: 0; font-size: 20px; }
@@ -72,21 +62,19 @@ h1 { margin: 0 0 4px 0; font-size: 28px; letter-spacing: 1px; color: #d97a8e; fo
   .game-container { flex-direction: column; align-items: center; padding: 12px; }
   .sidebar { width: 90%; max-width: 300px; flex-direction: row; flex-wrap: wrap; }
   .info-box, .ranking-box { flex: 1; min-width: 80px; }
-  .cell { width: 34px; height: 34px; }
-  .worm-wrap { width: 28px; height: 28px; }
 }
 </style>
 </head>
 <body>
 
 <div class="header-group">
-  <h1>🐛 꼬물이 대탈출 <span class="pronunciation">(WIGGLE ESCAPE)</span></h1>
-  <div class="sub-title">꼬물이들을 순서대로 미로 밖으로 보내주세요!</div>
+  <h1>🐛 꼬물이 대탈출</h1>
+  <div class="sub-title">앞이 가로막히지 않은 꼬물이부터 밖으로 내보내세요!</div>
 </div>
 
 <div class="game-container">
   <div class="board-wrapper">
-    <div id="board"></div>
+    <svg id="game-svg"></svg>
     <div class="overlay" id="overlay">
       <h2 id="overlay-title"></h2>
       <p id="overlay-text"></p>
@@ -107,14 +95,15 @@ h1 { margin: 0 0 4px 0; font-size: 28px; letter-spacing: 1px; color: #d97a8e; fo
     </div>
     <div class="ranking-box">
       <div class="ranking-title">🏆 최단시간 랭킹</div>
-      <ul id="ranking-list" class="ranking-list"><li style="text-align:center;color:#bba;">불러오는 중...</li></ul>
+      <ul id="ranking-list" class="ranking-list"><li style="text-align:center;">대기중...</li></ul>
     </div>
-    <button id="start-btn" onclick="startGame()">꼬물이 구출 시작!</button>
+    <button id="start-btn" onclick="startGame()">게임 시작!</button>
   </div>
 </div>
-<div class="dev-footer">WIGGLE ESCAPE · Dev v2.0 (cute) · Ranking: Supabase</div>
+<div class="dev-footer">WIGGLE ESCAPE · Engine: SVG DAG (Ray-casting) · Backend: Supabase</div>
 
 <script>
+// --- [1] 백엔드 초기화 ---
 const SUPABASE_URL = "https://pvjrbhsgffadiklpiknk.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_d4NBdGqpxrg__1SXiRA-YA_TDutoT7B";
 let supabaseClient = null;
@@ -122,144 +111,181 @@ try { supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY); }
 
 async function loadRanking() {
   const ul = document.getElementById('ranking-list');
-  if (!supabaseClient) { ul.innerHTML = '<li style="text-align:center;color:#ff6b81;">⚠️ 서버 미설정</li>'; return; }
-  ul.innerHTML = '<li style="text-align:center;color:#bba;">불러오는 중...</li>';
+  if (!supabaseClient) { ul.innerHTML = '<li style="text-align:center;">서버 미설정</li>'; return; }
+  ul.innerHTML = '<li style="text-align:center;">불러오는 중...</li>';
   try {
     const { data, error } = await supabaseClient.from('jumong_scores').select('name, time_seconds').order('time_seconds', { ascending: true }).limit(5);
     if (error) throw error;
-    if (!data || data.length === 0) { ul.innerHTML = '<li style="text-align:center;color:#bba;">기록 없음</li>'; return; }
-    ul.innerHTML = '';
-    data.forEach((item, i) => {
-      const m = Math.floor(item.time_seconds / 60), s = item.time_seconds % 60;
-      ul.innerHTML += `<li class="ranking-item"><span>${i+1}. ${item.name}</span><strong>${m}:${String(s).padStart(2,'0')}</strong></li>`;
-    });
-  } catch(e) { console.error(e); ul.innerHTML = '<li style="text-align:center;color:#ff6b81;">⚠️ 불러오기 실패</li>'; }
+    if (!data || data.length === 0) { ul.innerHTML = '<li style="text-align:center;">기록 없음</li>'; return; }
+    ul.innerHTML = data.map((item, i) => `<li class="ranking-item"><span>${i+1}. ${item.name}</span><strong>${Math.floor(item.time_seconds / 60)}:${String(item.time_seconds % 60).padStart(2,'0')}</strong></li>`).join('');
+  } catch(e) { ul.innerHTML = '<li style="text-align:center;color:#ffb4bd;">오류 발생</li>'; }
 }
+
 async function saveScore(name, timeSeconds) {
-  if (!supabaseClient) { alert("랭킹 서버가 아직 설정되지 않았습니다."); return; }
+  if (!supabaseClient) return;
   try {
     const { error } = await supabaseClient.from('jumong_scores').insert([{ name: name.substring(0,6).toUpperCase(), time_seconds: timeSeconds }]);
-    if (error) throw error;
-    await loadRanking();
-  } catch(e) { console.error(e); alert("점수 저장에 실패했습니다."); }
+    if (!error) await loadRanking();
+  } catch(e) { console.error("저장 실패"); }
 }
 
+// --- [2] 게임 상수 및 변수 ---
 const LEVELS = [
-  { gridSize: 4, numArrows: 5 },
-  { gridSize: 4, numArrows: 7 },
-  { gridSize: 5, numArrows: 9 },
-  { gridSize: 5, numArrows: 12 },
-  { gridSize: 6, numArrows: 15 },
-  { gridSize: 6, numArrows: 18 },
-  { gridSize: 7, numArrows: 22 },
-  { gridSize: 7, numArrows: 26 },
+  { size: 5, worms: 6 },  { size: 5, worms: 8 },
+  { size: 6, worms: 10 }, { size: 6, worms: 13 },
+  { size: 7, worms: 16 }, { size: 7, worms: 20 },
+  { size: 8, worms: 24 }, { size: 8, worms: 30 }
 ];
-const DIR_VECTOR = { up: [0,-1], down: [0,1], left: [-1,0], right: [1,0] };
-const DIR_ANGLE = { right: 0, down: 90, left: 180, up: 270 };
-const WORM_COLORS = ['#ffb6c1', '#a0e7c4', '#ffe08a', '#b8c9ff', '#ffc2a1', '#d6b8ff'];
+const WORM_COLORS = ['#ffb6c1', '#a0e7c4', '#ffe08a', '#b8c9ff', '#ffc2a1', '#d6b8ff', '#f3b0c3', '#a7d7c5'];
+const CELL_SIZE = 45; 
+const DIR_VECTOR = { up: {dx:0, dy:-1, a:270}, down: {dx:0, dy:1, a:90}, left: {dx:-1, dy:0, a:180}, right: {dx:1, dy:0, a:0} };
 
-let board = [];
-let gridSize = 4;
-let arrowsRemaining = 0;
-let hearts = 3;
-let currentLevelIndex = 0;
-let gameActive = false;
-let elapsedSeconds = 0;
-let timerInterval = null;
+let currentLevel = 0, hearts = 3, elapsedSeconds = 0, timerInterval = null, gameActive = false;
+let gridState = [], wormObjects = [];
 
-function generateLevel(size, numArrows) {
-  const b = Array.from({length: size}, () => new Array(size).fill(null));
-  const dirs = ['up','down','left','right'];
-  let placed = 0, attempts = 0;
-  while (placed < numArrows && attempts < numArrows * 60) {
+// --- [3] 맵 생성 (역방향 DAG + Ray-casting 알고리즘) ---
+function generateSolvableLevel(size, numWorms) {
+  let grid = Array.from({length: size}, () => Array(size).fill(null));
+  let worms = [];
+  let attempts = 0;
+  
+  // 조건이 까다로워졌으므로 시도 횟수를 3000으로 상향
+  while(worms.length < numWorms && attempts < 3000) {
     attempts++;
-    const x = Math.floor(Math.random() * size);
-    const y = Math.floor(Math.random() * size);
-    if (b[y][x]) continue;
-    const shuffled = dirs.slice().sort(() => Math.random() - 0.5);
-    let chosen = null;
-    for (const d of shuffled) {
-      const [dx, dy] = DIR_VECTOR[d];
-      let cx = x + dx, cy = y + dy, clear = true;
-      while (cx >= 0 && cx < size && cy >= 0 && cy < size) {
-        if (b[cy][cx]) { clear = false; break; }
-        cx += dx; cy += dy;
+    let length = Math.floor(Math.random() * 2) + 2; // 길이 2~3칸
+    let headX = Math.floor(Math.random() * size);
+    let headY = Math.floor(Math.random() * size);
+    let dirs = ['up','down','left','right'];
+    let dir = dirs[Math.floor(Math.random() * dirs.length)];
+    let vec = DIR_VECTOR[dir];
+    
+    // 몸통은 머리의 '반대 방향'으로 확장
+    let bx = -vec.dx;
+    let by = -vec.dy;
+    
+    let canPlace = true;
+    let bodyCoords = [];
+    
+    // 1단계: 몸통이 놓일 공간 검증
+    for(let i=0; i<length; i++) {
+      let cx = headX + bx*i;
+      let cy = headY + by*i;
+      if(cx < 0 || cx >= size || cy < 0 || cy >= size || grid[cy][cx] !== null) { canPlace = false; break; }
+      bodyCoords.push({x: cx, y: cy});
+    }
+    
+    // 2단계: [Ray-casting 교착 방지] 머리 앞 탈출 경로 검증
+    if (canPlace) {
+      let rayX = headX + vec.dx;
+      let rayY = headY + vec.dy;
+      while(rayX >= 0 && rayX < size && rayY >= 0 && rayY < size) {
+        if (grid[rayY][rayX] !== null) { canPlace = false; break; }
+        rayX += vec.dx;
+        rayY += vec.dy;
       }
-      if (clear) { chosen = d; break; }
     }
-    if (!chosen) continue;
-    b[y][x] = { dir: chosen, color: WORM_COLORS[Math.floor(Math.random() * WORM_COLORS.length)] };
-    placed++;
+    
+    // 3단계: 맵 확정 배치
+    if(canPlace) {
+      let id = 'w_' + worms.length;
+      let color = WORM_COLORS[Math.floor(Math.random()*WORM_COLORS.length)];
+      worms.push({ id, headX, headY, dir, length, color, bodyCoords, active: true });
+      bodyCoords.forEach(c => grid[c.y][c.x] = id);
+    }
   }
-  return { board: b, total: placed };
+  return { grid, worms };
 }
 
-function isPathClear(x, y, dir, size, b) {
-  const [dx, dy] = DIR_VECTOR[dir];
-  let cx = x + dx, cy = y + dy;
-  while (cx >= 0 && cx < size && cy >= 0 && cy < size) {
-    if (b[cy][cx]) return false;
-    cx += dx; cy += dy;
-  }
-  return true;
-}
-
-function wormHTML(data) {
-  const angle = DIR_ANGLE[data.dir];
-  return `<div class="worm-wrap" style="transform: rotate(${angle}deg)">
-    <div class="worm-body">
-      <span class="worm-tail" style="background:${data.color}"></span>
-      <span class="worm-head" style="background:${data.color}">
-        <span class="eye eye-l"></span><span class="eye eye-r"></span>
-        <span class="blush blush-l"></span><span class="blush blush-r"></span>
-      </span>
-    </div>
-  </div>`;
-}
-
+// --- [4] SVG 렌더링 ---
 function renderBoard() {
-  const boardEl = document.getElementById('board');
-  boardEl.style.gridTemplateColumns = `repeat(${gridSize}, 42px)`;
-  boardEl.innerHTML = '';
-  for (let y = 0; y < gridSize; y++) {
-    for (let x = 0; x < gridSize; x++) {
-      const cell = document.createElement('div');
-      const data = board[y][x];
-      cell.className = data ? 'cell' : 'cell empty';
-      cell.dataset.x = x; cell.dataset.y = y;
-      if (data) { cell.innerHTML = wormHTML(data); cell.onclick = () => handleClick(x, y); }
-      boardEl.appendChild(cell);
-    }
+  const svg = document.getElementById('game-svg');
+  const size = LEVELS[currentLevel].size;
+  svg.setAttribute('width', size * CELL_SIZE);
+  svg.setAttribute('height', size * CELL_SIZE);
+  
+  svg.innerHTML = wormObjects.filter(w => w.active).map(w => {
+    let px = w.headX * CELL_SIZE + (CELL_SIZE/2);
+    let py = w.headY * CELL_SIZE + (CELL_SIZE/2);
+    let angle = DIR_VECTOR[w.dir].a;
+    let bodyWidth = w.length * CELL_SIZE - 8;
+    let bodyX = -((w.length - 1) * CELL_SIZE) - 18;
+    
+    return `
+      <g id="${w.id}" class="worm-group" transform="translate(${px}, ${py}) rotate(${angle})" onclick="handleWormClick('${w.id}')">
+        <rect x="${bodyX}" y="-16" width="${bodyWidth}" height="32" rx="16" fill="${w.color}" />
+        <circle cx="0" cy="0" r="16" fill="${w.color}" />
+        <circle cx="4" cy="-6" r="3" fill="#3a2e2a" />
+        <circle cx="4" cy="6" r="3" fill="#3a2e2a" />
+        <ellipse cx="10" cy="-9" rx="3" ry="2" fill="rgba(160,120,110,0.5)" />
+        <ellipse cx="10" cy="9" rx="3" ry="2" fill="rgba(160,120,110,0.5)" />
+      </g>`;
+  }).join('');
+}
+
+// --- [5] 충돌 판정 및 상호작용 ---
+function handleWormClick(id) {
+  if(!gameActive) return;
+  const worm = wormObjects.find(w => w.id === id);
+  if(!worm || !worm.active) return;
+
+  const size = LEVELS[currentLevel].size;
+  const vec = DIR_VECTOR[worm.dir];
+  let cx = worm.headX + vec.dx;
+  let cy = worm.headY + vec.dy;
+  let isBlocked = false;
+
+  // 머리 앞 방향으로 맵 끝까지 검사
+  while(cx >= 0 && cx < size && cy >= 0 && cy < size) {
+    if(gridState[cy][cx] !== null && gridState[cy][cx] !== worm.id) { isBlocked = true; break; }
+    cx += vec.dx; cy += vec.dy;
+  }
+
+  const gEl = document.getElementById(worm.id);
+  if(isBlocked) {
+    gEl.classList.add('worm-error');
+    setTimeout(() => gEl.classList.remove('worm-error'), 300);
+    loseHeart();
+  } else {
+    // 탈출 성공 처리
+    worm.active = false;
+    worm.bodyCoords.forEach(c => gridState[c.y][c.x] = null);
+    
+    // CSS 애니메이션 변수 설정
+    let startX = worm.headX * CELL_SIZE + (CELL_SIZE/2);
+    let startY = worm.headY * CELL_SIZE + (CELL_SIZE/2);
+    gEl.style.setProperty('--startX', `${startX}px`);
+    gEl.style.setProperty('--startY', `${startY}px`);
+    gEl.style.setProperty('--endX', `${startX + vec.dx * 800}px`);
+    gEl.style.setProperty('--endY', `${startY + vec.dy * 800}px`);
+    gEl.style.setProperty('--angle', `${vec.a}deg`);
+    
+    gEl.classList.add('escaping');
+    setTimeout(() => gEl.remove(), 400);
+
+    if(wormObjects.filter(w => w.active).length === 0) setTimeout(levelComplete, 300);
   }
 }
 
-function handleClick(x, y) {
-  if (!gameActive) return;
-  const data = board[y][x];
-  if (!data) return;
-  const cellEl = document.querySelector(`.cell[data-x="${x}"][data-y="${y}"]`);
-  if (isPathClear(x, y, data.dir, gridSize, board)) {
-    cellEl.classList.add('flash-green');
-    board[y][x] = null;
-    arrowsRemaining--;
-    setTimeout(() => { renderBoard(); }, 150);
-    if (arrowsRemaining === 0) setTimeout(levelComplete, 200);
-  } else {
-    cellEl.classList.add('flash-red');
-    setTimeout(() => cellEl.classList.remove('flash-red'), 300);
-    loseHeart();
-  }
-}
+// --- [6] 게임 흐름 제어 ---
+function updateHearts() { document.getElementById('hearts-val').innerText = '💗'.repeat(hearts) + '🤍'.repeat(3 - hearts); }
+function formatTime(s) { return `${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`; }
 
 function loseHeart() {
-  hearts--;
-  document.getElementById('hearts-val').innerText = '💗'.repeat(Math.max(hearts,0)) + '🤍'.repeat(3 - Math.max(hearts,0));
-  if (hearts <= 0) retryLevel();
+  hearts--; updateHearts();
+  if(hearts <= 0) {
+    showOverlay('꼬물이가 갇혔어요!', '다시 도전하세요', 1000);
+    setTimeout(() => startLevel(currentLevel, false), 1000);
+  }
 }
 
-function retryLevel() {
-  showOverlay('꼬물이가 갇혔어요!', '같은 난이도로 다시 도전해요', 900);
-  setTimeout(() => { startLevel(currentLevelIndex, false); }, 900);
+function startLevel(index, resetHearts = true) {
+  const cfg = LEVELS[index];
+  const { grid, worms } = generateSolvableLevel(cfg.size, cfg.worms);
+  gridState = grid; wormObjects = worms;
+  if(resetHearts) hearts = 3; updateHearts();
+  document.getElementById('level-val').innerText = `${index + 1} / ${LEVELS.length}`;
+  document.getElementById('overlay').classList.remove('show');
+  renderBoard();
 }
 
 function showOverlay(title, text, ms) {
@@ -267,52 +293,32 @@ function showOverlay(title, text, ms) {
   document.getElementById('overlay-title').innerText = title;
   document.getElementById('overlay-text').innerText = text;
   ov.classList.add('show');
-  if (ms) setTimeout(() => ov.classList.remove('show'), ms);
-}
-
-function startLevel(index, resetHearts = true) {
-  const cfg = LEVELS[index];
-  gridSize = cfg.gridSize;
-  const gen = generateLevel(cfg.gridSize, cfg.numArrows);
-  board = gen.board; arrowsRemaining = gen.total;
-  if (resetHearts) hearts = 3;
-  document.getElementById('hearts-val').innerText = '💗'.repeat(hearts) + '🤍'.repeat(3-hearts);
-  document.getElementById('level-val').innerText = `${index + 1} / ${LEVELS.length}`;
-  document.getElementById('overlay').classList.remove('show');
-  renderBoard();
+  if(ms) setTimeout(() => ov.classList.remove('show'), ms);
 }
 
 function levelComplete() {
-  currentLevelIndex++;
-  if (currentLevelIndex < LEVELS.length) {
-    showOverlay('레벨 클리어! 🎉', `다음 레벨로 이동해요 (${currentLevelIndex + 1}/${LEVELS.length})`, 1200);
-    setTimeout(() => startLevel(currentLevelIndex, true), 1200);
+  currentLevel++;
+  if(currentLevel < LEVELS.length) {
+    showOverlay('클리어! 🎉', `다음 레벨 (${currentLevel + 1}/${LEVELS.length})`, 1200);
+    setTimeout(() => startLevel(currentLevel, true), 1200);
   } else {
-    allLevelsComplete();
+    gameActive = false; clearInterval(timerInterval);
+    showOverlay('탈출 성공! 🎊', `소요시간: ${formatTime(elapsedSeconds)}`, 0);
+    document.getElementById('start-btn').disabled = false;
+    setTimeout(() => {
+      const name = prompt(`클리어 시간: ${formatTime(elapsedSeconds)}\n이니셜 3자리를 입력하세요:`, "AAA");
+      if(name) saveScore(name, elapsedSeconds);
+    }, 500);
   }
 }
 
-function allLevelsComplete() {
-  gameActive = false;
-  clearInterval(timerInterval);
-  showOverlay('모든 꼬물이 구출 성공! 🎊', `총 소요시간: ${formatTime(elapsedSeconds)}`, 0);
-  document.getElementById('start-btn').disabled = false;
-  setTimeout(() => {
-    const name = prompt(`클리어 시간: ${formatTime(elapsedSeconds)}\n이름을 입력하세요:`, "AAA");
-    if (name) saveScore(name, elapsedSeconds);
-  }, 300);
-}
-
-function formatTime(s) { const m = Math.floor(s/60); const sec = s%60; return `${m}:${String(sec).padStart(2,'0')}`; }
-
 function startGame() {
   document.getElementById('start-btn').disabled = true;
-  currentLevelIndex = 0; elapsedSeconds = 0; gameActive = true;
+  currentLevel = 0; elapsedSeconds = 0; gameActive = true;
   document.getElementById('time-val').innerText = '00:00';
   clearInterval(timerInterval);
   timerInterval = setInterval(() => {
-    elapsedSeconds++;
-    document.getElementById('time-val').innerText = formatTime(elapsedSeconds);
+    elapsedSeconds++; document.getElementById('time-val').innerText = formatTime(elapsedSeconds);
   }, 1000);
   startLevel(0, true);
 }

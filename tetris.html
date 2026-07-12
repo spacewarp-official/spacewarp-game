@@ -4,46 +4,40 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>한글 테.틀.잇으 : 세종의 과제 (TETRIS HANGUL WAR)</title>
+
+<!-- ★★★ Supabase 연동 추가 (랭킹 서버 저장용) ★★★ -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
 <style>
 /* 1. 글로벌 공통 베이스 */
 body {
-    background: #111 !important; color: #fff; font-family: 'Malgun Gothic', sans-serif;
-    display: flex; flex-direction: column; align-items: center; justify-content: center;
-    min-height: 100vh; margin: 0; overflow-x: hidden;
+  background: #111 !important; color: #fff; font-family: 'Malgun Gothic', sans-serif;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  min-height: 100vh; margin: 0; overflow-x: hidden;
 }
-
 /* 상단 타이틀 및 서브타이틀 */
 .header-group { text-align: center; margin-bottom: 15px; width: 100%; }
 .sejong-speech { font-size: 14px; color: #ffb703; font-weight: bold; background: rgba(0, 0, 0, 0.8); padding: 8px 16px; border-radius: 20px; border: 2px solid #4a3321; margin: 0 auto 10px auto; box-shadow: 0 4px 15px rgba(0,0,0,0.7); display: inline-block; }
 h1 { margin: 0 0 5px 0; font-size: 26px; letter-spacing: 3px; color: #00ffcc; text-shadow: 0 0 15px rgba(0,255,204,0.5); }
 .pronunciation { font-size: 14px; color: #aaa; letter-spacing: 1px; font-weight: normal; }
 .sub-title { font-size: 11px; color: #ff0d72; font-weight: bold; margin-bottom: 5px; letter-spacing: 1px; }
-
 /* 2. PC 오리지널 가로 레이아웃 보존 */
 .game-container {
-    display: flex; flex-direction: row; background: #14100d; padding: 22px; border-radius: 16px;
-    box-shadow: 0 30px 70px rgba(0,0,0,0.95), inset 0 0 20px rgba(0,0,0,0.8);
-    border: 3px solid #4a3321; position: relative; gap: 20px; align-items: flex-start;
+  display: flex; flex-direction: row; background: #14100d; padding: 22px; border-radius: 16px;
+  box-shadow: 0 30px 70px rgba(0,0,0,0.95), inset 0 0 20px rgba(0,0,0,0.8);
+  border: 3px solid #4a3321; position: relative; gap: 20px; align-items: flex-start;
 }
 .top-layout { display: flex; flex-direction: row; gap: 20px; }
-
-/* 캔버스 및 세종대왕 배경 */
-.canvas-wrapper { 
-    position: relative; height: 100%; 
-    background-image: url('sejong.png'); background-size: cover; background-position: center; background-color: #222; 
-    border: 4px solid #261e19; border-radius: 6px; 
+.canvas-wrapper {
+  position: relative; height: 100%;
+  background-image: url('sejong.png'); background-size: cover; background-position: center; background-color: #222;
+  border: 4px solid #261e19; border-radius: 6px;
 }
 canvas#tetris { background-color: rgba(0, 0, 0, 0.95); transition: background-color 0.8s ease; border: none; outline: none; border-radius: 2px; display: block; }
-
-/* PC 사이드바 기본 형태 */
 .sidebar { width: 170px; display: flex; flex-direction: column; gap: 10px; }
-
-/* 설정창 패널 (PC에서는 평범하게 사이드바에 표시, 모바일에서는 숨기고 모달로 전환) */
 .settings-panel { display: flex; flex-direction: column; gap: 10px; width: 100%; }
-.mobile-settings-btn { display: none; } /* PC에선 버튼 숨김 */
-.close-settings-btn { display: none; } /* PC에선 닫기 숨김 */
-
-/* 설정 박스 디자인 */
+.mobile-settings-btn { display: none; }
+.close-settings-btn { display: none; }
 .config-box, .ranking-box { background: #0c0a08; padding: 10px; border-radius: 8px; border: 1px solid #261e19; font-size: 11px; position: relative; }
 .config-title, .ranking-title { text-align: center; font-weight: bold; color: #00ffcc; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 1px; }
 .ranking-title { color: #ff0d72; }
@@ -52,8 +46,6 @@ canvas#tetris { background-color: rgba(0, 0, 0, 0.95); transition: background-co
 .info-btn { position: absolute; right: 6px; top: 6px; background: #00ffcc; color: #000; border: none; width: 18px; height: 18px; font-size: 11px; font-weight: bold; border-radius: 5px; cursor: pointer; display: flex; align-items: center; justify-content: center; z-index: 10; }
 .ranking-list { font-size: 11px; list-style: none; padding: 0; margin: 0; color: #ddd; }
 .ranking-item { display: flex; justify-content: space-between; border-bottom: 1px dashed #261e19; padding: 3px 0; }
-
-/* HUD 디자인 (점수, 다음블록 등) */
 .score-box { background: #0c0a08; padding: 10px; text-align: center; border-radius: 8px; border: 1px solid #261e19; border-left: 4px solid #00ffcc; }
 .score-val { font-size: 24px; font-weight: bold; color: #00ffcc; }
 .next-box { background: #0c0a08; padding: 10px; text-align: center; border-radius: 8px; border: 1px solid #261e19; }
@@ -62,23 +54,17 @@ canvas#tetris { background-color: rgba(0, 0, 0, 0.95); transition: background-co
 .item-active-val { font-weight: bold; color: #ffb703; margin-top: 4px; font-size: 14px; }
 #start-btn { padding: 12px; background: #00ffcc; color: #000; border: none; font-weight: bold; font-size: 14px; cursor: pointer; border-radius: 8px; transition: all 0.2s; width: 100%; }
 #start-btn:disabled { background: #2a2a2a; color: #555; }
-
-/* 모바일 전용 UI 컨트롤 숨김 (PC) */
 #mobile-gameboy-controls { display: none; }
-
-/* 도움말 모달 */
 .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 4000; align-items: center; justify-content: center; }
 .modal-content { background: #14100d; width: 340px; padding: 22px; border-radius: 14px; text-align: left; font-size: 12.5px; line-height: 1.6; border: 2px solid #4a3321; color: #fff; }
 .modal-header { font-size: 18px; font-weight: bold; color: #00ffcc; margin-bottom: 12px; text-align: center; border-bottom: 1px solid #222; padding-bottom: 6px; }
 .item-guide-row { display: flex; gap: 10px; margin-bottom: 8px; align-items: center; }
 .guide-emoji { font-size: 18px; background: #261e19; padding: 4px; border-radius: 6px; width: 26px; text-align: center; }
 .close-modal-btn { width: 100%; padding: 10px; background: #e63946; color: #fff; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; margin-top: 12px; }
-
-/* 팝업 한 줄 고정 */
-#combo-popup { 
-    position: absolute; top: 140px; left: 50%; transform: translateX(-50%) scale(0); 
-    font-size: 38px; font-weight: 900; color: #ff0; pointer-events: none; text-shadow: 0 0 12px #ff0; z-index: 500; transition: all 0.3s;
-    white-space: nowrap !important; width: max-content !important; display: block !important;
+#combo-popup {
+  position: absolute; top: 140px; left: 50%; transform: translateX(-50%) scale(0);
+  font-size: 38px; font-weight: 900; color: #ff0; pointer-events: none; text-shadow: 0 0 12px #ff0; z-index: 500; transition: all 0.3s;
+  white-space: nowrap !important; width: max-content !important; display: block !important;
 }
 .pop-anim { transform: translateX(-50%) scale(1.2) !important; opacity: 1 !important; }
 .toast-container { position: fixed; top: 15px; right: 15px; display: flex; flex-direction: column; gap: 6px; z-index: 1000; pointer-events: none; }
@@ -86,188 +72,233 @@ canvas#tetris { background-color: rgba(0, 0, 0, 0.95); transition: background-co
 @keyframes fadeOut { 0% { opacity: 1; } 80% { opacity: 1; } 100% { opacity: 0; } }
 .dev-footer { width: 100%; text-align: center; color: #555; font-size: 11px; font-weight: bold; margin-top: 25px; letter-spacing: 1px; text-transform: uppercase; }
 
-/* ------------------------------------------------------------------------- */
-/* 3. 모바일 반응형 완전 수정 (설정창 모달화 & 하단 여백 추가) */
-/* ------------------------------------------------------------------------- */
 @media (max-width: 768px) {
-    body { padding: 4px; overflow: hidden; justify-content: flex-start; }
-    .header-group { margin-bottom: 4px; }
-    .sejong-speech { font-size: 11px; padding: 4px 10px; margin-bottom: 3px; }
-    h1 { font-size: 17px; margin-bottom: 1px; }
-    .pronunciation { font-size: 11px; }
-    .sub-title { font-size: 9px; margin-bottom: 2px; }
-
-    .game-container { flex-direction: column; padding: 4px; border-radius: 10px; border: none; box-shadow: none; width: 100%; max-width: 430px; background: transparent; flex: 1; min-height: 0; gap: 4px; margin: 0 auto; }
-    .top-layout { width: 100%; flex: 1; min-height: 0; gap: 6px; justify-content: center; }
-    
-    .canvas-wrapper { flex: 1; max-width: calc(100% - 86px); }
-    canvas#tetris { height: 100%; width: auto; max-width: 100%; aspect-ratio: 240/400; object-fit: contain; }
-    
-    .sidebar { width: 80px; gap: 4px; }
-    
-    /* 모바일 전용 큼직한 설정 팝업 버튼 */
-    .mobile-settings-btn { 
-        display: block; background: #261e19; color: #00ffcc; border: 1px solid #00ffcc; 
-        border-radius: 4px; font-size: 10px; padding: 8px 0; width: 100%; 
-        font-weight: bold; cursor: pointer; text-align: center; margin-bottom: 2px; 
-    }
-
-    /* 설정/마당선택 패널을 모바일에서 전체화면 모달로 전환 */
-    .settings-panel { 
-        display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; 
-        background: rgba(0,0,0,0.95); z-index: 3000; flex-direction: column; 
-        align-items: center; justify-content: center; gap: 15px; padding: 20px; box-sizing: border-box; 
-    }
-    .settings-panel.open { display: flex; }
-    .config-box, .ranking-box { width: 100%; max-width: 320px; font-size: 13px; }
-    .config-options label { margin-bottom: 6px; font-size: 13px; }
-    .close-settings-btn { 
-        display: block; width: 100%; max-width: 320px; padding: 12px; background: #e63946; 
-        color: #fff; border: none; border-radius: 6px; font-weight: bold; margin-top: 10px; font-size: 15px; 
-    }
-
-    .score-box, .next-box, .item-status-box { padding: 4px; font-size: 9px; }
-    .score-val { font-size: 15px; }
-    #start-btn { padding: 8px 2px; font-size: 11px; }
-
-    /* ★ 1번 요구사항: 하단 공간 여백 추가 (margin-bottom 및 safe-area 적용) */
-    #mobile-gameboy-controls { 
-        display: flex !important; width: 100%; justify-content: space-around; align-items: center; 
-        padding: 12px 10px; box-sizing: border-box; 
-        margin-top: 5px; 
-        margin-bottom: 30px; /* ★ 아래쪽 3cm(30px) 무조건 띄움 */
-        padding-bottom: calc(12px + env(safe-area-inset-bottom)); /* 아이폰 하단 바 겹침 방지 */
-        background: #d8d8d8; border-radius: 10px 10px 35px 10px; border: 2px solid #888;
-        box-shadow: inset -4px -4px 12px rgba(0,0,0,0.2), 0 4px 12px rgba(0,0,0,0.5);
-    }
-    
-    .dpad-container { display: grid; grid-template-columns: repeat(3, 60px); grid-template-rows: repeat(3, 60px); gap: 4px; }
-    .action-container { display: flex; gap: 12px; align-items: center; }
-    .m-btn { background: #333; color: #666; border: 2px solid #111; border-radius: 8px; font-weight: bold; font-size: 24px; display: flex; align-items: center; justify-content: center; user-select: none; touch-action: manipulation; box-shadow: 0 4px 0 #000; }
-    .m-btn:active { background: #000; color: #fff; transform: translateY(4px); box-shadow: 0 0 0 #000; }
-    
-    #btn-rotate { grid-column: 2; grid-row: 1; }
-    #btn-left { grid-column: 1; grid-row: 2; }
-    #btn-right { grid-column: 3; grid-row: 2; }
-    #btn-down { grid-column: 2; grid-row: 3; }
-    
-    .round-btn { width: 75px; height: 75px; border-radius: 50%; background: #a31d1d; color: #fff; font-size: 14px; border: 4px solid #5c1111; box-shadow: 0 5px 0 #3a0808; display: flex; justify-content: center; align-items: center; }
-    .round-btn:active { background: #ff2a2a; transform: translateY(5px); box-shadow: 0 0 0 #3a0808; }
-    
-    .pause-btn { background: #555; color: #fff; width: 45px; height: 45px; border-radius: 8px; display: flex; justify-content: center; align-items: center; font-size: 18px; border: 2px solid #222; box-shadow: 0 4px 0 #111; }
-    .pause-btn:active { background: #888; transform: translateY(4px); box-shadow: 0 0 0 #111; }
-
-    .dev-footer { margin-top: 2px; font-size: 9px; letter-spacing: 0.5px; }
+  body { padding: 4px; overflow: hidden; justify-content: flex-start; }
+  .header-group { margin-bottom: 4px; }
+  .sejong-speech { font-size: 11px; padding: 4px 10px; margin-bottom: 3px; }
+  h1 { font-size: 17px; margin-bottom: 1px; }
+  .pronunciation { font-size: 11px; }
+  .sub-title { font-size: 9px; margin-bottom: 2px; }
+  .game-container { flex-direction: column; padding: 4px; border-radius: 10px; border: none; box-shadow: none; width: 100%; max-width: 430px; background: transparent; flex: 1; min-height: 0; gap: 4px; margin: 0 auto; }
+  .top-layout { width: 100%; flex: 1; min-height: 0; gap: 6px; justify-content: center; }
+  .canvas-wrapper { flex: 1; max-width: calc(100% - 86px); }
+  canvas#tetris { height: 100%; width: auto; max-width: 100%; aspect-ratio: 240/400; object-fit: contain; }
+  .sidebar { width: 80px; gap: 4px; }
+  .mobile-settings-btn {
+    display: block; background: #261e19; color: #00ffcc; border: 1px solid #00ffcc;
+    border-radius: 4px; font-size: 10px; padding: 8px 0; width: 100%;
+    font-weight: bold; cursor: pointer; text-align: center; margin-bottom: 2px;
+  }
+  .settings-panel {
+    display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+    background: rgba(0,0,0,0.95); z-index: 3000; flex-direction: column;
+    align-items: center; justify-content: center; gap: 15px; padding: 20px; box-sizing: border-box;
+  }
+  .settings-panel.open { display: flex; }
+  .config-box, .ranking-box { width: 100%; max-width: 320px; font-size: 13px; }
+  .config-options label { margin-bottom: 6px; font-size: 13px; }
+  .close-settings-btn {
+    display: block; width: 100%; max-width: 320px; padding: 12px; background: #e63946;
+    color: #fff; border: none; border-radius: 6px; font-weight: bold; margin-top: 10px; font-size: 15px;
+  }
+  .score-box, .next-box, .item-status-box { padding: 4px; font-size: 9px; }
+  .score-val { font-size: 15px; }
+  #start-btn { padding: 8px 2px; font-size: 11px; }
+  #mobile-gameboy-controls {
+    display: flex !important; width: 100%; justify-content: space-around; align-items: center;
+    padding: 12px 10px; box-sizing: border-box;
+    margin-top: 5px;
+    margin-bottom: 30px;
+    padding-bottom: calc(12px + env(safe-area-inset-bottom));
+    background: #d8d8d8; border-radius: 10px 10px 35px 10px; border: 2px solid #888;
+    box-shadow: inset -4px -4px 12px rgba(0,0,0,0.2), 0 4px 12px rgba(0,0,0,0.5);
+  }
+  .dpad-container { display: grid; grid-template-columns: repeat(3, 60px); grid-template-rows: repeat(3, 60px); gap: 4px; }
+  .action-container { display: flex; gap: 12px; align-items: center; }
+  .m-btn { background: #333; color: #666; border: 2px solid #111; border-radius: 8px; font-weight: bold; font-size: 24px; display: flex; align-items: center; justify-content: center; user-select: none; touch-action: manipulation; box-shadow: 0 4px 0 #000; }
+  .m-btn:active { background: #000; color: #fff; transform: translateY(4px); box-shadow: 0 0 0 #000; }
+  #btn-rotate { grid-column: 2; grid-row: 1; }
+  #btn-left { grid-column: 1; grid-row: 2; }
+  #btn-right { grid-column: 3; grid-row: 2; }
+  #btn-down { grid-column: 2; grid-row: 3; }
+  .round-btn { width: 75px; height: 75px; border-radius: 50%; background: #a31d1d; color: #fff; font-size: 14px; border: 4px solid #5c1111; box-shadow: 0 5px 0 #3a0808; display: flex; justify-content: center; align-items: center; }
+  .round-btn:active { background: #ff2a2a; transform: translateY(5px); box-shadow: 0 0 0 #3a0808; }
+  .pause-btn { background: #555; color: #fff; width: 45px; height: 45px; border-radius: 8px; display: flex; justify-content: center; align-items: center; font-size: 18px; border: 2px solid #222; box-shadow: 0 4px 0 #111; }
+  .pause-btn:active { background: #888; transform: translateY(4px); box-shadow: 0 0 0 #111; }
+  .dev-footer { margin-top: 2px; font-size: 9px; letter-spacing: 0.5px; }
 }
+
+/* ★ 서버 랭킹 로딩 표시 */
+.ranking-loading { text-align:center; color:#888; font-size: 11px; }
 </style>
 </head>
 <body>
 
 <div class="header-group">
-    <div class="sejong-speech">😎 "나라말싸미 듕귁과 다르고, 미귁과도 다르니, 내 이를 배포한다"</div>
-    <h1>한글 테.틀.잇으 <span class="pronunciation">(TETRIS HANGUL WAR)</span></h1>
-    <div class="sub-title">집현전에서 세종이 내는 과제를 줄을 맞춰 없애보자</div>
+  <div class="sejong-speech">😎 "나라말싸미 듕귁과 다르고, 미귁과도 다르니, 내 이를 배포한다"</div>
+  <h1>한글 테.틀.잇으 <span class="pronunciation">(TETRIS HANGUL WAR)</span></h1>
+  <div class="sub-title">집현전에서 세종이 내는 과제를 줄을 맞춰 없애보자</div>
 </div>
 
 <div class="game-container">
-    <div class="top-layout">
-        <div class="canvas-wrapper">
-            <canvas id="tetris" width="240" height="400" tabindex="0"></canvas>
-            <div id="combo-popup"></div>
-        </div>
-        
-        <div class="sidebar">
-            <button class="mobile-settings-btn" onclick="toggleSettings()">⚙️ 마당(아이템) 선택</button>
-            
-            <div class="settings-panel" id="settings-panel">
-                <div class="config-box">
-                    <button class="info-btn" onclick="openHelpModal()">i</button>
-                    <div class="config-title">🎮 마당 선택</div>
-                    <div class="config-options">
-                        <label><input type="radio" name="gMode" id="mode-normal" value="normal" checked> 그냥마당 (Normal)</label>
-                        <label><input type="radio" name="gMode" id="mode-item" value="item"> 물건마당 (Item)</label>
-                    </div>
-                </div>
-                
-                <div class="config-box">
-                    <div class="config-title">⚡ 어려운정도</div>
-                    <div class="config-options">
-                        <label><input type="radio" name="diff" value="easy" checked> 쉽다 (EASY)</label>
-                        <label><input type="radio" name="diff" value="normal"> 할만하다 (NORMAL)</label>
-                        <label><input type="radio" name="diff" value="hard"> 어렵다 (HARD)</label>
-                    </div>
-                </div>
-                
-                <div class="ranking-box">
-                    <div class="ranking-title">🏆 장원급제</div>
-                    <ul id="ranking-list" class="ranking-list"><li style="text-align:center; color:#888;">기록 없음</li></ul>
-                </div>
-
-                <button class="close-settings-btn" onclick="toggleSettings()">❌ 닫고 게임화면으로</button>
-            </div>
-
-            <div class="score-box">
-                <div id="level-label" style="font-size: 11px; color: #00ffcc; font-weight: bold;">LEVEL (단계) : 1</div>
-                <div id="speed-label" style="font-size: 9px; color: #ffb703; font-weight: bold; margin: 3px 0;">속도 : 30 KM/H</div>
-                <div style="font-size: 10px; color: #aaa;">SCORE (점수)</div>
-                <div id="score" class="score-val">0</div>
-            </div>
-            
-            <div class="next-box">
-                <div style="font-size:10px; color: #aaa; font-weight: bold;">NEXT (다음)</div>
-                <canvas id="nextCanvas" width="100" height="120"></canvas>
-            </div>
-            
-            <div id="item-status-panel" class="item-status-box">
-                <div style="color: #aaa; font-weight: bold; font-size:10px;">ITEM (물건)</div>
-                <div id="active-item-text" class="item-active-val">없음 (NONE)</div>
-            </div>
-            
-            <button id="start-btn" onclick="pressStart()">입장하기 (START)</button>
-        </div>
+  <div class="top-layout">
+    <div class="canvas-wrapper">
+      <canvas id="tetris" width="240" height="400" tabindex="0"></canvas>
+      <div id="combo-popup"></div>
     </div>
-
-    <div id="mobile-gameboy-controls">
-        <div class="dpad-container">
-            <div class="m-btn" id="btn-rotate">↻</div>
-            <div class="m-btn" id="btn-left">◀</div>
-            <div class="m-btn" id="btn-right">▶</div>
-            <div class="m-btn" id="btn-down">▼</div>
+    <div class="sidebar">
+      <button class="mobile-settings-btn" onclick="toggleSettings()">⚙️ 마당(아이템) 선택</button>
+      <div class="settings-panel" id="settings-panel">
+        <div class="config-box">
+          <button class="info-btn" onclick="openHelpModal()">i</button>
+          <div class="config-title">🎮 마당 선택</div>
+          <div class="config-options">
+            <label><input type="radio" name="gMode" id="mode-normal" value="normal" checked> 그냥마당 (Normal)</label>
+            <label><input type="radio" name="gMode" id="mode-item" value="item"> 물건마당 (Item)</label>
+          </div>
         </div>
-        <div class="action-container">
-            <div class="m-btn pause-btn" id="btn-pause">⏸</div>
-            <div class="m-btn round-btn" id="btn-drop">DROP</div>
+        <div class="config-box">
+          <div class="config-title">⚡ 어려운정도</div>
+          <div class="config-options">
+            <label><input type="radio" name="diff" value="easy" checked> 쉽다 (EASY)</label>
+            <label><input type="radio" name="diff" value="normal"> 할만하다 (NORMAL)</label>
+            <label><input type="radio" name="diff" value="hard"> 어렵다 (HARD)</label>
+          </div>
         </div>
+        <div class="ranking-box">
+          <div class="ranking-title">🏆 장원급제 (전체 랭킹)</div>
+          <ul id="ranking-list" class="ranking-list"><li class="ranking-loading">불러오는 중...</li></ul>
+        </div>
+        <button class="close-settings-btn" onclick="toggleSettings()">❌ 닫고 게임화면으로</button>
+      </div>
+      <div class="score-box">
+        <div id="level-label" style="font-size: 11px; color: #00ffcc; font-weight: bold;">LEVEL (단계) : 1</div>
+        <div id="speed-label" style="font-size: 9px; color: #ffb703; font-weight: bold; margin: 3px 0;">속도 : 30 KM/H</div>
+        <div style="font-size: 10px; color: #aaa;">SCORE (점수)</div>
+        <div id="score" class="score-val">0</div>
+      </div>
+      <div class="next-box">
+        <div style="font-size:10px; color: #aaa; font-weight: bold;">NEXT (다음)</div>
+        <canvas id="nextCanvas" width="100" height="120"></canvas>
+      </div>
+      <div id="item-status-panel" class="item-status-box">
+        <div style="color: #aaa; font-weight: bold; font-size:10px;">ITEM (물건)</div>
+        <div id="active-item-text" class="item-active-val">없음 (NONE)</div>
+      </div>
+      <button id="start-btn" onclick="pressStart()">입장하기 (START)</button>
     </div>
+  </div>
+  <div id="mobile-gameboy-controls">
+    <div class="dpad-container">
+      <div class="m-btn" id="btn-rotate">↻</div>
+      <div class="m-btn" id="btn-left">◀</div>
+      <div class="m-btn" id="btn-right">▶</div>
+      <div class="m-btn" id="btn-down">▼</div>
+    </div>
+    <div class="action-container">
+      <div class="m-btn pause-btn" id="btn-pause">⏸</div>
+      <div class="m-btn round-btn" id="btn-drop">DROP</div>
+    </div>
+  </div>
 </div>
-
-<div class="dev-footer">Dev v1.0.0 | TETRIS HANGUL WAR | Matrix is More</div>
-
+<div class="dev-footer">Dev v1.1.0 | TETRIS HANGUL WAR | Matrix is More | Ranking: Supabase</div>
 <div class="toast-container" id="toast-container"></div>
 
 <div id="helpModal" class="modal-overlay">
-    <div class="modal-content">
-        <div class="modal-header"> 위인 물건(아이템) 가이드</div>
-        <div class="item-guide-row"><div class="guide-emoji">💥</div><div><strong>연이음:</strong> 줄 소거 연속 성공 시 가산점 점수</div></div>
-        <div class="item-guide-row"><div class="guide-emoji">🧨</div><div><strong>문종의 신기전:</strong> 사방 9칸 폭발 소거</div></div>
-        <div class="item-guide-row"><div class="guide-emoji">⏱️</div><div><strong>장영실 자격루:</strong> +5초(최대 30초) 동안 블록 하강 지연</div></div>
-        <div class="item-guide-row"><div class="guide-emoji">👁️</div><div><strong>황희의 혜안:</strong> +5초 동안 블록 착지 가이드 궤적 표시</div></div>
-        <div class="item-guide-row"><div class="guide-emoji">🚩</div><div><strong>김종서 6진:</strong> 최하단 바닥 한 줄 즉시 소거 처리</div></div>
-        <div class="item-guide-row"><div class="guide-emoji">🎵</div><div><strong>박연의 여민락:</strong> 현재 블록을 일자(ㅣ) 막대로 강제 변환!</div></div>
-        <button class="close-modal-btn" onclick="closeHelpModal()">가이드 닫기</button>
-    </div>
+  <div class="modal-content">
+    <div class="modal-header"> 위인 물건(아이템) 가이드</div>
+    <div class="item-guide-row"><div class="guide-emoji">💥</div><div><strong>연이음:</strong> 줄 소거 연속 성공 시 가산점 점수</div></div>
+    <div class="item-guide-row"><div class="guide-emoji">🧨</div><div><strong>문종의 신기전:</strong> 사방 9칸 폭발 소거</div></div>
+    <div class="item-guide-row"><div class="guide-emoji">⏱️</div><div><strong>장영실 자격루:</strong> +5초(최대 30초) 동안 블록 하강 지연</div></div>
+    <div class="item-guide-row"><div class="guide-emoji">👁️</div><div><strong>황희의 혜안:</strong> +5초 동안 블록 착지 가이드 궤적 표시</div></div>
+    <div class="item-guide-row"><div class="guide-emoji">🚩</div><div><strong>김종서 6진:</strong> 최하단 바닥 한 줄 즉시 소거 처리</div></div>
+    <div class="item-guide-row"><div class="guide-emoji">🎵</div><div><strong>박연의 여민락:</strong> 현재 블록을 일자(ㅣ) 막대로 강제 변환!</div></div>
+    <button class="close-modal-btn" onclick="closeHelpModal()">가이드 닫기</button>
+  </div>
 </div>
 
 <script>
-// 모바일 설정 모달 온오프 함수
-function toggleSettings() {
-    const panel = document.getElementById('settings-panel');
-    panel.classList.toggle('open');
-    if (panel.classList.contains('open')) {
-        if (gameActive && !isPaused) togglePause();
-    }
+/* ============================================================
+   ★★★ SUPABASE 설정 (이 두 줄만 스웦님이 직접 채워넣으면 됩니다) ★★★
+   1. supabase.com 접속 → 무료 프로젝트 생성
+   2. 프로젝트 Settings → API 메뉴에서 아래 두 값 복사
+   3. 이 파일에 붙여넣기 후 저장
+   ============================================================ */
+const SUPABASE_URL = "https://pvjrbhsgffadiklpiknk.supabase.co";
+const SUPABASE_ANON_KEY = "sb_publishable_d4NBdGqpxrg__1SXiRA-YA_TDutoT7B";
+
+let supabaseClient = null;
+try {
+  if (SUPABASE_URL.startsWith("http") && SUPABASE_ANON_KEY.length > 10) {
+    supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  }
+} catch (e) {
+  console.error("Supabase 초기화 실패:", e);
 }
 
+// 서버에서 상위 5개 랭킹 불러와서 화면에 그리기
+async function loadRankingFromServer() {
+  const rankingListUl = document.getElementById('ranking-list');
+  if (!supabaseClient) {
+    rankingListUl.innerHTML = '<li style="text-align:center; color:#e63946;">⚠️ 랭킹 서버 미설정</li>';
+    return;
+  }
+  rankingListUl.innerHTML = '<li class="ranking-loading">불러오는 중...</li>';
+  try {
+    const { data, error } = await supabaseClient
+      .from('tetris_scores')
+      .select('name, score, diff')
+      .order('score', { ascending: false })
+      .limit(5);
+
+    if (error) throw error;
+
+    if (!data || data.length === 0) {
+      rankingListUl.innerHTML = '<li style="text-align:center; color:#888;">기록 없음</li>';
+      return;
+    }
+    rankingListUl.innerHTML = '';
+    data.forEach((item, index) => {
+      rankingListUl.innerHTML += `<li class="ranking-item"><span>${index + 1}. ${item.name} (${item.diff || '-'})</span><strong>${item.score}</strong></li>`;
+    });
+  } catch (e) {
+    console.error("랭킹 불러오기 실패:", e);
+    rankingListUl.innerHTML = '<li style="text-align:center; color:#e63946;">⚠️ 불러오기 실패</li>';
+  }
+}
+
+// 점수를 서버에 저장한 뒤, 다시 랭킹을 새로고침
+async function saveAndRenderRanking(name, finalScore) {
+  const diffName = document.querySelector('input[name="diff"]:checked').value;
+  const safeName = name.substring(0, 6).toUpperCase();
+
+  if (!supabaseClient) {
+    alert("랭킹 서버가 아직 설정되지 않았습니다. (SUPABASE_URL / SUPABASE_ANON_KEY 확인 필요)");
+    return;
+  }
+
+  try {
+    const { error } = await supabaseClient
+      .from('tetris_scores')
+      .insert([{ name: safeName, score: finalScore, diff: diffName }]);
+
+    if (error) throw error;
+
+    await loadRankingFromServer();
+  } catch (e) {
+    console.error("랭킹 저장 실패:", e);
+    alert("랭킹 저장에 실패했습니다. 잠시 후 다시 시도해주세요.");
+  }
+}
+
+// 모바일 설정 모달 온오프 함수
+function toggleSettings() {
+  const panel = document.getElementById('settings-panel');
+  panel.classList.toggle('open');
+  if (panel.classList.contains('open')) {
+    if (gameActive && !isPaused) togglePause();
+  }
+}
 function openHelpModal() { document.getElementById('helpModal').style.display = 'flex'; }
 function closeHelpModal() { document.getElementById('helpModal').style.display = 'none'; canvas.focus(); }
 
@@ -277,329 +308,295 @@ const arena = Array.from({length: 20}, () => new Array(12).fill(0));
 const itemMap = Array.from({length: 20}, () => new Array(12).fill(null));
 const player = { pos: {x: 0, y: 0}, matrix: null, itemType: null, itemX: -1, itemY: -1, type: '' };
 let nextPieceObj = null; let score = 0; let combo = 0; let lastTime = 0; let dropCounter = 0; let gameActive = false; let isPaused = false; let hitStopUntil = 0;
-let isLevelUpPaused = false; let currentLevel = 1; let dropInterval = 1000; let baseInterval = 1000; let prevLevelInterval = 1000; let rankingData = [];
+let isLevelUpPaused = false; let currentLevel = 1; let dropInterval = 1000; let baseInterval = 1000; let prevLevelInterval = 1000;
 let slowTimeLeft = 0; let slowCountdownInterval = null; let ghostTimeLeft = 0; let ghostCountdownInterval = null; let particles = [];
 const colors = [null, '#FF0D72', '#0DC2FF', '#0DFF72', '#F538FF', '#FF8E0D', '#FFE135', '#3877FF'];
 
 function showToast(msg, color) {
-    const container = document.getElementById('toast-container'); const toast = document.createElement('div');
-    toast.className = 'toast'; toast.style.borderLeftColor = color; toast.innerHTML = msg;
-    container.appendChild(toast); setTimeout(() => { if(toast.parentElement) toast.remove(); }, 2500);
+  const container = document.getElementById('toast-container'); const toast = document.createElement('div');
+  toast.className = 'toast'; toast.style.borderLeftColor = color; toast.innerHTML = msg;
+  container.appendChild(toast); setTimeout(() => { if(toast.parentElement) toast.remove(); }, 2500);
 }
-
 function togglePause() {
-    if (!gameActive || isLevelUpPaused) return;
-    isPaused = !isPaused;
-    if (isPaused) {
-        context.filter = 'grayscale(100%)'; draw();
-        context.fillStyle = 'rgba(0, 0, 0, 0.6)'; context.fillRect(0, 0, 240, 400);
-        context.fillStyle = '#ffb703'; context.font = 'bold 24px Arial'; context.textAlign = 'center'; context.fillText("정 지 (PAUSE)", 120, 200);
-    } else {
-        lastTime = performance.now(); context.filter = 'none'; draw(); update();
-    }
+  if (!gameActive || isLevelUpPaused) return;
+  isPaused = !isPaused;
+  if (isPaused) {
+    context.filter = 'grayscale(100%)'; draw();
+    context.fillStyle = 'rgba(0, 0, 0, 0.6)'; context.fillRect(0, 0, 240, 400);
+    context.fillStyle = '#ffb703'; context.font = 'bold 24px Arial'; context.textAlign = 'center'; context.fillText("정 지 (PAUSE)", 120, 200);
+  } else {
+    lastTime = performance.now(); context.filter = 'none'; draw(); update();
+  }
 }
-
 function createPiece(type) {
-    if (type === 'ㄱ') return [[0,4,0],[0,4,0],[4,4,0]]; if (type === 'ㄴ') return [[0,3,0],[0,3,0],[0,3,3]];
-    if (type === 'ㅁ') return [[2,2],[2,2]]; if (type === 'ㄹ1') return [[0,6,6],[6,6,0],[0,0,0]]; if (type === 'ㄹ2') return [[7,7,0],[0,7,7],[0,0,0]];
-    if (type === 'ㅣ') return [[0,5,0,0],[0,5,0,0],[0,5,0,0],[0,5,0,0]]; if (type === 'ㅜ') return [[0,0,0],[1,1,1],[0,1,0]];
-    if (type === 'ㅑ') return [[2,2],[2,0]]; if (type === 'ㅢ') return [[0,0,0,2],[0,0,0,2],[0,2,2,2],[0,0,0,2]];
-    if (type === 'ㄷ') return [[1,1,0],[1,0,0],[1,1,0]]; if (type === 'ㅇ') return [[0,7,0],[7,7,7],[0,7,0]];
-    if (type === 'ㅂ1') return [[2,0,0,0],[2,2,0,0],[2,0,0,0],[2,2,0,0]]; if (type === 'ㅂ2') return [[0,0,0,3],[0,0,3,3],[0,0,0,3],[0,0,3,3]];
-    if (type === 'ㅅ') return [[0,7,0],[0,7,0],[7,0,7]]; return [[0,0],[0,0]];
+  if (type === 'ㄱ') return [[0,4,0],[0,4,0],[4,4,0]]; if (type === 'ㄴ') return [[0,3,0],[0,3,0],[0,3,3]];
+  if (type === 'ㅁ') return [[2,2],[2,2]]; if (type === 'ㄹ1') return [[0,6,6],[6,6,0],[0,0,0]]; if (type === 'ㄹ2') return [[7,7,0],[0,7,7],[0,0,0]];
+  if (type === 'ㅣ') return [[0,5,0,0],[0,5,0,0],[0,5,0,0],[0,5,0,0]]; if (type === 'ㅜ') return [[0,0,0],[1,1,1],[0,1,0]];
+  if (type === 'ㅑ') return [[2,2],[2,0]]; if (type === 'ㅢ') return [[0,0,0,2],[0,0,0,2],[0,2,2,2],[0,0,0,2]];
+  if (type === 'ㄷ') return [[1,1,0],[1,0,0],[1,1,0]]; if (type === 'ㅇ') return [[0,7,0],[7,7,7],[0,7,0]];
+  if (type === 'ㅂ1') return [[2,0,0,0],[2,2,0,0],[2,0,0,0],[2,2,0,0]]; if (type === 'ㅂ2') return [[0,0,0,3],[0,0,3,3],[0,0,0,3],[0,0,3,3]];
+  if (type === 'ㅅ') return [[0,7,0],[0,7,0],[7,0,7]]; return [[0,0],[0,0]];
 }
-
 function createDotParticle(x, y, color, isItemEffect = false) {
-    const count = isItemEffect ? 40 : 15;
-    for (let i = 0; i < count; i++) {
-        particles.push({ x: x * 20 + 10, y: y * 20 + 10, vx: (Math.random() - 0.5) * (isItemEffect ? 15 : 7), vy: (Math.random() - 0.5) * (isItemEffect ? 15 : 7), alpha: 1, color: isItemEffect ? ['#ff00ff', '#ffff00', '#00ffff'][Math.floor(Math.random()*3)] : color, size: isItemEffect ? 5 : 2 });
-    }
+  const count = isItemEffect ? 40 : 15;
+  for (let i = 0; i < count; i++) {
+    particles.push({ x: x * 20 + 10, y: y * 20 + 10, vx: (Math.random() - 0.5) * (isItemEffect ? 15 : 7), vy: (Math.random() - 0.5) * (isItemEffect ? 15 : 7), alpha: 1, color: isItemEffect ? ['#ff00ff', '#ffff00', '#00ffff'][Math.floor(Math.random()*3)] : color, size: isItemEffect ? 5 : 2 });
+  }
 }
-
 function drawLevelBackground(ctx, level) { ctx.clearRect(0, 0, 240, 400); }
-
 function drawGhostBlock() {
-    if (ghostTimeLeft <= 0 || !player.matrix) return;
-    const ghost = { matrix: player.matrix, pos: { x: player.pos.x, y: player.pos.y } };
-    while (!collide(arena, ghost)) ghost.pos.y++; ghost.pos.y--;
-    context.save(); context.globalAlpha = 0.3;
-    ghost.matrix.forEach((row, y) => { row.forEach((value, x) => { if (value !== 0) drawBlock(x + ghost.pos.x, y + ghost.pos.y, value, null, context); }); });
-    context.restore();
+  if (ghostTimeLeft <= 0 || !player.matrix) return;
+  const ghost = { matrix: player.matrix, pos: { x: player.pos.x, y: player.pos.y } };
+  while (!collide(arena, ghost)) ghost.pos.y++; ghost.pos.y--;
+  context.save(); context.globalAlpha = 0.3;
+  ghost.matrix.forEach((row, y) => { row.forEach((value, x) => { if (value !== 0) drawBlock(x + ghost.pos.x, y + ghost.pos.y, value, null, context); }); });
+  context.restore();
 }
-
 function draw() {
-    drawLevelBackground(context, currentLevel); drawGrid(context);
-    arena.forEach((row, y) => { row.forEach((value, x) => { if (value !== 0) drawBlock(x, y, value, itemMap[y][x], context); }); });
-    drawGhostBlock();
-    if (player.matrix) {
-        player.matrix.forEach((row, y) => {
-            row.forEach((value, x) => {
-                if (value !== 0) {
-                    let blockItem = null; if (player.itemType && y === player.itemY && x === player.itemX) blockItem = player.itemType;
-                    drawBlock(x + player.pos.x, y + player.pos.y, value, blockItem, context);
-                }
-            });
-        });
-    }
-    updateAndDrawParticles();
-    
-    if (isLevelUpPaused) {
-        context.fillStyle = 'rgba(0, 0, 0, 0.85)'; context.fillRect(0, 0, 240, 400);
-        context.fillStyle = '#ffb703'; context.font = '22px Arial'; context.textAlign = 'center'; context.fillText("과제 통과!", 120, 160);
-        context.fillStyle = '#fff'; context.font = '14px Arial';
-        let nextKmh = Math.round(30000 / (baseInterval * 0.7));
-        context.fillText("NEXT LEVEL: " + (currentLevel + 1), 120, 200); context.fillText("SPEED: " + nextKmh + " KM/H", 120, 220);
-        context.fillStyle = '#00ffcc'; context.font = '12px Arial'; context.fillText("화면을 터치하여 재개", 120, 270);
-    }
-}
-
-function updateAndDrawParticles() {
-    for (let i = particles.length - 1; i >= 0; i--) {
-        let p = particles[i]; p.x += p.vx; p.y += p.vy; p.alpha -= 0.03;
-        if (p.alpha <= 0) { particles.splice(i, 1); continue; }
-        context.save(); context.globalAlpha = p.alpha; context.fillStyle = p.color;
-        const size = p.size || 2; context.fillRect(p.x - size / 2, p.y - size / 2, size, size); context.restore();
-    }
-}
-
-function drawGrid(ctx) {
-    ctx.strokeStyle = 'rgba(255,255,255,0.05)'; ctx.lineWidth = 0.5;
-    for (let i = 0; i <= 240; i += 20) { ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, 400); ctx.stroke(); }
-    for (let i = 0; i <= 400; i += 20) { ctx.beginPath(); ctx.moveTo(0, i); ctx.lineTo(240, i); ctx.stroke(); }
-}
-
-function drawBlock(x, y, value, itemType, ctx) {
-    if (!colors[value]) return;
-    ctx.fillStyle = colors[value]; ctx.fillRect(x * 20, y * 20, 19, 19);
-    if (itemType) {
-        ctx.fillStyle = '#ffffff'; ctx.font = '13px Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-        let emoji = '';
-        if (itemType === 'B') emoji = '🧨'; else if (itemType === 'S') emoji = '⏱️'; else if (itemType === 'C') emoji = '🚩'; else if (itemType === 'G') emoji = '👁️'; else if (itemType === 'M') emoji = '🎵';
-        ctx.fillText(emoji, x * 20 + 10, y * 20 + 10);
-    }
-}
-
-function drawNext() {
-    nextContext.fillStyle = '#111'; nextContext.fillRect(0, 0, 100, 120);
-    if (nextPieceObj && nextPieceObj.matrix) {
-        const matrix = nextPieceObj.matrix; const xGridOffset = (5 - matrix[0].length) / 2; const yGridOffset = (6 - matrix.length) / 2;
-        matrix.forEach((row, y) => {
-            row.forEach((value, x) => {
-                if (value !== 0) {
-                    let nextItem = null; if (nextPieceObj.itemType && y === nextPieceObj.itemY && x === nextPieceObj.itemX) nextItem = nextPieceObj.itemType;
-                    drawBlock(x + xGridOffset, y + yGridOffset, value, nextItem, nextContext);
-                }
-            });
-        });
-    }
-}
-
-function collide(arena, player) {
-    const [m, o] = [player.matrix, player.pos];
-    for (let y = 0; y < m.length; ++y) {
-        for (let x = 0; x < m[y].length; ++x) { if (m[y][x] !== 0 && (arena[y + o.y] && arena[y + o.y][x + o.x]) !== 0) return true; }
-    }
-    return false;
-}
-
-function merge(arena, player) {
+  drawLevelBackground(context, currentLevel); drawGrid(context);
+  arena.forEach((row, y) => { row.forEach((value, x) => { if (value !== 0) drawBlock(x, y, value, itemMap[y][x], context); }); });
+  drawGhostBlock();
+  if (player.matrix) {
     player.matrix.forEach((row, y) => {
-        row.forEach((value, x) => {
-            if (value !== 0) {
-                arena[y + player.pos.y][x + player.pos.x] = value;
-                if (player.itemType && y === player.itemY && x === player.itemX) itemMap[y + player.pos.y][x + player.pos.x] = player.itemType;
-            }
-        });
+      row.forEach((value, x) => {
+        if (value !== 0) {
+          let blockItem = null; if (player.itemType && y === player.itemY && x === player.itemX) blockItem = player.itemType;
+          drawBlock(x + player.pos.x, y + player.pos.y, value, blockItem, context);
+        }
+      });
     });
+  }
+  updateAndDrawParticles();
+  if (isLevelUpPaused) {
+    context.fillStyle = 'rgba(0, 0, 0, 0.85)'; context.fillRect(0, 0, 240, 400);
+    context.fillStyle = '#ffb703'; context.font = '22px Arial'; context.textAlign = 'center'; context.fillText("과제 통과!", 120, 160);
+    context.fillStyle = '#fff'; context.font = '14px Arial';
+    let nextKmh = Math.round(30000 / (baseInterval * 0.7));
+    context.fillText("NEXT LEVEL: " + (currentLevel + 1), 120, 200); context.fillText("SPEED: " + nextKmh + " KM/H", 120, 220);
+    context.fillStyle = '#00ffcc'; context.font = '12px Arial'; context.fillText("화면을 터치하여 재개", 120, 270);
+  }
 }
-
+function updateAndDrawParticles() {
+  for (let i = particles.length - 1; i >= 0; i--) {
+    let p = particles[i]; p.x += p.vx; p.y += p.vy; p.alpha -= 0.03;
+    if (p.alpha <= 0) { particles.splice(i, 1); continue; }
+    context.save(); context.globalAlpha = p.alpha; context.fillStyle = p.color;
+    const size = p.size || 2; context.fillRect(p.x - size / 2, p.y - size / 2, size, size); context.restore();
+  }
+}
+function drawGrid(ctx) {
+  ctx.strokeStyle = 'rgba(255,255,255,0.05)'; ctx.lineWidth = 0.5;
+  for (let i = 0; i <= 240; i += 20) { ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, 400); ctx.stroke(); }
+  for (let i = 0; i <= 400; i += 20) { ctx.beginPath(); ctx.moveTo(0, i); ctx.lineTo(240, i); ctx.stroke(); }
+}
+function drawBlock(x, y, value, itemType, ctx) {
+  if (!colors[value]) return;
+  ctx.fillStyle = colors[value]; ctx.fillRect(x * 20, y * 20, 19, 19);
+  if (itemType) {
+    ctx.fillStyle = '#ffffff'; ctx.font = '13px Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    let emoji = '';
+    if (itemType === 'B') emoji = '🧨'; else if (itemType === 'S') emoji = '⏱️'; else if (itemType === 'C') emoji = '🚩'; else if (itemType === 'G') emoji = '👁️'; else if (itemType === 'M') emoji = '🎵';
+    ctx.fillText(emoji, x * 20 + 10, y * 20 + 10);
+  }
+}
+function drawNext() {
+  nextContext.fillStyle = '#111'; nextContext.fillRect(0, 0, 100, 120);
+  if (nextPieceObj && nextPieceObj.matrix) {
+    const matrix = nextPieceObj.matrix; const xGridOffset = (5 - matrix[0].length) / 2; const yGridOffset = (6 - matrix.length) / 2;
+    matrix.forEach((row, y) => {
+      row.forEach((value, x) => {
+        if (value !== 0) {
+          let nextItem = null; if (nextPieceObj.itemType && y === nextPieceObj.itemY && x === nextPieceObj.itemX) nextItem = nextPieceObj.itemType;
+          drawBlock(x + xGridOffset, y + yGridOffset, value, nextItem, nextContext);
+        }
+      });
+    });
+  }
+}
+function collide(arena, player) {
+  const [m, o] = [player.matrix, player.pos];
+  for (let y = 0; y < m.length; ++y) {
+    for (let x = 0; x < m[y].length; ++x) { if (m[y][x] !== 0 && (arena[y + o.y] && arena[y + o.y][x + o.x]) !== 0) return true; }
+  }
+  return false;
+}
+function merge(arena, player) {
+  player.matrix.forEach((row, y) => {
+    row.forEach((value, x) => {
+      if (value !== 0) {
+        arena[y + player.pos.y][x + player.pos.x] = value;
+        if (player.itemType && y === player.itemY && x === player.itemX) itemMap[y + player.pos.y][x + player.pos.x] = player.itemType;
+      }
+    });
+  });
+}
 function applySpeedEffects() {
-    if (slowTimeLeft > 0) dropInterval = prevLevelInterval; else if (ghostTimeLeft > 0) dropInterval = baseInterval / 1.5; else dropInterval = baseInterval;
-    let kmh = Math.round(30000 / dropInterval); document.getElementById('speed-label').innerText = "속도 : " + kmh + " KM/H";
+  if (slowTimeLeft > 0) dropInterval = prevLevelInterval; else if (ghostTimeLeft > 0) dropInterval = baseInterval / 1.5; else dropInterval = baseInterval;
+  let kmh = Math.round(30000 / dropInterval); document.getElementById('speed-label').innerText = "속도 : " + kmh + " KM/H";
 }
-
 function updateCanvasAlpha() {
-    let newAlpha = Math.max(0.0, 0.95 - (currentLevel * 0.08)); 
-    document.getElementById('tetris').style.backgroundColor = `rgba(0, 0, 0, ${newAlpha})`;
+  let newAlpha = Math.max(0.0, 0.95 - (currentLevel * 0.08));
+  document.getElementById('tetris').style.backgroundColor = `rgba(0, 0, 0, ${newAlpha})`;
 }
-
 function arenaSweep() {
-    let linesCleared = 0; let itemsTriggered = [];
-    for (let y = arena.length - 1; y > 0; --y) {
-        let isFull = true;
-        for (let x = 0; x < arena[y].length; ++x) { if (arena[y][x] === 0) { isFull = false; break; } }
-        if (isFull) {
-            for (let x = 0; x < arena[y].length; ++x) {
-                createDotParticle(x, y, colors[arena[y][x]], false);
-                if (itemMap[y][x]) itemsTriggered.push({type: itemMap[y][x], x: x, y: y});
-            }
-            arena.splice(y, 1); itemMap.splice(y, 1);
-            arena.unshift(new Array(12).fill(0)); itemMap.unshift(new Array(12).fill(null));
-            ++y; linesCleared++;
-        }
+  let linesCleared = 0; let itemsTriggered = [];
+  for (let y = arena.length - 1; y > 0; --y) {
+    let isFull = true;
+    for (let x = 0; x < arena[y].length; ++x) { if (arena[y][x] === 0) { isFull = false; break; } }
+    if (isFull) {
+      for (let x = 0; x < arena[y].length; ++x) {
+        createDotParticle(x, y, colors[arena[y][x]], false);
+        if (itemMap[y][x]) itemsTriggered.push({type: itemMap[y][x], x: x, y: y});
+      }
+      arena.splice(y, 1); itemMap.splice(y, 1);
+      arena.unshift(new Array(12).fill(0)); itemMap.unshift(new Array(12).fill(null));
+      ++y; linesCleared++;
     }
-    if (itemsTriggered.length > 0) itemsTriggered.forEach(item => triggerItemEffect(item.type, item.x, item.y));
-    const comboDisplay = document.getElementById('combo-popup');
-    if (linesCleared > 0) {
-        combo = linesCleared; score += (linesCleared * 10) + (combo * 10); document.getElementById('score').innerText = score;
-        comboDisplay.innerText = `💥 ${combo} 연이음! 🔥`; comboDisplay.classList.add('pop-anim'); setTimeout(() => comboDisplay.classList.remove('pop-anim'), 600);
-        hitStopUntil = performance.now() + 150;
-        let nextLvl = Math.floor(score / 200) + 1;
-        if (nextLvl !== currentLevel) {
-            prevLevelInterval = baseInterval; currentLevel = nextLvl; baseInterval = Math.max(50, baseInterval * 0.7); applySpeedEffects();
-            document.getElementById('level-label').innerHTML = `LEVEL (단계) : ${currentLevel}`;
-            updateCanvasAlpha(); isLevelUpPaused = true; draw();
-        }
-    } else { combo = 0; comboDisplay.innerText = ''; }
+  }
+  if (itemsTriggered.length > 0) itemsTriggered.forEach(item => triggerItemEffect(item.type, item.x, item.y));
+  const comboDisplay = document.getElementById('combo-popup');
+  if (linesCleared > 0) {
+    combo = linesCleared; score += (linesCleared * 10) + (combo * 10); document.getElementById('score').innerText = score;
+    comboDisplay.innerText = `💥 ${combo} 연이음! 🔥`; comboDisplay.classList.add('pop-anim'); setTimeout(() => comboDisplay.classList.remove('pop-anim'), 600);
+    hitStopUntil = performance.now() + 150;
+    let nextLvl = Math.floor(score / 200) + 1;
+    if (nextLvl !== currentLevel) {
+      prevLevelInterval = baseInterval; currentLevel = nextLvl; baseInterval = Math.max(50, baseInterval * 0.7); applySpeedEffects();
+      document.getElementById('level-label').innerHTML = `LEVEL (단계) : ${currentLevel}`;
+      updateCanvasAlpha(); isLevelUpPaused = true; draw();
+    }
+  } else { combo = 0; comboDisplay.innerText = ''; }
 }
-
-/* ★ 3번 요구사항: 아이템 발동 로직 100% 정상 가동 */
 function triggerItemEffect(itemType, targetX, targetY) {
-    const itemTextEl = document.getElementById('active-item-text'); const panelEl = document.getElementById('item-status-panel');
-    if (itemType === 'B') {
-        showToast("🧨 문종 폭발!", "#e63946");
-        for (let y = Math.max(0, targetY - 1); y <= Math.min(19, targetY + 1); ++y) {
-            for (let x = Math.max(0, targetX - 1); x <= Math.min(11, targetX + 1); ++x) {
-                if (arena[y][x] !== 0) { createDotParticle(x, y, colors[arena[y][x]], true); arena[y][x] = 0; itemMap[y][x] = null; }
-            }
-        }
-    } else if (itemType === 'S') {
-        slowTimeLeft = Math.min(30, slowTimeLeft + 5); showToast(`⏱️ 자격루 ${slowTimeLeft}초`, "#ffb703"); panelEl.style.borderLeft = "5px solid #ffb703"; applySpeedEffects();
-        if (!slowCountdownInterval) {
-            slowCountdownInterval = setInterval(() => {
-                slowTimeLeft--;
-                if (slowTimeLeft > 0) itemTextEl.innerText = `⏱️ ${slowTimeLeft}s`;
-                else { clearInterval(slowCountdownInterval); slowCountdownInterval = null; itemTextEl.innerText = ghostTimeLeft > 0 ? `👁️ ${ghostTimeLeft}s` : "없음 (NONE)"; panelEl.style.borderLeft = ghostTimeLeft > 0 ? "5px solid #9b5de5" : "5px solid #261e19"; applySpeedEffects(); }
-            }, 1000);
-        }
-        itemTextEl.innerText = `⏱️ ${slowTimeLeft}s`;
-    } else if (itemType === 'C') {
-        showToast("🚩 6진 개척!", "#a8dadc");
-        for(let x=0; x<12; x++) { if(arena[19][x] !== 0) createDotParticle(x, 19, colors[arena[19][x]]); }
-        arena.splice(19, 1); itemMap.splice(19, 1); arena.unshift(new Array(12).fill(0)); itemMap.unshift(new Array(12).fill(null));
-    } else if (itemType === 'G') {
-        ghostTimeLeft = Math.min(30, ghostTimeLeft + 5); showToast(`👁️ 혜안 ${ghostTimeLeft}초`, "#9b5de5"); panelEl.style.borderLeft = "5px solid #9b5de5"; applySpeedEffects();
-        if (!ghostCountdownInterval) {
-            ghostCountdownInterval = setInterval(() => {
-                ghostTimeLeft--; if(slowTimeLeft <= 0) itemTextEl.innerText = `👁️ ${ghostTimeLeft}s`;
-                if (ghostTimeLeft <= 0) { clearInterval(ghostCountdownInterval); ghostCountdownInterval = null; if(slowTimeLeft <= 0) { itemTextEl.innerText = "없음 (NONE)"; panelEl.style.borderLeft = "5px solid #261e19"; } applySpeedEffects(); }
-            }, 1000);
-        }
-        if(slowTimeLeft <= 0) itemTextEl.innerText = `👁️ ${ghostTimeLeft}s`;
-    } else if (itemType === 'M') {
-        showToast("🎵 여민락!", "#F538FF"); player.type = 'ㅣ'; player.matrix = createPiece('ㅣ'); player.itemType = null; player.itemX = -1; player.itemY = -1;
+  const itemTextEl = document.getElementById('active-item-text'); const panelEl = document.getElementById('item-status-panel');
+  if (itemType === 'B') {
+    showToast("🧨 문종 폭발!", "#e63946");
+    for (let y = Math.max(0, targetY - 1); y <= Math.min(19, targetY + 1); ++y) {
+      for (let x = Math.max(0, targetX - 1); x <= Math.min(11, targetX + 1); ++x) {
+        if (arena[y][x] !== 0) { createDotParticle(x, y, colors[arena[y][x]], true); arena[y][x] = 0; itemMap[y][x] = null; }
+      }
     }
-    draw();
+  } else if (itemType === 'S') {
+    slowTimeLeft = Math.min(30, slowTimeLeft + 5); showToast(`⏱️ 자격루 ${slowTimeLeft}초`, "#ffb703"); panelEl.style.borderLeft = "5px solid #ffb703"; applySpeedEffects();
+    if (!slowCountdownInterval) {
+      slowCountdownInterval = setInterval(() => {
+        slowTimeLeft--;
+        if (slowTimeLeft > 0) itemTextEl.innerText = `⏱️ ${slowTimeLeft}s`;
+        else { clearInterval(slowCountdownInterval); slowCountdownInterval = null; itemTextEl.innerText = ghostTimeLeft > 0 ? `👁️ ${ghostTimeLeft}s` : "없음 (NONE)"; panelEl.style.borderLeft = ghostTimeLeft > 0 ? "5px solid #9b5de5" : "5px solid #261e19"; applySpeedEffects(); }
+      }, 1000);
+    }
+    itemTextEl.innerText = `⏱️ ${slowTimeLeft}s`;
+  } else if (itemType === 'C') {
+    showToast("🚩 6진 개척!", "#a8dadc");
+    for(let x=0; x<12; x++) { if(arena[19][x] !== 0) createDotParticle(x, 19, colors[arena[19][x]]); }
+    arena.splice(19, 1); itemMap.splice(19, 1); arena.unshift(new Array(12).fill(0)); itemMap.unshift(new Array(12).fill(null));
+  } else if (itemType === 'G') {
+    ghostTimeLeft = Math.min(30, ghostTimeLeft + 5); showToast(`👁️ 혜안 ${ghostTimeLeft}초`, "#9b5de5"); panelEl.style.borderLeft = "5px solid #9b5de5"; applySpeedEffects();
+    if (!ghostCountdownInterval) {
+      ghostCountdownInterval = setInterval(() => {
+        ghostTimeLeft--; if(slowTimeLeft <= 0) itemTextEl.innerText = `👁️ ${ghostTimeLeft}s`;
+        if (ghostTimeLeft <= 0) { clearInterval(ghostCountdownInterval); ghostCountdownInterval = null; if(slowTimeLeft <= 0) { itemTextEl.innerText = "없음 (NONE)"; panelEl.style.borderLeft = "5px solid #261e19"; } applySpeedEffects(); }
+      }, 1000);
+    }
+    if(slowTimeLeft <= 0) itemTextEl.innerText = `👁️ ${ghostTimeLeft}s`;
+  } else if (itemType === 'M') {
+    showToast("🎵 여민락!", "#F538FF"); player.type = 'ㅣ'; player.matrix = createPiece('ㅣ'); player.itemType = null; player.itemX = -1; player.itemY = -1;
+  }
+  draw();
 }
-
 function playerDrop() { if (!gameActive || isPaused || isLevelUpPaused) return; player.pos.y++; if (collide(arena, player)) { player.pos.y--; merge(arena, player); playerReset(); arenaSweep(); } dropCounter = 0; }
 function playerHardDrop() { if (!gameActive || isPaused || isLevelUpPaused) return; while (!collide(arena, player)) player.pos.y++; player.pos.y--; merge(arena, player); playerReset(); arenaSweep(); draw(); dropCounter = 0; }
 function playerMove(dir) { if (!gameActive || isPaused || isLevelUpPaused) return; player.pos.x += dir; if (collide(arena, player)) player.pos.x -= dir; }
-
 function playerReset() {
-    if (!nextPieceObj) nextPieceObj = generatePieceObject();
-    player.matrix = nextPieceObj.matrix; player.itemType = nextPieceObj.itemType; player.itemX = nextPieceObj.itemX; player.itemY = nextPieceObj.itemY; player.type = nextPieceObj.type;
-    player.pos.y = 0; player.pos.x = Math.floor(arena[0].length / 2) - Math.floor(player.matrix[0].length / 2);
-    nextPieceObj = generatePieceObject(); drawNext();
-    if (collide(arena, player)) {
-        gameActive = false; document.getElementById('active-item-text').innerText = "없음 (NONE)"; document.getElementById('item-status-panel').style.borderLeft = "5px solid #261e19";
-        if (slowCountdownInterval) clearInterval(slowCountdownInterval); if (ghostCountdownInterval) clearInterval(ghostCountdownInterval);
-        document.getElementById('start-btn').disabled = false; document.querySelectorAll('input').forEach(r => r.disabled = false);
-        setTimeout(() => { const nameInput = prompt("초과근무 점수: " + score + "점\n이름을 입력하시오:", "AAA"); if (nameInput) saveAndRenderRanking(nameInput, score); }, 50);
-    }
+  if (!nextPieceObj) nextPieceObj = generatePieceObject();
+  player.matrix = nextPieceObj.matrix; player.itemType = nextPieceObj.itemType; player.itemX = nextPieceObj.itemX; player.itemY = nextPieceObj.itemY; player.type = nextPieceObj.type;
+  player.pos.y = 0; player.pos.x = Math.floor(arena[0].length / 2) - Math.floor(player.matrix[0].length / 2);
+  nextPieceObj = generatePieceObject(); drawNext();
+  if (collide(arena, player)) {
+    gameActive = false; document.getElementById('active-item-text').innerText = "없음 (NONE)"; document.getElementById('item-status-panel').style.borderLeft = "5px solid #261e19";
+    if (slowCountdownInterval) clearInterval(slowCountdownInterval); if (ghostCountdownInterval) clearInterval(ghostCountdownInterval);
+    document.getElementById('start-btn').disabled = false; document.querySelectorAll('input').forEach(r => r.disabled = false);
+    setTimeout(() => { const nameInput = prompt("초과근무 점수: " + score + "점\n이름을 입력하시오:", "AAA"); if (nameInput) saveAndRenderRanking(nameInput, score); }, 50);
+  }
 }
-
-/* ★ 3번 요구사항: 물건(아이템) 마당과 난이도 선택 로직 100% 정상 작동 체크 완료 */
 function generatePieceObject() {
-    const easyPool = ['ㅣ', 'ㅁ', 'ㅜ', 'ㄱ', 'ㄴ', 'ㄹ1', 'ㄹ2']; const normalPool = ['ㅣ', 'ㅁ', 'ㅜ', 'ㄱ', 'ㄴ', 'ㄷ', 'ㅇ', 'ㄹ1', 'ㄹ2', 'ㅅ', 'ㅂ1', 'ㅑ']; const hardPool = ['ㅣ', 'ㅁ', 'ㅜ', 'ㄱ', 'ㄴ', 'ㄷ', 'ㅇ', 'ㄹ1', 'ㄹ2', 'ㅂ1', 'ㅂ2', 'ㅅ', 'ㅑ', 'ㅢ'];
-    const diff = document.querySelector('input[name="diff"]:checked').value;
-    let chosenType = ''; if (diff === "easy") chosenType = easyPool[Math.floor(Math.random() * easyPool.length)]; else if (diff === "normal") chosenType = normalPool[Math.floor(Math.random() * normalPool.length)]; else chosenType = hardPool[Math.floor(Math.random() * hardPool.length)];
-    const matrix = createPiece(chosenType); let itemType = null; let itemX = -1; let itemY = -1;
-    if (document.getElementById('mode-item').checked && Math.random() < 0.35) {
-        const itemPool = ['B', 'S', 'C', 'G', 'M']; itemType = itemPool[Math.floor(Math.random() * itemPool.length)];
-        let validCoords = [];
-        for (let y = 0; y < matrix.length; y++) { for (let x = 0; x < matrix[y].length; x++) { if (matrix[y][x] !== 0) validCoords.push({x: x, y: y}); } }
-        if (validCoords.length > 0) { let chosenCoord = validCoords[Math.floor(Math.random() * validCoords.length)]; itemX = chosenCoord.x; itemY = chosenCoord.y; }
-    }
-    return { matrix, itemType, itemX, itemY, type: chosenType };
+  const easyPool = ['ㅣ', 'ㅁ', 'ㅜ', 'ㄱ', 'ㄴ', 'ㄹ1', 'ㄹ2']; const normalPool = ['ㅣ', 'ㅁ', 'ㅜ', 'ㄱ', 'ㄴ', 'ㄷ', 'ㅇ', 'ㄹ1', 'ㄹ2', 'ㅅ', 'ㅂ1', 'ㅑ']; const hardPool = ['ㅣ', 'ㅁ', 'ㅜ', 'ㄱ', 'ㄴ', 'ㄷ', 'ㅇ', 'ㄹ1', 'ㄹ2', 'ㅂ1', 'ㅂ2', 'ㅅ', 'ㅑ', 'ㅢ'];
+  const diff = document.querySelector('input[name="diff"]:checked').value;
+  let chosenType = ''; if (diff === "easy") chosenType = easyPool[Math.floor(Math.random() * easyPool.length)]; else if (diff === "normal") chosenType = normalPool[Math.floor(Math.random() * normalPool.length)]; else chosenType = hardPool[Math.floor(Math.random() * hardPool.length)];
+  const matrix = createPiece(chosenType); let itemType = null; let itemX = -1; let itemY = -1;
+  if (document.getElementById('mode-item').checked && Math.random() < 0.35) {
+    const itemPool = ['B', 'S', 'C', 'G', 'M']; itemType = itemPool[Math.floor(Math.random() * itemPool.length)];
+    let validCoords = [];
+    for (let y = 0; y < matrix.length; y++) { for (let x = 0; x < matrix[y].length; x++) { if (matrix[y][x] !== 0) validCoords.push({x: x, y: y}); } }
+    if (validCoords.length > 0) { let chosenCoord = validCoords[Math.floor(Math.random() * validCoords.length)]; itemX = chosenCoord.x; itemY = chosenCoord.y; }
+  }
+  return { matrix, itemType, itemX, itemY, type: chosenType };
 }
-
-function saveAndRenderRanking(name, finalScore) {
-    const diffName = document.querySelector('input[name="diff"]:checked').value;
-    rankingData.push({ name: name.substring(0, 6).toUpperCase(), score: finalScore, diff: diffName });
-    rankingData.sort((a, b) => b.score - a.score); rankingData = rankingData.slice(0, 5);
-    const rankingListUl = document.getElementById('ranking-list'); rankingListUl.innerHTML = '';
-    rankingData.forEach((item, index) => { rankingListUl.innerHTML += `<li class="ranking-item"><span>${index + 1}. ${item.name} (${item.diff})</span><strong>${item.score}</strong></li>`; });
-}
-
 function playerRotate() {
-    if (!gameActive || isPaused || isLevelUpPaused) return; const pos = player.pos.x; let offset = 1;
-    for (let y = 0; y < player.matrix.length; ++y) { for (let x = 0; x < y; ++x) { [player.matrix[x][y], player.matrix[y][x]] = [player.matrix[y][x], player.matrix[x][y]]; } }
-    player.matrix.forEach(row => row.reverse());
-    if (player.itemType) { const n = player.matrix.length; let oldX = player.itemX; let oldY = player.itemY; player.itemX = n - 1 - oldY; player.itemY = oldX; }
-    while (collide(arena, player)) {
-        player.pos.x += offset; offset = -(offset + (offset > 0 ? 1 : -1));
-        if (offset > player.matrix[0].length) {
-            player.matrix.forEach(row => row.reverse());
-            for (let y = 0; y < player.matrix.length; ++y) { for (let x = 0; x < y; ++x) [player.matrix[x][y], player.matrix[y][x]] = [player.matrix[y][x], player.matrix[x][y]]; }
-            player.pos.x = pos; return;
-        }
+  if (!gameActive || isPaused || isLevelUpPaused) return; const pos = player.pos.x; let offset = 1;
+  for (let y = 0; y < player.matrix.length; ++y) { for (let x = 0; x < y; ++x) { [player.matrix[x][y], player.matrix[y][x]] = [player.matrix[y][x], player.matrix[x][y]]; } }
+  player.matrix.forEach(row => row.reverse());
+  if (player.itemType) { const n = player.matrix.length; let oldX = player.itemX; let oldY = player.itemY; player.itemX = n - 1 - oldY; player.itemY = oldX; }
+  while (collide(arena, player)) {
+    player.pos.x += offset; offset = -(offset + (offset > 0 ? 1 : -1));
+    if (offset > player.matrix[0].length) {
+      player.matrix.forEach(row => row.reverse());
+      for (let y = 0; y < player.matrix.length; ++y) { for (let x = 0; x < y; ++x) [player.matrix[x][y], player.matrix[y][x]] = [player.matrix[y][x], player.matrix[x][y]]; }
+      player.pos.x = pos; return;
     }
+  }
 }
-
 function update(time = performance.now()) {
-    if (!gameActive || isPaused || isLevelUpPaused) return;
-    if (time < hitStopUntil) { animationId = requestAnimationFrame(update); return; }
-    const deltaTime = time - lastTime; lastTime = time; dropCounter += deltaTime;
-    if (dropCounter > dropInterval) playerDrop();
-    draw(); animationId = requestAnimationFrame(update);
+  if (!gameActive || isPaused || isLevelUpPaused) return;
+  if (time < hitStopUntil) { animationId = requestAnimationFrame(update); return; }
+  const deltaTime = time - lastTime; lastTime = time; dropCounter += deltaTime;
+  if (dropCounter > dropInterval) playerDrop();
+  draw(); animationId = requestAnimationFrame(update);
 }
-
 function resumeNextLevel() {
-    isLevelUpPaused = false; prevLevelInterval = baseInterval; currentLevel++; baseInterval = Math.max(50, baseInterval * 0.7); applySpeedEffects();
-    document.getElementById('level-label').innerHTML = `LEVEL (단계) : ${currentLevel}`;
-    lastTime = performance.now(); dropCounter = 0; canvas.focus(); animationId = requestAnimationFrame(update);
+  isLevelUpPaused = false; prevLevelInterval = baseInterval; currentLevel++; baseInterval = Math.max(50, baseInterval * 0.7); applySpeedEffects();
+  document.getElementById('level-label').innerHTML = `LEVEL (단계) : ${currentLevel}`;
+  lastTime = performance.now(); dropCounter = 0; canvas.focus(); animationId = requestAnimationFrame(update);
 }
-
 function pressStart() {
-    if (animationId !== null) cancelAnimationFrame(animationId);
-    baseInterval = 1000; if (slowCountdownInterval) clearInterval(slowCountdownInterval); slowTimeLeft = 0; if (ghostCountdownInterval) clearInterval(ghostCountdownInterval); ghostTimeLeft = 0;
-    isPaused = false; isLevelUpPaused = false; context.filter = 'none';
-    document.getElementById('start-btn').disabled = true; document.querySelectorAll('input').forEach(r => r.disabled = true);
-    score = 0; combo = 0; currentLevel = 1; dropInterval = baseInterval; prevLevelInterval = baseInterval;
-    document.getElementById('score').innerText = score; document.getElementById('level-label').innerHTML = `LEVEL (단계) : 1`;
-    document.getElementById('active-item-text').innerText = "없음 (NONE)"; applySpeedEffects(); updateCanvasAlpha();
-    arena.forEach(row => row.fill(0)); itemMap.forEach(row => row.fill(null)); particles = []; gameActive = true;
-    nextPieceObj = generatePieceObject(); playerReset(); canvas.focus(); lastTime = performance.now(); dropCounter = 0; hitStopUntil = 0; 
-    animationId = requestAnimationFrame(update);
+  if (animationId !== null) cancelAnimationFrame(animationId);
+  baseInterval = 1000; if (slowCountdownInterval) clearInterval(slowCountdownInterval); slowTimeLeft = 0; if (ghostCountdownInterval) clearInterval(ghostCountdownInterval); ghostTimeLeft = 0;
+  isPaused = false; isLevelUpPaused = false; context.filter = 'none';
+  document.getElementById('start-btn').disabled = true; document.querySelectorAll('input').forEach(r => r.disabled = true);
+  score = 0; combo = 0; currentLevel = 1; dropInterval = baseInterval; prevLevelInterval = baseInterval;
+  document.getElementById('score').innerText = score; document.getElementById('level-label').innerHTML = `LEVEL (단계) : 1`;
+  document.getElementById('active-item-text').innerText = "없음 (NONE)"; applySpeedEffects(); updateCanvasAlpha();
+  arena.forEach(row => row.fill(0)); itemMap.forEach(row => row.fill(null)); particles = []; gameActive = true;
+  nextPieceObj = generatePieceObject(); playerReset(); canvas.focus(); lastTime = performance.now(); dropCounter = 0; hitStopUntil = 0;
+  animationId = requestAnimationFrame(update);
 }
-
 window.addEventListener('keydown', event => {
-    if (event.keyCode === 27) { event.preventDefault(); togglePause(); return; }
-    if (isPaused || !gameActive) return;
-    if (isLevelUpPaused) { if (event.keyCode === 32 || event.keyCode === 13) { event.preventDefault(); resumeNextLevel(); } return; }
-    if ([37, 38, 39, 40, 32].includes(event.keyCode)) event.preventDefault();
-    if (event.keyCode === 37) { playerMove(-1); draw(); } else if (event.keyCode === 39) { playerMove(1); draw(); }
-    else if (event.keyCode === 38) { playerRotate(); draw(); } else if (event.keyCode === 40) { playerDrop(); draw(); } else if (event.keyCode === 32) { playerHardDrop(); }
+  if (event.keyCode === 27) { event.preventDefault(); togglePause(); return; }
+  if (isPaused || !gameActive) return;
+  if (isLevelUpPaused) { if (event.keyCode === 32 || event.keyCode === 13) { event.preventDefault(); resumeNextLevel(); } return; }
+  if ([37, 38, 39, 40, 32].includes(event.keyCode)) event.preventDefault();
+  if (event.keyCode === 37) { playerMove(-1); draw(); } else if (event.keyCode === 39) { playerMove(1); draw(); }
+  else if (event.keyCode === 38) { playerRotate(); draw(); } else if (event.keyCode === 40) { playerDrop(); draw(); } else if (event.keyCode === 32) { playerHardDrop(); }
 });
-
 function bindTouch(id, action, continuous = false) {
-    const btn = document.getElementById(id); if(!btn) return;
-    let intervalId = null; let timeoutId = null;
-    const startAction = (e) => {
-        e.preventDefault(); if (isLevelUpPaused) { resumeNextLevel(); return; } if (!gameActive && id !== 'btn-pause') return; action(); 
-        if (continuous) { timeoutId = setTimeout(() => { intervalId = setInterval(action, 70); }, 180); }
-    };
-    const stopAction = (e) => { e.preventDefault(); if (timeoutId) clearTimeout(timeoutId); if (intervalId) clearInterval(intervalId); };
-    btn.addEventListener('touchstart', startAction, {passive: false}); btn.addEventListener('touchend', stopAction, {passive: false}); btn.addEventListener('touchcancel', stopAction, {passive: false});
+  const btn = document.getElementById(id); if(!btn) return;
+  let intervalId = null; let timeoutId = null;
+  const startAction = (e) => {
+    e.preventDefault(); if (isLevelUpPaused) { resumeNextLevel(); return; } if (!gameActive && id !== 'btn-pause') return; action();
+    if (continuous) { timeoutId = setTimeout(() => { intervalId = setInterval(action, 70); }, 180); }
+  };
+  const stopAction = (e) => { e.preventDefault(); if (timeoutId) clearTimeout(timeoutId); if (intervalId) clearInterval(intervalId); };
+  btn.addEventListener('touchstart', startAction, {passive: false}); btn.addEventListener('touchend', stopAction, {passive: false}); btn.addEventListener('touchcancel', stopAction, {passive: false});
 }
-
 bindTouch('btn-left', () => { playerMove(-1); draw(); }, true); bindTouch('btn-right', () => { playerMove(1); draw(); }, true);
 bindTouch('btn-rotate', () => { playerRotate(); draw(); }); bindTouch('btn-down', () => { playerDrop(); draw(); }, true);
 bindTouch('btn-drop', () => { playerHardDrop(); }); bindTouch('btn-pause', () => { togglePause(); });
 canvas.addEventListener('touchstart', (e) => { e.preventDefault(); if (isLevelUpPaused) resumeNextLevel(); }, {passive: false});
 
 drawLevelBackground(context, 1); drawGrid(context); nextContext.fillStyle = '#111'; nextContext.fillRect(0, 0, 100, 120); updateCanvasAlpha();
+
+// ★ 페이지 로드 시 서버 랭킹 즉시 불러오기
+loadRankingFromServer();
 </script>
 </body>
 </html>

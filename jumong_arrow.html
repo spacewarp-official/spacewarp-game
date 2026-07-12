@@ -3,69 +3,85 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>주몽의 화살 (JUMONG'S ARROW)</title>
+<title>꼬물이 대탈출 (WIGGLE ESCAPE)</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 body {
-  background: #10140f !important; color: #fff; font-family: 'Malgun Gothic', sans-serif;
+  background: linear-gradient(180deg, #f3f0ea 0%, #eceee9 50%, #e8ecec 100%) !important;
+  color: #4a4640; font-family: 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
   display: flex; flex-direction: column; align-items: center; justify-content: center;
   min-height: 100vh; margin: 0; overflow-x: hidden;
 }
-.header-group { text-align: center; margin-bottom: 12px; }
-h1 { margin: 0 0 4px 0; font-size: 26px; letter-spacing: 2px; color: #ffb703; text-shadow: 0 0 15px rgba(255,183,3,0.5); }
-.pronunciation { font-size: 13px; color: #9aa89a; }
-.sub-title { font-size: 11px; color: #7cbf6a; font-weight: bold; margin-top: 4px; }
+.header-group { text-align: center; margin-bottom: 14px; }
+h1 { margin: 0 0 4px 0; font-size: 28px; letter-spacing: 1px; color: #d97a8e; font-weight: 900; text-shadow: 0 2px 0 #f5f2ec; }
+.pronunciation { font-size: 13px; color: #9a9488; font-weight: bold; }
+.sub-title { font-size: 12px; color: #7fae9a; font-weight: bold; margin-top: 6px; }
 
 .game-container {
-  display: flex; flex-direction: row; background: #171d15; padding: 20px; border-radius: 16px;
-  box-shadow: 0 30px 70px rgba(0,0,0,0.9); border: 3px solid #3a4a30; gap: 18px; align-items: flex-start;
+  display: flex; flex-direction: row; background: #fdfcfa; padding: 20px; border-radius: 30px;
+  box-shadow: 0 15px 40px rgba(0,0,0,0.08), inset 0 0 0 3px #e6e2d8; gap: 18px; align-items: flex-start;
 }
 .board-wrapper { position: relative; }
 #board {
-  display: grid; gap: 3px; background: #0b0f09; padding: 8px; border-radius: 8px; border: 3px solid #2b3524;
+  display: grid; gap: 5px; background: #f4f1eb; padding: 10px; border-radius: 18px; border: 3px dashed #d9d4c6;
 }
 .cell {
-  width: 42px; height: 42px; background: #202a1a; border-radius: 5px; display: flex; align-items: center; justify-content: center;
-  font-size: 20px; cursor: pointer; user-select: none; transition: transform 0.15s, background 0.2s; color: #ffb703; font-weight: bold;
+  width: 42px; height: 42px; background: #ede9df; border-radius: 10px; display: flex; align-items: center; justify-content: center;
+  cursor: pointer; user-select: none; transition: transform 0.15s, background 0.2s; box-shadow: inset 0 -3px 0 rgba(0,0,0,0.05);
 }
-.cell.empty { background: transparent; cursor: default; }
-.cell:active { transform: scale(0.92); }
-.cell.flash-green { background: #2ecc71 !important; transition: none; }
-.cell.flash-red { background: #e63946 !important; transition: none; }
+.cell.empty { background: #f7f5f0; box-shadow: none; cursor: default; }
+.cell:active { transform: scale(0.9); }
+.cell.flash-green { background: #b9f2d3 !important; transition: none; }
+.cell.flash-red { background: #ffb4bd !important; transition: none; }
+
+/* 길줘진 지렁이 캐릭터 (미로화살표처럼 길게) */
+.worm-wrap { width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; }
+.worm-body { position: relative; width: 34px; height: 15px; }
+.worm-tail { position: absolute; left: 0; top: 2px; width: 21px; height: 11px; border-radius: 6px; box-shadow: inset -2px -2px 0 rgba(0,0,0,0.07); }
+.worm-head { position: absolute; right: 0; top: 0; width: 17px; height: 17px; border-radius: 50%; box-shadow: inset -2px -2px 0 rgba(0,0,0,0.07); }
+.eye { position: absolute; width: 3px; height: 3px; background: #3a2e2a; border-radius: 50%; top: 5px; }
+.eye-l { left: 3px; } .eye-r { left: 10px; }
+.blush { position: absolute; width: 3px; height: 2px; background: rgba(160,120,110,0.5); border-radius: 50%; bottom: 3px; }
+.blush-l { left: 1px; } .blush-r { left: 12px; }
 
 .sidebar { width: 170px; display: flex; flex-direction: column; gap: 10px; }
-.info-box { background: #0b0f09; padding: 10px; border-radius: 8px; border: 1px solid #2b3524; text-align: center; }
-.info-title { font-size: 10px; color: #7cbf6a; font-weight: bold; text-transform: uppercase; margin-bottom: 4px; }
-.info-val { font-size: 20px; font-weight: bold; color: #ffb703; }
+.info-box { background: #f8f6f1; padding: 10px; border-radius: 16px; border: 2px solid #e6e2d8; text-align: center; }
+.info-title { font-size: 10px; color: #c98a9c; font-weight: 800; text-transform: uppercase; margin-bottom: 4px; letter-spacing: 1px; }
+.info-val { font-size: 20px; font-weight: 900; color: #7b7ac7; }
 .hearts { font-size: 18px; letter-spacing: 3px; }
-.ranking-box { background: #0b0f09; padding: 10px; border-radius: 8px; border: 1px solid #2b3524; font-size: 11px; }
-.ranking-title { text-align: center; font-weight: bold; color: #ffb703; margin-bottom: 6px; }
-.ranking-list { list-style: none; padding: 0; margin: 0; color: #ddd; }
-.ranking-item { display: flex; justify-content: space-between; border-bottom: 1px dashed #2b3524; padding: 3px 0; }
-#start-btn { padding: 12px; background: #ffb703; color: #10140f; border: none; font-weight: bold; font-size: 14px; cursor: pointer; border-radius: 8px; width: 100%; }
-#start-btn:disabled { background: #333; color: #777; }
+.ranking-box { background: #f8f5ec; padding: 10px; border-radius: 16px; border: 2px solid #e6dcc0; font-size: 11px; }
+.ranking-title { text-align: center; font-weight: 800; color: #c99a4f; margin-bottom: 6px; }
+.ranking-list { list-style: none; padding: 0; margin: 0; color: #7a7568; }
+.ranking-item { display: flex; justify-content: space-between; border-bottom: 1px dashed #e6dcc0; padding: 3px 0; }
+#start-btn {
+  padding: 13px; background: linear-gradient(135deg, #cbb89a, #a8c9b5); color: #3d3a33; border: none;
+  font-weight: 900; font-size: 14px; cursor: pointer; border-radius: 30px; width: 100%; box-shadow: 0 5px 0 #9aa895;
+}
+#start-btn:active { transform: translateY(3px); box-shadow: 0 2px 0 #9aa895; }
+#start-btn:disabled { background: #eee; color: #bbb; box-shadow: none; }
 .overlay {
-  position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85);
-  display: none; align-items: center; justify-content: center; flex-direction: column; border-radius: 8px; text-align: center; gap: 8px;
+  position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(248,246,240,0.96);
+  display: none; align-items: center; justify-content: center; flex-direction: column; border-radius: 18px; text-align: center; gap: 8px;
 }
 .overlay.show { display: flex; }
-.overlay h2 { color: #ffb703; margin: 0; font-size: 18px; }
-.overlay p { color: #ccc; font-size: 12px; margin: 0; }
-.dev-footer { margin-top: 18px; color: #555; font-size: 10px; letter-spacing: 1px; }
+.overlay h2 { color: #b97e8f; margin: 0; font-size: 20px; }
+.overlay p { color: #9a9488; font-size: 12px; margin: 0; }
+.dev-footer { margin-top: 18px; color: #cbb; font-size: 10px; letter-spacing: 1px; }
 
 @media (max-width: 768px) {
-  .game-container { flex-direction: column; align-items: center; padding: 10px; }
+  .game-container { flex-direction: column; align-items: center; padding: 12px; }
   .sidebar { width: 90%; max-width: 300px; flex-direction: row; flex-wrap: wrap; }
   .info-box, .ranking-box { flex: 1; min-width: 80px; }
-  .cell { width: 34px; height: 34px; font-size: 16px; }
+  .cell { width: 34px; height: 34px; }
+  .worm-wrap { width: 28px; height: 28px; }
 }
 </style>
 </head>
 <body>
 
 <div class="header-group">
-  <h1>🏹 주몽의 화살 <span class="pronunciation">(JUMONG'S ARROW)</span></h1>
-  <div class="sub-title">화살을 순서대로 쏘아 판을 비워라</div>
+  <h1>🐛 꼬물이 대탈출 <span class="pronunciation">(WIGGLE ESCAPE)</span></h1>
+  <div class="sub-title">꼬물이들을 순서대로 미로 밖으로 보내주세요!</div>
 </div>
 
 <div class="game-container">
@@ -87,21 +103,18 @@ h1 { margin: 0 0 4px 0; font-size: 26px; letter-spacing: 2px; color: #ffb703; te
     </div>
     <div class="info-box">
       <div class="info-title">HEARTS</div>
-      <div class="hearts" id="hearts-val">❤️❤️❤️</div>
+      <div class="hearts" id="hearts-val">💗💗💗</div>
     </div>
     <div class="ranking-box">
       <div class="ranking-title">🏆 최단시간 랭킹</div>
-      <ul id="ranking-list" class="ranking-list"><li style="text-align:center;color:#888;">불러오는 중...</li></ul>
+      <ul id="ranking-list" class="ranking-list"><li style="text-align:center;color:#bba;">불러오는 중...</li></ul>
     </div>
-    <button id="start-btn" onclick="startGame()">활쏘기 시작</button>
+    <button id="start-btn" onclick="startGame()">꼬물이 구출 시작!</button>
   </div>
 </div>
-<div class="dev-footer">JUMONG'S ARROW · Dev v1.0 · Ranking: Supabase</div>
+<div class="dev-footer">WIGGLE ESCAPE · Dev v2.0 (cute) · Ranking: Supabase</div>
 
 <script>
-/* ============================================================
-   Supabase 설정 (테트리스와 같은 프로젝트 재사용, 테이블만 다름)
-   ============================================================ */
 const SUPABASE_URL = "https://pvjrbhsgffadiklpiknk.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_d4NBdGqpxrg__1SXiRA-YA_TDutoT7B";
 let supabaseClient = null;
@@ -109,18 +122,18 @@ try { supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY); }
 
 async function loadRanking() {
   const ul = document.getElementById('ranking-list');
-  if (!supabaseClient) { ul.innerHTML = '<li style="text-align:center;color:#e63946;">⚠️ 서버 미설정</li>'; return; }
-  ul.innerHTML = '<li style="text-align:center;color:#888;">불러오는 중...</li>';
+  if (!supabaseClient) { ul.innerHTML = '<li style="text-align:center;color:#ff6b81;">⚠️ 서버 미설정</li>'; return; }
+  ul.innerHTML = '<li style="text-align:center;color:#bba;">불러오는 중...</li>';
   try {
     const { data, error } = await supabaseClient.from('jumong_scores').select('name, time_seconds').order('time_seconds', { ascending: true }).limit(5);
     if (error) throw error;
-    if (!data || data.length === 0) { ul.innerHTML = '<li style="text-align:center;color:#888;">기록 없음</li>'; return; }
+    if (!data || data.length === 0) { ul.innerHTML = '<li style="text-align:center;color:#bba;">기록 없음</li>'; return; }
     ul.innerHTML = '';
     data.forEach((item, i) => {
       const m = Math.floor(item.time_seconds / 60), s = item.time_seconds % 60;
       ul.innerHTML += `<li class="ranking-item"><span>${i+1}. ${item.name}</span><strong>${m}:${String(s).padStart(2,'0')}</strong></li>`;
     });
-  } catch(e) { console.error(e); ul.innerHTML = '<li style="text-align:center;color:#e63946;">⚠️ 불러오기 실패</li>'; }
+  } catch(e) { console.error(e); ul.innerHTML = '<li style="text-align:center;color:#ff6b81;">⚠️ 불러오기 실패</li>'; }
 }
 async function saveScore(name, timeSeconds) {
   if (!supabaseClient) { alert("랭킹 서버가 아직 설정되지 않았습니다."); return; }
@@ -131,9 +144,6 @@ async function saveScore(name, timeSeconds) {
   } catch(e) { console.error(e); alert("점수 저장에 실패했습니다."); }
 }
 
-/* ============================================================
-   게임 로직
-   ============================================================ */
 const LEVELS = [
   { gridSize: 4, numArrows: 5 },
   { gridSize: 4, numArrows: 7 },
@@ -144,8 +154,9 @@ const LEVELS = [
   { gridSize: 7, numArrows: 22 },
   { gridSize: 7, numArrows: 26 },
 ];
-const DIR_ARROW = { up: '↑', down: '↓', left: '←', right: '→' };
 const DIR_VECTOR = { up: [0,-1], down: [0,1], left: [-1,0], right: [1,0] };
+const DIR_ANGLE = { right: 0, down: 90, left: 180, up: 270 };
+const WORM_COLORS = ['#ffb6c1', '#a0e7c4', '#ffe08a', '#b8c9ff', '#ffc2a1', '#d6b8ff'];
 
 let board = [];
 let gridSize = 4;
@@ -156,7 +167,6 @@ let gameActive = false;
 let elapsedSeconds = 0;
 let timerInterval = null;
 
-// 반드시 풀리는 레벨 생성: 배치 순서의 "역순"이 항상 유효한 정답 경로가 됨
 function generateLevel(size, numArrows) {
   const b = Array.from({length: size}, () => new Array(size).fill(null));
   const dirs = ['up','down','left','right'];
@@ -178,7 +188,7 @@ function generateLevel(size, numArrows) {
       if (clear) { chosen = d; break; }
     }
     if (!chosen) continue;
-    b[y][x] = { dir: chosen };
+    b[y][x] = { dir: chosen, color: WORM_COLORS[Math.floor(Math.random() * WORM_COLORS.length)] };
     placed++;
   }
   return { board: b, total: placed };
@@ -194,6 +204,19 @@ function isPathClear(x, y, dir, size, b) {
   return true;
 }
 
+function wormHTML(data) {
+  const angle = DIR_ANGLE[data.dir];
+  return `<div class="worm-wrap" style="transform: rotate(${angle}deg)">
+    <div class="worm-body">
+      <span class="worm-tail" style="background:${data.color}"></span>
+      <span class="worm-head" style="background:${data.color}">
+        <span class="eye eye-l"></span><span class="eye eye-r"></span>
+        <span class="blush blush-l"></span><span class="blush blush-r"></span>
+      </span>
+    </div>
+  </div>`;
+}
+
 function renderBoard() {
   const boardEl = document.getElementById('board');
   boardEl.style.gridTemplateColumns = `repeat(${gridSize}, 42px)`;
@@ -204,7 +227,7 @@ function renderBoard() {
       const data = board[y][x];
       cell.className = data ? 'cell' : 'cell empty';
       cell.dataset.x = x; cell.dataset.y = y;
-      if (data) { cell.innerText = DIR_ARROW[data.dir]; cell.onclick = () => handleClick(x, y); }
+      if (data) { cell.innerHTML = wormHTML(data); cell.onclick = () => handleClick(x, y); }
       boardEl.appendChild(cell);
     }
   }
@@ -230,12 +253,12 @@ function handleClick(x, y) {
 
 function loseHeart() {
   hearts--;
-  document.getElementById('hearts-val').innerText = '❤️'.repeat(Math.max(hearts,0)) + '🖤'.repeat(3 - Math.max(hearts,0));
+  document.getElementById('hearts-val').innerText = '💗'.repeat(Math.max(hearts,0)) + '🤍'.repeat(3 - Math.max(hearts,0));
   if (hearts <= 0) retryLevel();
 }
 
 function retryLevel() {
-  showOverlay('판이 막혔습니다', '같은 난이도로 다시 도전합니다', 900);
+  showOverlay('꼬물이가 갇혔어요!', '같은 난이도로 다시 도전해요', 900);
   setTimeout(() => { startLevel(currentLevelIndex, false); }, 900);
 }
 
@@ -253,7 +276,7 @@ function startLevel(index, resetHearts = true) {
   const gen = generateLevel(cfg.gridSize, cfg.numArrows);
   board = gen.board; arrowsRemaining = gen.total;
   if (resetHearts) hearts = 3;
-  document.getElementById('hearts-val').innerText = '❤️❤️❤️'.slice(0, hearts*2);
+  document.getElementById('hearts-val').innerText = '💗'.repeat(hearts) + '🤍'.repeat(3-hearts);
   document.getElementById('level-val').innerText = `${index + 1} / ${LEVELS.length}`;
   document.getElementById('overlay').classList.remove('show');
   renderBoard();
@@ -262,7 +285,7 @@ function startLevel(index, resetHearts = true) {
 function levelComplete() {
   currentLevelIndex++;
   if (currentLevelIndex < LEVELS.length) {
-    showOverlay('레벨 클리어!', `다음 레벨로 이동합니다 (${currentLevelIndex + 1}/${LEVELS.length})`, 1200);
+    showOverlay('레벨 클리어! 🎉', `다음 레벨로 이동해요 (${currentLevelIndex + 1}/${LEVELS.length})`, 1200);
     setTimeout(() => startLevel(currentLevelIndex, true), 1200);
   } else {
     allLevelsComplete();
@@ -272,7 +295,7 @@ function levelComplete() {
 function allLevelsComplete() {
   gameActive = false;
   clearInterval(timerInterval);
-  showOverlay('모든 레벨 클리어! 🏹', `총 소요시간: ${formatTime(elapsedSeconds)}`, 0);
+  showOverlay('모든 꼬물이 구출 성공! 🎊', `총 소요시간: ${formatTime(elapsedSeconds)}`, 0);
   document.getElementById('start-btn').disabled = false;
   setTimeout(() => {
     const name = prompt(`클리어 시간: ${formatTime(elapsedSeconds)}\n이름을 입력하세요:`, "AAA");

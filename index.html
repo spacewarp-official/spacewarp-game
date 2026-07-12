@@ -63,6 +63,8 @@
         .planet-tetris { background: radial-gradient(circle at 30% 30%, #4facfe 0%, #00f2fe 100%); }
         .planet-run { background: radial-gradient(circle at 30% 30%, #ff0844 0%, #ffb199 100%); animation-delay: 0.3s; }
         .planet-unknown { background: radial-gradient(circle at 30% 30%, #2b5876 0%, #4e4376 100%); opacity: 0.8; animation-delay: 1s; }
+        .planet-jumong { background: radial-gradient(circle at 30% 30%, #f7b733 0%, #7c4a03 100%); animation-delay: 0.6s; }
+        .planet-submit { background: radial-gradient(circle at 30% 30%, #43e97b 0%, #38f9d7 100%); animation-delay: 0.9s; }
 
         .card-content { padding: 30px 25px; border-top: 1px solid rgba(255, 255, 255, 0.05); flex-grow: 1; }
         .card-title { font-size: 22px; font-weight: bold; margin-bottom: 10px; color: #fff; }
@@ -113,6 +115,15 @@
             </div>
         </a>
         
+        <a href="jumong_arrow.html" class="game-card">
+            <div class="planet-container"><div class="planet planet-jumong">🏹</div></div>
+            <div class="card-content">
+                <span class="badge badge-active lang-text" data-ko="WARP READY" data-en="WARP READY">WARP READY</span>
+                <div class="card-title lang-text" data-ko="행성: 고구려 (주몽의 화살)" data-en="Planet: Goguryeo (Jumong's Arrow)">행성: 고구려 (주몽의 화살)</div>
+                <div class="card-desc lang-text" data-ko="화살을 순서대로 쏘아 판을 비워라. 논리와 순서의 화살 퍼즐." data-en="Fire arrows in the right order to clear the board. A logic puzzle.">화살을 순서대로 쏘아 판을 비워라. 논리와 순서의 화살 퍼즐.</div>
+            </div>
+        </a>
+
         <div class="game-card" style="cursor: default;">
             <div class="planet-container"><div class="planet planet-unknown">🚀</div></div>
             <div class="card-content">
@@ -122,6 +133,15 @@
             </div>
         </div>
 
+        <a href="#" id="submitCard" class="game-card" target="_blank" rel="noopener">
+            <div class="planet-container"><div class="planet planet-submit">✉️</div></div>
+            <div class="card-content">
+                <span class="badge badge-active lang-text" data-ko="OPEN CHANNEL" data-en="OPEN CHANNEL">OPEN CHANNEL</span>
+                <div class="card-title lang-text" data-ko="게임 아이디어 제안하기" data-en="Suggest a Game Idea">게임 아이디어 제안하기</div>
+                <div class="card-desc lang-text" data-ko="만들었으면 하는 게임이나 아이디어가 있나요? 신청서를 보내주세요. 검토 후 새로운 행성으로 만들어드립니다." data-en="Have a game idea you'd like to see? Send us a suggestion. We'll review it and may turn it into a new planet.">만들었으면 하는 게임이나 아이디어가 있나요? 신청서를 보내주세요. 검토 후 새로운 행성으로 만들어드립니다.</div>
+            </div>
+        </a>
+
         <div class="no-result lang-text" id="noResult" data-ko="레이더에 잡히는 행성이 없습니다. 📡" data-en="No planets detected on radar. 📡">레이더에 잡히는 행성이 없습니다. 📡</div>
     </div>
 
@@ -130,6 +150,11 @@
     </div>
 
     <script>
+        // ★★★ 게임 신청(제안) 폼 링크 - 스웦님이 직접 만든 구글 폼 URL로 교체하세요 ★★★
+        // 만드는 법은 "게임신청시스템_가이드.md" 참고
+        const GAME_SUBMIT_FORM_URL = "https://docs.google.com/forms/d/e/1FAIpQLSeMHNxpwnmku26Lfiq6r2glrG_f_1248oc-cGY10Qr8GacOCQ/viewform?usp=sharing&ouid=113370294111477859739";
+        document.getElementById('submitCard').href = GAME_SUBMIT_FORM_URL;
+
         // 1. 다국어 로컬라이제이션 엔진
         let currentLang = 'ko';
 

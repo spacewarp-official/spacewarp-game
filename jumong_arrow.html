@@ -306,8 +306,9 @@ function levelComplete() {
     showOverlay('탈출 성공! 🎊', `소요시간: ${formatTime(elapsedSeconds)}`, 0);
     document.getElementById('start-btn').disabled = false;
     setTimeout(() => {
-      const name = prompt(`클리어 시간: ${formatTime(elapsedSeconds)}\n이니셜 3자리를 입력하세요:`, "AAA");
-      if(name) saveScore(name, elapsedSeconds);
+      const savedName = localStorage.getItem('spacewarp_nickname') || "AAA";
+      const name = prompt(`클리어 시간: ${formatTime(elapsedSeconds)}\n이니셜 3자리를 입력하세요:`, savedName);
+      if(name) { localStorage.setItem('spacewarp_nickname', name.substring(0,6).toUpperCase()); saveScore(name, elapsedSeconds); }
     }, 500);
   }
 }

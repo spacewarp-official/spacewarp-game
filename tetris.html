@@ -516,7 +516,11 @@ function playerReset() {
     gameActive = false; document.getElementById('active-item-text').innerText = "없음 (NONE)"; document.getElementById('item-status-panel').style.borderLeft = "5px solid #261e19";
     if (slowCountdownInterval) clearInterval(slowCountdownInterval); if (ghostCountdownInterval) clearInterval(ghostCountdownInterval);
     document.getElementById('start-btn').disabled = false; document.querySelectorAll('input').forEach(r => r.disabled = false);
-    setTimeout(() => { const nameInput = prompt("초과근무 점수: " + score + "점\n이름을 입력하시오:", "AAA"); if (nameInput) saveAndRenderRanking(nameInput, score); }, 50);
+    setTimeout(() => {
+      const savedName = localStorage.getItem('spacewarp_nickname') || "AAA";
+      const nameInput = prompt("초과근무 점수: " + score + "점\n이름을 입력하시오:", savedName);
+      if (nameInput) { localStorage.setItem('spacewarp_nickname', nameInput.substring(0,6).toUpperCase()); saveAndRenderRanking(nameInput, score); }
+    }, 50);
   }
 }
 function generatePieceObject() {

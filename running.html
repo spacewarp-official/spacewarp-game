@@ -3,7 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>칼퇴의 민족 - K-8282</title>
+    <title>칼퇴의 민족 - K-직장인 3D 러닝 게임 | 스페이스웝</title>
+    <meta name="description" content="야근과 상사의 전화를 피해 전력 질주! 3D 한강 러닝 게임. 어깨빵과 아이템으로 방해꾼을 제치고 5km 완주하세요.">
+    <link rel="canonical" href="https://spacewarp.co.kr/running.html">
+    <meta property="og:title" content="칼퇴의 민족 - K-직장인 러닝 게임">
+    <meta property="og:description" content="야근과 상사의 전화를 피해 전력 질주하는 3D 러닝 게임.">
+    <meta name="robots" content="index, follow">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Noto+Sans+KR:wght@700&display=swap');
         body { margin: 0; overflow: hidden; background-color: #000; font-family: 'Noto Sans KR', sans-serif; user-select: none; }
@@ -65,6 +70,35 @@
             50% { transform: translate(-3px, 0px) rotate(1deg); }
             100% { transform: translate(1px, -1px) rotate(-1deg); }
         }
+
+        /* 홈 버튼 */
+        #home-btn {
+            position: absolute; top: 20px; right: 20px; z-index: 20; pointer-events: auto;
+            background: rgba(0,0,0,0.6); color: #00ffcc; border: 1px solid #00ffcc; border-radius: 20px;
+            padding: 7px 14px; font-size: 12px; font-weight: bold; text-decoration: none;
+        }
+
+        /* 모바일 터치 조작 UI */
+        #mobile-controls {
+            position: absolute; bottom: 0; left: 0; width: 100%; z-index: 20; pointer-events: none;
+            display: flex; justify-content: space-between; align-items: flex-end; padding: 0 16px 16px; box-sizing: border-box;
+        }
+        .m-dpad { display: flex; gap: 10px; pointer-events: auto; }
+        .m-actions { display: flex; gap: 10px; align-items: flex-end; pointer-events: auto; }
+        .m-btn {
+            width: 62px; height: 62px; border-radius: 50%; background: rgba(0,0,0,0.55); color: #fff;
+            border: 2px solid rgba(255,255,255,0.5); font-size: 26px; display: flex; align-items: center; justify-content: center;
+            user-select: none; touch-action: manipulation;
+        }
+        .m-btn:active { background: rgba(0,255,204,0.35); border-color: #00ffcc; }
+        .m-btn.small { width: 50px; height: 50px; font-size: 20px; }
+        #m-btn-item { border-color: #ffcc00; }
+        #m-btn-punch { border-color: #ff3300; }
+        #m-btn-boost { width: 74px; height: 74px; font-size: 14px; font-weight: bold; border-color: #ff3300; background: rgba(255,51,0,0.35); text-align:center; line-height:1.2; }
+
+        @media (min-width: 900px) {
+            #mobile-controls { display: none; } /* PC에서는 숨김, 키보드로 조작 */
+        }
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 </head>
@@ -73,6 +107,8 @@
 <div id="game-container"></div>
 
 <div id="ui-layer">
+    <a id="home-btn" href="index.html">🏠 홈으로</a>
+
     <div id="distance-info">집까지 남은 거리<br><span id="dist-val">5.00</span> km</div>
     
     <div id="inventory">
@@ -86,16 +122,30 @@
     </div>
 
     <div id="event-msg"></div>
+
+    <div id="mobile-controls">
+        <div class="m-dpad">
+            <div class="m-btn" id="m-btn-left">◀</div>
+            <div class="m-btn" id="m-btn-right">▶</div>
+        </div>
+        <div class="m-actions">
+            <div class="m-btn small" id="m-btn-item">💧</div>
+            <div class="m-btn small" id="m-btn-punch">👊</div>
+            <div class="m-btn" id="m-btn-boost">칼퇴<br>GO</div>
+        </div>
+    </div>
 </div>
 
 <div id="start-screen" class="overlay">
     <h1>칼퇴의 민족</h1>
     <p>
-        [조작법]<br>
+        [PC 조작법]<br>
         ⬅️ ➡️ 방향키: 곡선 도로를 따라 차선 이동<br>
         <strong>[ X ] 키: 어깨빵! (옆에 있는 사람을 한강으로 밀쳐냅니다)</strong><br>
         <strong>[ Z ] 키: 아이템 사용 (물풍선 던지기, 바나나 깔기)</strong><br>
         <strong>SPACE BAR</strong>: 텐션 100% 시 칼퇴 모드 (무적+광속)<br><br>
+        [모바일 조작법]<br>
+        화면 하단 ◀▶ 버튼: 차선 이동 / 👊: 어깨빵 / 💧: 아이템 / 칼퇴GO: 부스터<br><br>
         목표: 5km 앞의 집까지 3분 안에 도착하세요!
     </p>
     <button onclick="startGame()">퇴근 시작</button>
@@ -305,31 +355,55 @@
     }
 
     // --- 4. 키보드 액션 제어 ---
+    function doMoveLeft() { if(state !== 'PLAYING') return; targetLane = Math.max(-laneLimits, targetLane - 6); }
+    function doMoveRight() { if(state !== 'PLAYING') return; targetLane = Math.min(laneLimits, targetLane + 6); }
+    function doPunch() {
+        if(state !== 'PLAYING' || isPunching) return;
+        isPunching = true;
+        setTimeout(() => isPunching = false, 300);
+        checkMeleeAttack();
+    }
+    function doUseItem() {
+        if(state !== 'PLAYING' || !currentItem) return;
+        useItem(currentItem);
+        currentItem = null;
+        updateInventoryUI();
+    }
+    function doKaltoeBoost() {
+        if(state !== 'PLAYING' || tension < 100 || isKaltoeMode) return;
+        activateKaltoeMode();
+    }
+
     document.addEventListener("keydown", (e) => {
         if(state !== 'PLAYING') return;
-
-        if (e.code === 'ArrowLeft') targetLane = Math.max(-laneLimits, targetLane - 6);
-        if (e.code === 'ArrowRight') targetLane = Math.min(laneLimits, targetLane + 6);
-        
-        // [X] 어깨빵 (펀치)
-        if (e.code === 'KeyX' && !isPunching) {
-            isPunching = true;
-            setTimeout(() => isPunching = false, 300); // 0.3초간 펀치 판정
-            checkMeleeAttack();
-        }
-
-        // [Z] 아이템 사용
-        if (e.code === 'KeyZ' && currentItem) {
-            useItem(currentItem);
-            currentItem = null;
-            updateInventoryUI();
-        }
-
-        // [SPACE] 칼퇴 부스터
-        if (e.code === 'Space' && tension >= 100 && !isKaltoeMode) {
-            activateKaltoeMode();
-        }
+        if (e.code === 'ArrowLeft') doMoveLeft();
+        if (e.code === 'ArrowRight') doMoveRight();
+        if (e.code === 'KeyX') doPunch();
+        if (e.code === 'KeyZ') doUseItem();
+        if (e.code === 'Space') doKaltoeBoost();
     });
+
+    // --- 모바일 터치 조작 바인딩 ---
+    function bindHold(id, action) {
+        const el = document.getElementById(id);
+        if(!el) return;
+        let interval = null;
+        const start = (ev) => { ev.preventDefault(); action(); interval = setInterval(action, 60); };
+        const stop = (ev) => { ev.preventDefault(); if(interval) clearInterval(interval); };
+        el.addEventListener('touchstart', start, {passive: false});
+        el.addEventListener('touchend', stop, {passive: false});
+        el.addEventListener('touchcancel', stop, {passive: false});
+    }
+    function bindTap(id, action) {
+        const el = document.getElementById(id);
+        if(!el) return;
+        el.addEventListener('touchstart', (ev) => { ev.preventDefault(); action(); }, {passive: false});
+    }
+    bindHold('m-btn-left', doMoveLeft);
+    bindHold('m-btn-right', doMoveRight);
+    bindTap('m-btn-punch', doPunch);
+    bindTap('m-btn-item', doUseItem);
+    bindTap('m-btn-boost', doKaltoeBoost);
 
     // --- 상호작용 및 액션 로직 ---
     function checkMeleeAttack() {
@@ -385,9 +459,13 @@
 
     function updateInventoryUI() {
         const icon = document.getElementById('inventory-icon');
-        if(!currentItem) icon.innerText = '❔';
-        else if(currentItem === 'banana') icon.innerText = '🍌';
-        else if(currentItem === 'balloon') icon.innerText = '💧';
+        const mIcon = document.getElementById('m-btn-item');
+        let display = '❔';
+        if(!currentItem) display = '❔';
+        else if(currentItem === 'banana') display = '🍌';
+        else if(currentItem === 'balloon') display = '💧';
+        icon.innerText = display;
+        if(mIcon) { mIcon.innerText = display; mIcon.style.opacity = currentItem ? '1' : '0.5'; }
     }
 
     function showEvent(msg, color) {

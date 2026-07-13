@@ -3,7 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SPACE WARP | 우주 오락실</title>
+    <title>스페이스웝 - 무료 브라우저 미니게임 모음 | 테트리스, 퍼즐 게임</title>
+    <meta name="description" content="설치 없이 바로 즐기는 무료 브라우저 게임 모음. 한글 테트리스, 지렁이 퍼즐, 러닝 게임까지 - 실시간 랭킹으로 친구와 경쟁하세요.">
+    <meta name="keywords" content="무료 게임, 브라우저 게임, 미니게임, 테트리스, 퍼즐게임, 온라인게임, 랭킹게임">
+    <link rel="canonical" href="https://spacewarp.co.kr/">
+    <meta property="og:title" content="스페이스웝 - 무료 브라우저 미니게임 모음">
+    <meta property="og:description" content="설치 없이 바로 즐기는 무료 브라우저 게임. 한글 테트리스, 지렁이 퍼즐 등 실시간 랭킹으로 경쟁하세요.">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://spacewarp.co.kr/">
+    <meta property="og:locale" content="ko_KR">
+    <meta name="robots" content="index, follow">
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif; }
         
@@ -44,6 +53,31 @@
         .search-input:focus { border-color: #00f0ff; box-shadow: 0 0 20px rgba(0, 240, 255, 0.2); background: rgba(0, 0, 0, 0.5); }
         .search-icon { position: absolute; right: 20px; top: 50%; transform: translateY(-50%); font-size: 20px; pointer-events: none; opacity: 0.7; }
 
+        /* 배너 캐러셀 (신작/공지/광고용) */
+        .banner-container { width: 100%; max-width: 1000px; margin-bottom: 30px; position: relative; }
+        .banner-slide {
+            display: none; background: linear-gradient(135deg, rgba(0,240,255,0.12), rgba(120,80,255,0.12));
+            border: 1px solid rgba(0,240,255,0.25); border-radius: 20px; padding: 22px 28px;
+            align-items: center; justify-content: space-between; gap: 16px; backdrop-filter: blur(8px);
+            text-decoration: none; color: inherit; cursor: pointer;
+        }
+        .banner-slide.active { display: flex; }
+        .banner-text-wrap { flex: 1; }
+        .banner-tag { font-size: 11px; font-weight: 800; color: #00f0ff; letter-spacing: 1px; margin-bottom: 6px; display: block; }
+        .banner-title { font-size: 18px; font-weight: 800; color: #fff; margin-bottom: 4px; }
+        .banner-desc { font-size: 13px; color: #9ba4b5; }
+        .banner-arrow { font-size: 22px; color: #00f0ff; flex-shrink: 0; }
+        .banner-dots { display: flex; justify-content: center; gap: 6px; margin-top: 10px; }
+        .banner-dot { width: 7px; height: 7px; border-radius: 50%; background: rgba(255,255,255,0.2); cursor: pointer; transition: background 0.3s; }
+        .banner-dot.active { background: #00f0ff; }
+
+        /* 해시태그 */
+        .tag-row { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
+        .tag-pill {
+            font-size: 11px; font-weight: 700; color: #9be8ff; background: rgba(0,240,255,0.08);
+            border: 1px solid rgba(0,240,255,0.25); border-radius: 12px; padding: 3px 9px;
+        }
+
         /* 게임 그리드 및 카드 */
         .game-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 30px; max-width: 1000px; width: 100%; }
         .game-card { 
@@ -57,7 +91,16 @@
         /* 행성 애니메이션 */
         @keyframes float { 0% { transform: translateY(0px); } 50% { transform: translateY(-12px); } 100% { transform: translateY(0px); } }
         .planet-container { height: 180px; display: flex; justify-content: center; align-items: center; position: relative; }
-        .planet { width: 110px; height: 110px; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 50px; animation: float 4s ease-in-out infinite; box-shadow: inset -15px -15px 30px rgba(0,0,0,0.5), 0 0 20px rgba(255,255,255,0.1); }
+        .planet { width: 110px; height: 110px; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 50px; animation: float 4s ease-in-out infinite; box-shadow: inset -15px -15px 30px rgba(0,0,0,0.5), 0 0 20px rgba(255,255,255,0.1); position: relative; z-index: 2; }
+        .planet-ring {
+            position: absolute; top: 50%; left: 50%; width: 168px; height: 44px;
+            border: 2px solid rgba(0, 240, 255, 0.35); border-radius: 50%;
+            transform: translate(-50%, -50%) rotate(-18deg); z-index: 1; pointer-events: none;
+        }
+        .planet-ring::after {
+            content: ''; position: absolute; top: 50%; left: 0; width: 100%; height: 2px;
+            background: transparent;
+        }
         
         /* 행성별 색상 스타일 */
         .planet-tetris { background: radial-gradient(circle at 30% 30%, #4facfe 0%, #00f2fe 100%); }
@@ -87,7 +130,7 @@
     </div>
 
     <div class="header">
-        <h1>SPACE_WARP</h1>
+        <h1>스웦 <span style="font-size:0.5em; color:#8fa; opacity:0.8;">(SPACEWARP)</span></h1>
         <p class="lang-text" data-ko="은하계에 흩어진 당신의 놀이터를 탐험하세요 🌌" data-en="Explore your playground scattered across the galaxy 🌌">은하계에 흩어진 당신의 놀이터를 탐험하세요 🌌</p>
     </div>
 
@@ -96,38 +139,47 @@
         <div class="search-icon">🛰️</div>
     </div>
 
+    <div class="banner-container" id="bannerContainer"></div>
+
     <div class="game-grid" id="gameGrid">
         <a href="tetris.html" class="game-card">
-            <div class="planet-container"><div class="planet planet-tetris">🧩</div></div>
+            <div class="planet-container"><div class="planet-ring"></div><div class="planet planet-tetris">🧩</div></div>
             <div class="card-content">
                 <span class="badge badge-active lang-text" data-ko="WARP READY" data-en="WARP READY">WARP READY</span>
                 <div class="card-title lang-text" data-ko="한글 테트리스" data-en="Planet: Jiphyeonjeon (Tetris)">한글 테트리스</div>
                 <div class="card-desc lang-text" data-ko="세종이 내리는 과제를 줄을 맞춰 없애보자. 직선과 논리의 한글 테트리스." data-en="Clear the tasks given by King Sejong. A logical Korean Tetris game.">세종이 내리는 과제를 줄을 맞춰 없애보자. 직선과 논리의 한글 테트리스.</div>
-            </div>
-        </a>
-
-        <a href="jumong_arrow.html" class="game-card">
-            <div class="planet-container"><div class="planet planet-jumong">🐛</div></div>
-            <div class="card-content">
-                <span class="badge badge-active lang-text" data-ko="WARP READY" data-en="WARP READY">WARP READY</span>
-                <div class="card-title lang-text" data-ko="꼬물이의 탈출" data-en="Planet: Goguryeo (Jumong's Arrow)">꼬물이의 대탈출</div>
-                <div class="card-desc lang-text" data-ko="지렁이를 순서대로 보내 땅을 비우자. 누가누가 가장빨리 보낼까." data-en="Fire arrows in the right order to clear the board. A logic puzzle.">지렁이를 순서대로 보내 땅을 비우자. 누가누가 가장빨리 보낼까</div>
+                <div class="tag-row">
+                    <span class="tag-pill">#퍼즐</span><span class="tag-pill">#논리</span><span class="tag-pill">#한글테마</span><span class="tag-pill">#랭킹</span>
+                </div>
             </div>
         </a>
 
         <a href="running.html" class="game-card">
-            <div class="planet-container"><div class="planet planet-run">🏃‍♂️</div></div>
+            <div class="planet-container"><div class="planet-ring"></div><div class="planet planet-run">🏃‍♂️</div></div>
             <div class="card-content">
                 <span class="badge badge-active lang-text" data-ko="WARP READY" data-en="WARP READY">WARP READY</span>
-                <div class="card-title lang-text" data-ko="(PC버전) 칼퇴의 민족" data-en="Planet: Run to Home">(PC버전)칼퇴의 민족</div>
+                <div class="card-title lang-text" data-ko="칼퇴의 민족" data-en="Planet: Run to Home">칼퇴의 민족</div>
                 <div class="card-desc lang-text" data-ko="야근과 상사의 전화를 피해 전력 질주하세요! K-직장인 스피드 러닝." data-en="Sprint away from overtime and your boss's calls! K-Office Worker Speed Runner.">야근과 상사의 전화를 피해 전력 질주하세요! K-직장인 스피드 러닝.</div>
+                <div class="tag-row">
+                    <span class="tag-pill">#액션</span><span class="tag-pill">#반사신경</span><span class="tag-pill">#직장인공감</span><span class="tag-pill">#랭킹</span>
+                </div>
             </div>
         </a>
         
-
+        <a href="jumong_arrow.html" class="game-card">
+            <div class="planet-container"><div class="planet-ring"></div><div class="planet planet-jumong">🐛</div></div>
+            <div class="card-content">
+                <span class="badge badge-active lang-text" data-ko="WARP READY" data-en="WARP READY">WARP READY</span>
+                <div class="card-title lang-text" data-ko="꼬물이의 탈출" data-en="Planet: Goguryeo (Jumong's Arrow)">꼬물이의 대탈출</div>
+                <div class="card-desc lang-text" data-ko="지렁이를 순서대로 보내 땅을 비우자. 누가누가 가장빨리 보낼까." data-en="Fire arrows in the right order to clear the board. A logic puzzle.">지렁이를 순서대로 보내 땅을 비우자. 누가누가 가장빨리 보낼까</div>
+                <div class="tag-row">
+                    <span class="tag-pill">#퍼즐</span><span class="tag-pill">#논리</span><span class="tag-pill">#귀여움</span><span class="tag-pill">#타임어택</span>
+                </div>
+            </div>
+        </a>
 
         <div class="game-card" style="cursor: default;">
-            <div class="planet-container"><div class="planet planet-unknown">🚀</div></div>
+            <div class="planet-container"><div class="planet-ring"></div><div class="planet planet-unknown">🚀</div></div>
             <div class="card-content">
                 <span class="badge badge-soon lang-text" data-ko="SCANNING..." data-en="SCANNING...">SCANNING...</span>
                 <div class="card-title lang-text" data-ko="새로운 은하계 탐색 중" data-en="Scanning New Galaxy">새로운 은하계 탐색 중</div>
@@ -136,7 +188,7 @@
         </div>
 
         <a href="#" id="submitCard" class="game-card" target="_blank" rel="noopener">
-            <div class="planet-container"><div class="planet planet-submit">✉️</div></div>
+            <div class="planet-container"><div class="planet-ring"></div><div class="planet planet-submit">✉️</div></div>
             <div class="card-content">
                 <span class="badge badge-active lang-text" data-ko="OPEN CHANNEL" data-en="OPEN CHANNEL">OPEN CHANNEL</span>
                 <div class="card-title lang-text" data-ko="게임 아이디어 제안하기" data-en="Suggest a Game Idea">게임 아이디어 제안하기</div>
@@ -156,6 +208,33 @@
         // 만드는 법은 "게임신청시스템_가이드.md" 참고
         const GAME_SUBMIT_FORM_URL = "https://docs.google.com/forms/d/e/1FAIpQLSeMHNxpwnmku26Lfiq6r2glrG_f_1248oc-cGY10Qr8GacOCQ/viewform?usp=sharing&ouid=113370294111477859739";
         document.getElementById('submitCard').href = GAME_SUBMIT_FORM_URL;
+
+        // ★★★★★ 배너/공지 슬라이드 - 여기 배열만 수정하면 배너 내용이 바뀝니다 ★★★★★
+        // tag: 작은 태그 문구 / title: 큰 제목 / desc: 설명 / link: 클릭시 이동할 주소 (없으면 "#")
+        const BANNER_SLIDES = [
+            { tag: "NEW", title: "새 행성 발견! 꼬물이의 대탈출", desc: "지렁이 퍼즐로 최단시간 랭킹에 도전하세요", link: "jumong_arrow.html" },
+            { tag: "NOTICE", title: "게임 아이디어를 보내주세요", desc: "여러분의 제안이 다음 행성이 됩니다", link: "#submitCard" },
+            // 광고를 넣고 싶으면 아래처럼 한 줄 추가하면 됩니다:
+            // { tag: "AD", title: "광고 제목", desc: "광고 설명", link: "https://광고링크.com" },
+        ];
+        let bannerIndex = 0;
+        function renderBanner() {
+            const container = document.getElementById('bannerContainer');
+            container.innerHTML = BANNER_SLIDES.map((s, i) => `
+                <a href="${s.link}" class="banner-slide ${i === bannerIndex ? 'active' : ''}" data-idx="${i}">
+                    <div class="banner-text-wrap">
+                        <span class="banner-tag">${s.tag}</span>
+                        <div class="banner-title">${s.title}</div>
+                        <div class="banner-desc">${s.desc}</div>
+                    </div>
+                    <div class="banner-arrow">→</div>
+                </a>`).join('') +
+                `<div class="banner-dots">${BANNER_SLIDES.map((_, i) => `<span class="banner-dot ${i === bannerIndex ? 'active' : ''}" onclick="event.stopPropagation(); goToBanner(${i})"></span>`).join('')}</div>`;
+        }
+        function goToBanner(i) { bannerIndex = i; renderBanner(); }
+        function nextBanner() { bannerIndex = (bannerIndex + 1) % BANNER_SLIDES.length; renderBanner(); }
+        renderBanner();
+        setInterval(nextBanner, 5000);
 
         // 1. 다국어 로컬라이제이션 엔진
         let currentLang = 'ko';

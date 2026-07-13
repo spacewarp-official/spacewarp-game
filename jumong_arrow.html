@@ -3,7 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>꼬물이 대탈출 (WIGGLE ESCAPE)</title>
+<title>꼬물이 대탈출 - 무료 지렁이 퍼즐 게임 | 스페이스웝</title>
+<meta name="description" content="귀여운 지렁이 캐릭터로 즐기는 무료 논리 퍼즐 게임. 순서를 계산해서 모든 꼬물이를 탈출시키세요. 최단시간 랭킹 도전.">
+<link rel="canonical" href="https://spacewarp.co.kr/jumong_arrow.html">
+<meta property="og:title" content="꼬물이 대탈출 - 지렁이 퍼즐 게임">
+<meta property="og:description" content="귀여운 지렁이 퍼즐 게임. 최단시간 랭킹에 도전하세요.">
+<meta name="robots" content="index, follow">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 body {
@@ -58,6 +63,32 @@ h1 { margin: 0 0 4px 0; font-size: 28px; letter-spacing: 1px; color: #d97a8e; fo
 .overlay p { color: #9a9488; font-size: 12px; margin: 0; }
 .dev-footer { margin-top: 18px; color: #cbb; font-size: 10px; letter-spacing: 1px; }
 
+/* 홈 버튼 & 인포 버튼 */
+.home-btn {
+  position: fixed; top: 10px; left: 10px; z-index: 999; background: rgba(255,255,255,0.85); color: #7a6a55;
+  border: 1px solid #e2ddd0; border-radius: 20px; padding: 7px 14px; font-size: 12px; font-weight: bold;
+  text-decoration: none; cursor: pointer;
+}
+.info-btn {
+  position: fixed; top: 10px; right: 10px; z-index: 999; background: rgba(255,255,255,0.85); color: #7a6a55;
+  border: 1px solid #e2ddd0; border-radius: 50%; width: 30px; height: 30px; font-size: 14px; font-weight: bold;
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+}
+.info-modal-overlay {
+  display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5);
+  z-index: 2000; align-items: center; justify-content: center;
+}
+.info-modal-overlay.show { display: flex; }
+.info-modal-content {
+  background: #fdfcfa; width: 320px; max-width: 88vw; padding: 22px; border-radius: 20px;
+  border: 2px solid #e6e2d8; color: #4a4640; font-size: 13px; line-height: 1.7;
+}
+.info-modal-content h2 { color: #d97a8e; font-size: 17px; margin-bottom: 10px; text-align: center; }
+.info-modal-content .close-info-btn {
+  width: 100%; margin-top: 14px; padding: 10px; background: #cbb89a; color: #3d3a33; border: none;
+  border-radius: 20px; font-weight: bold; cursor: pointer;
+}
+
 @media (max-width: 768px) {
   .game-container { flex-direction: column; align-items: center; padding: 12px; }
   .sidebar { width: 90%; max-width: 300px; flex-direction: row; flex-wrap: wrap; }
@@ -66,6 +97,22 @@ h1 { margin: 0 0 4px 0; font-size: 28px; letter-spacing: 1px; color: #d97a8e; fo
 </style>
 </head>
 <body>
+
+<a href="index.html" class="home-btn">🏠 홈으로</a>
+<button class="info-btn" onclick="toggleInfoModal(true)">i</button>
+
+<div class="info-modal-overlay" id="infoModalOverlay">
+  <div class="info-modal-content">
+    <h2>🐛 게임 방법</h2>
+    <p>
+      1. 판 위에는 여러 마리의 꼬물이가 각자 방향을 보고 있어요.<br><br>
+      2. 꼬물이를 탭하면 그 방향으로 미끄러져 나가요. 단, <b>앞을 가로막는 다른 꼬물이가 없어야</b> 나갈 수 있어요.<br><br>
+      3. 앞이 막혀있는데 탭하면 ❤️ 하나가 사라져요. 하트가 다 사라지면 같은 레벨을 다시 도전해요.<br><br>
+      4. 판 위의 꼬물이를 모두 내보내면 다음 레벨로 이동해요. 총 8레벨을 최대한 빨리 클리어해보세요!
+    </p>
+    <button class="close-info-btn" onclick="toggleInfoModal(false)">확인했어요</button>
+  </div>
+</div>
 
 <div class="header-group">
   <h1>🐛 꼬물이 대탈출</h1>
@@ -322,6 +369,10 @@ function startGame() {
     elapsedSeconds++; document.getElementById('time-val').innerText = formatTime(elapsedSeconds);
   }, 1000);
   startLevel(0, true);
+}
+
+function toggleInfoModal(show) {
+  document.getElementById('infoModalOverlay').classList.toggle('show', show);
 }
 
 loadRanking();

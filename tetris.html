@@ -3,7 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>한글 테.틀.잇으 : 세종의 과제 (TETRIS HANGUL WAR)</title>
+<title>한글 테트리스 무료 온라인 게임 - 세종의 과제 | 스페이스웝</title>
+<meta name="description" content="한글 테마 무료 테트리스 게임. 세종대왕이 내는 과제를 줄 맞춰 없애보세요. 실시간 랭킹으로 친구와 점수 경쟁.">
+<link rel="canonical" href="https://spacewarp.co.kr/tetris.html">
+<meta property="og:title" content="한글 테트리스 - 세종의 과제">
+<meta property="og:description" content="한글 테마 무료 테트리스 게임. 실시간 랭킹으로 경쟁하세요.">
+<meta name="robots" content="index, follow">
 
 <!-- ★★★ Supabase 연동 추가 (랭킹 서버 저장용) ★★★ -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -128,11 +133,21 @@ canvas#tetris { background-color: rgba(0, 0, 0, 0.95); transition: background-co
   .dev-footer { margin-top: 2px; font-size: 9px; letter-spacing: 0.5px; }
 }
 
+/* 홈으로 버튼 */
+.home-btn {
+  position: fixed; top: 10px; left: 10px; z-index: 999; background: rgba(0,0,0,0.6); color: #00ffcc;
+  border: 1px solid #00ffcc; border-radius: 20px; padding: 7px 14px; font-size: 12px; font-weight: bold;
+  text-decoration: none; cursor: pointer; backdrop-filter: blur(4px);
+}
+.home-btn:hover { background: rgba(0,255,204,0.15); }
+
 /* ★ 서버 랭킹 로딩 표시 */
 .ranking-loading { text-align:center; color:#888; font-size: 11px; }
 </style>
 </head>
 <body>
+
+<a href="index.html" class="home-btn">🏠 홈으로</a>
 
 <div class="header-group">
   <div class="sejong-speech">😎 "나라말싸미 듕귁과 다르고, 미귁과도 다르니, 내 이를 배포한다"</div>

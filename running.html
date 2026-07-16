@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>칼퇴의 민족 - K-직장인 3D 러닝 게임 | 스페이스웝</title>
+    <title>칼퇴의 민족 - K-직장인 3D 러닝 게임 | 스웦(SPACEWARP)</title>
     <meta name="description" content="야근과 상사의 전화를 피해 전력 질주! 3D 한강 러닝 게임. 어깨빵과 아이템으로 방해꾼을 제치고 5km 완주하세요.">
     <link rel="canonical" href="https://spacewarp.co.kr/running.html">
     <meta property="og:title" content="칼퇴의 민족 - K-직장인 러닝 게임">
@@ -78,6 +78,13 @@
             padding: 7px 14px; font-size: 12px; font-weight: bold; text-decoration: none;
         }
 
+        /* 카톡 공유 버튼 */
+        #kakao-share-btn {
+            position: absolute; top: 20px; left: 20px; z-index: 20; pointer-events: auto;
+            background: rgba(0,0,0,0.6); color: #FEE500; border: 1px solid #FEE500; border-radius: 20px;
+            padding: 7px 14px; font-size: 12px; font-weight: bold; cursor: pointer;
+        }
+
         /* 모바일 터치 조작 UI */
         #mobile-controls {
             position: absolute; bottom: 0; left: 0; width: 100%; z-index: 20; pointer-events: none;
@@ -104,10 +111,22 @@
 </head>
 <body>
 
+<div id="kakao-browser-notice" style="display:none; position:fixed; top:0; left:0; width:100%; z-index:5000; background:#3c1e1e; color:#fff; font-size:12px; padding:10px 40px 10px 14px; text-align:center; box-sizing:border-box; line-height:1.5;">
+    ⚠️ 카카오톡 안에서는 버튼이 가려질 수 있어요. 우측 하단 <b>'•••'</b> 또는 공유 아이콘에서 <b>'다른 브라우저로 열기'</b>를 눌러주세요.
+    <span onclick="document.getElementById('kakao-browser-notice').style.display='none'" style="position:absolute; right:12px; top:8px; cursor:pointer; font-size:16px;">✕</span>
+</div>
+<script>
+    if (/KAKAOTALK/i.test(navigator.userAgent || '')) {
+        document.getElementById('kakao-browser-notice').style.display = 'block';
+        document.body.style.paddingTop = '44px';
+    }
+</script>
+
 <div id="game-container"></div>
 
 <div id="ui-layer">
     <a id="home-btn" href="index.html">🏠 홈으로</a>
+    <button id="kakao-share-btn" onclick="shareKakao()">💬 공유</button>
 
     <div id="distance-info">집까지 남은 거리<br><span id="dist-val">5.00</span> km</div>
     
@@ -649,6 +668,40 @@
     }
 
     init();
+</script>
+
+<!-- Google Analytics(GA4) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-CTNNSY6150"></script>
+<script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-CTNNSY6150');
+</script>
+
+<!-- 카카오 공유 SDK -->
+<script src="https://developers.kakao.com/sdk/js/kakao.min.js"></script>
+<script>
+    try { Kakao.init('1747ba005771471984d6560a563cb948'); } catch (e) { console.log('카카오 SDK 초기화 대기 중'); }
+
+    function shareKakao() {
+        if (!Kakao.isInitialized || !Kakao.isInitialized()) {
+            alert('카카오 공유 기능을 준비 중입니다. 잠시 후 다시 시도해주세요.');
+            return;
+        }
+        Kakao.Share.sendDefault({
+            objectType: 'feed',
+            content: {
+                title: '칼퇴의 민족 - K-직장인 러닝 게임 | 스웦(SPACEWARP)',
+                description: '야근과 상사의 전화를 피해 전력 질주! 5km 완주에 도전하세요.',
+                imageUrl: 'https://spacewarp.co.kr/og-image.png',
+                link: { mobileWebUrl: 'https://spacewarp.co.kr/running.html', webUrl: 'https://spacewarp.co.kr/running.html' },
+            },
+            buttons: [
+                { title: '뛰러가기', link: { mobileWebUrl: 'https://spacewarp.co.kr/running.html', webUrl: 'https://spacewarp.co.kr/running.html' } },
+            ],
+        });
+    }
 </script>
 </body>
 </html>

@@ -111,6 +111,10 @@
         @media (min-width: 900px) {
             #mobile-controls { display: none; } /* PC에서는 숨김, 키보드로 조작 */
         }
+        @media (max-width: 899px) {
+            .menu-wrap { top: 70px; }
+            #mobile-controls { padding-bottom: calc(110px + env(safe-area-inset-bottom)); }
+        }
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 </head>

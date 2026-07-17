@@ -15,8 +15,12 @@ body {
   background: linear-gradient(180deg, #f3f0ea 0%, #eceee9 50%, #e8ecec 100%) !important;
   color: #4a4640; font-family: 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
   display: flex; flex-direction: column; align-items: center; justify-content: center;
-  min-height: 100vh; margin: 0; overflow-x: hidden; touch-action: manipulation;
+  min-height: 100vh; margin: 0; overflow: hidden; touch-action: manipulation;
+  -webkit-user-select: none; user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
 }
+html { overflow: hidden; height: 100%; overscroll-behavior: none; }
 .header-group { text-align: center; margin-bottom: 14px; }
 h1 { margin: 0 0 4px 0; font-size: 28px; letter-spacing: 1px; color: #d97a8e; font-weight: 900; text-shadow: 0 2px 0 #f5f2ec; }
 .sub-title { font-size: 12px; color: #7fae9a; font-weight: bold; margin-top: 6px; }
@@ -63,21 +67,25 @@ h1 { margin: 0 0 4px 0; font-size: 28px; letter-spacing: 1px; color: #d97a8e; fo
 .overlay p { color: #9a9488; font-size: 12px; margin: 0; }
 .dev-footer { margin-top: 18px; color: #cbb; font-size: 10px; letter-spacing: 1px; }
 
-/* 홈 버튼 & 인포 버튼 */
+/* 홈 버튼 */
 .home-btn {
   position: fixed; top: 10px; left: 10px; z-index: 999; background: rgba(255,255,255,0.85); color: #7a6a55;
   border: 1px solid #e2ddd0; border-radius: 20px; padding: 7px 14px; font-size: 12px; font-weight: bold;
   text-decoration: none; cursor: pointer;
 }
+.top-right-group { position: fixed; top: 10px; right: 10px; z-index: 999; display: flex; gap: 6px; align-items: center; }
 .info-btn {
-  position: fixed; top: 10px; right: 10px; z-index: 999; background: rgba(255,255,255,0.85); color: #7a6a55;
+  background: rgba(255,255,255,0.85); color: #7a6a55;
   border: 1px solid #e2ddd0; border-radius: 50%; width: 30px; height: 30px; font-size: 14px; font-weight: bold;
   cursor: pointer; display: flex; align-items: center; justify-content: center;
 }
 .kakao-share-btn {
-  position: fixed; top: 10px; right: 50px; z-index: 999; background: rgba(255,255,255,0.85); color: #3a2e2a;
-  border: 1px solid #FEE500; background-color: rgba(254,229,0,0.85); border-radius: 20px; padding: 7px 14px;
+  color: #3a2e2a; border: 1px solid #FEE500; background-color: rgba(254,229,0,0.85); border-radius: 20px; padding: 7px 14px;
   font-size: 12px; font-weight: bold; cursor: pointer;
+}
+.bug-report-btn {
+  color: #7a3a3a; text-decoration: none; border: 1px solid #ffb3bd; background-color: rgba(255,179,189,0.55);
+  border-radius: 20px; padding: 7px 12px; font-size: 12px; font-weight: bold; display: inline-flex; align-items: center;
 }
 .info-modal-overlay {
   display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5);
@@ -118,8 +126,11 @@ h1 { margin: 0 0 4px 0; font-size: 28px; letter-spacing: 1px; color: #d97a8e; fo
 </script>
 
 <a href="index.html" class="home-btn">🏠 홈으로</a>
-<button class="kakao-share-btn" onclick="shareKakao()">💬 공유</button>
-<button class="info-btn" onclick="toggleInfoModal(true)">i</button>
+<div class="top-right-group">
+    <button class="info-btn" onclick="toggleInfoModal(true)">i</button>
+    <button class="kakao-share-btn" onclick="shareKakao()">💬 공유</button>
+    <a class="bug-report-btn" href="https://forms.gle/YOUR_BUG_REPORT_FORM_ID" target="_blank" rel="noopener">🐞 제보</a>
+</div>
 
 <div class="info-modal-overlay" id="infoModalOverlay">
   <div class="info-modal-content">

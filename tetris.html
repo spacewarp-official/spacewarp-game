@@ -19,6 +19,9 @@ body {
   background: #111 !important; color: #fff; font-family: 'Malgun Gothic', sans-serif;
   display: flex; flex-direction: column; align-items: center; justify-content: center;
   min-height: 100vh; margin: 0; overflow-x: hidden;
+  -webkit-user-select: none; user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
 }
 /* 상단 타이틀 및 서브타이틀 */
 .header-group { text-align: center; margin-bottom: 15px; width: 100%; }
@@ -118,14 +121,14 @@ canvas#tetris { background-color: rgba(0, 0, 0, 0.95); transition: background-co
     background: #d8d8d8; border-radius: 10px 10px 35px 10px; border: 2px solid #888;
     box-shadow: inset -4px -4px 12px rgba(0,0,0,0.2), 0 4px 12px rgba(0,0,0,0.5);
   }
-  .dpad-container { display: grid; grid-template-columns: repeat(3, 60px); grid-template-rows: repeat(3, 60px); gap: 4px; }
+  .dpad-container { display: grid; grid-template-columns: repeat(3, 58px); grid-template-rows: repeat(2, 58px); gap: 4px; }
   .action-container { display: flex; gap: 12px; align-items: center; }
-  .m-btn { background: #333; color: #666; border: 2px solid #111; border-radius: 8px; font-weight: bold; font-size: 24px; display: flex; align-items: center; justify-content: center; user-select: none; touch-action: manipulation; box-shadow: 0 4px 0 #000; }
+  .m-btn { background: #333; color: #666; border: 2px solid #111; border-radius: 8px; font-weight: bold; font-size: 22px; display: flex; align-items: center; justify-content: center; user-select: none; touch-action: manipulation; box-shadow: 0 4px 0 #000; }
   .m-btn:active { background: #000; color: #fff; transform: translateY(4px); box-shadow: 0 0 0 #000; }
   #btn-rotate { grid-column: 2; grid-row: 1; }
   #btn-left { grid-column: 1; grid-row: 2; }
+  #btn-down { grid-column: 2; grid-row: 2; }
   #btn-right { grid-column: 3; grid-row: 2; }
-  #btn-down { grid-column: 2; grid-row: 3; }
   .round-btn { width: 75px; height: 75px; border-radius: 50%; background: #a31d1d; color: #fff; font-size: 14px; border: 4px solid #5c1111; box-shadow: 0 5px 0 #3a0808; display: flex; justify-content: center; align-items: center; }
   .round-btn:active { background: #ff2a2a; transform: translateY(5px); box-shadow: 0 0 0 #3a0808; }
   .pause-btn { background: #555; color: #fff; width: 45px; height: 45px; border-radius: 8px; display: flex; justify-content: center; align-items: center; font-size: 18px; border: 2px solid #222; box-shadow: 0 4px 0 #111; }
@@ -141,13 +144,20 @@ canvas#tetris { background-color: rgba(0, 0, 0, 0.95); transition: background-co
 }
 .home-btn:hover { background: rgba(0,255,204,0.15); }
 
-/* 카톡 공유 버튼 */
+/* 우측 상단 버튼 그룹(공유/버그제보) */
+.top-right-group { position: fixed; top: 10px; right: 10px; z-index: 999; display: flex; gap: 6px; }
 .kakao-share-btn {
-  position: fixed; top: 10px; right: 10px; z-index: 999; background: rgba(0,0,0,0.6); color: #FEE500;
+  background: rgba(0,0,0,0.6); color: #FEE500;
   border: 1px solid #FEE500; border-radius: 20px; padding: 7px 14px; font-size: 12px; font-weight: bold;
   cursor: pointer; backdrop-filter: blur(4px);
 }
 .kakao-share-btn:hover { background: rgba(254,229,0,0.15); }
+.bug-report-btn {
+  background: rgba(0,0,0,0.6); color: #ff6b81; text-decoration: none;
+  border: 1px solid #ff6b81; border-radius: 20px; padding: 7px 12px; font-size: 12px; font-weight: bold;
+  cursor: pointer; backdrop-filter: blur(4px); display: inline-flex; align-items: center;
+}
+.bug-report-btn:hover { background: rgba(255,107,129,0.15); }
 
 /* ★ 서버 랭킹 로딩 표시 */
 .ranking-loading { text-align:center; color:#888; font-size: 11px; }
@@ -172,7 +182,10 @@ canvas#tetris { background-color: rgba(0, 0, 0, 0.95); transition: background-co
 </script>
 
 <a href="index.html" class="home-btn">🏠 홈으로</a>
-<button class="kakao-share-btn" onclick="shareKakao()">💬 공유</button>
+<div class="top-right-group">
+    <button class="kakao-share-btn" onclick="shareKakao()">💬 공유</button>
+    <a class="bug-report-btn" href="https://forms.gle/YOUR_BUG_REPORT_FORM_ID" target="_blank" rel="noopener">🐞 제보</a>
+</div>
 
 <div class="header-group">
   <div class="sejong-speech">😎 "나라말싸미 듕귁과 다르고, 미귁과도 다르니, 내 이를 배포한다"</div>
@@ -388,12 +401,14 @@ function showToast(msg, color) {
 function togglePause() {
   if (!gameActive || isLevelUpPaused) return;
   isPaused = !isPaused;
+  if (animationId !== null) { cancelAnimationFrame(animationId); animationId = null; }
   if (isPaused) {
     context.filter = 'grayscale(100%)'; draw();
     context.fillStyle = 'rgba(0, 0, 0, 0.6)'; context.fillRect(0, 0, 240, 400);
     context.fillStyle = '#ffb703'; context.font = 'bold 24px Arial'; context.textAlign = 'center'; context.fillText("정 지 (PAUSE)", 120, 200);
   } else {
-    lastTime = performance.now(); context.filter = 'none'; draw(); update();
+    lastTime = performance.now(); hitStopUntil = 0; context.filter = 'none';
+    animationId = requestAnimationFrame(update);
   }
 }
 function createPiece(type) {

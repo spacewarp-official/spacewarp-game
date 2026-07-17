@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>한글 테트리스 무료 온라인 게임 - 세종의 과제 | 스페이스웝</title>
+<title>한글 테트리스 무료 온라인 게임 - 세종의 과제 | 스웦(SPACEWARP)</title>
 <meta name="description" content="한글 테마 무료 테트리스 게임. 세종대왕이 내는 과제를 줄 맞춰 없애보세요. 실시간 랭킹으로 친구와 점수 경쟁.">
 <link rel="canonical" href="https://spacewarp.co.kr/tetris.html">
 <meta property="og:title" content="한글 테트리스 - 세종의 과제">
@@ -113,8 +113,8 @@ canvas#tetris { background-color: rgba(0, 0, 0, 0.95); transition: background-co
     display: flex !important; width: 100%; justify-content: space-around; align-items: center;
     padding: 12px 10px; box-sizing: border-box;
     margin-top: 5px;
-    margin-bottom: 30px;
-    padding-bottom: calc(12px + env(safe-area-inset-bottom));
+    margin-bottom: 60px;
+    padding-bottom: calc(20px + env(safe-area-inset-bottom));
     background: #d8d8d8; border-radius: 10px 10px 35px 10px; border: 2px solid #888;
     box-shadow: inset -4px -4px 12px rgba(0,0,0,0.2), 0 4px 12px rgba(0,0,0,0.5);
   }
@@ -141,13 +141,38 @@ canvas#tetris { background-color: rgba(0, 0, 0, 0.95); transition: background-co
 }
 .home-btn:hover { background: rgba(0,255,204,0.15); }
 
+/* 카톡 공유 버튼 */
+.kakao-share-btn {
+  position: fixed; top: 10px; right: 10px; z-index: 999; background: rgba(0,0,0,0.6); color: #FEE500;
+  border: 1px solid #FEE500; border-radius: 20px; padding: 7px 14px; font-size: 12px; font-weight: bold;
+  cursor: pointer; backdrop-filter: blur(4px);
+}
+.kakao-share-btn:hover { background: rgba(254,229,0,0.15); }
+
 /* ★ 서버 랭킹 로딩 표시 */
 .ranking-loading { text-align:center; color:#888; font-size: 11px; }
 </style>
 </head>
 <body>
 
+<div id="kakao-browser-notice" style="display:none; position:fixed; top:0; left:0; width:100%; z-index:5000; background:#3c1e1e; color:#fff; font-size:12px; padding:10px 40px 10px 14px; text-align:center; box-sizing:border-box; line-height:1.5;">
+    ⚠️ 카카오톡 안에서는 버튼이 가려질 수 있어요. 우측 하단 <b>'•••'</b> 또는 공유 아이콘에서 <b>'다른 브라우저로 열기'</b>를 눌러주세요.
+    <span onclick="document.getElementById('kakao-browser-notice').style.display='none'" style="position:absolute; right:12px; top:8px; cursor:pointer; font-size:16px;">✕</span>
+</div>
+<script>
+    if (/KAKAOTALK/i.test(navigator.userAgent || '')) {
+        // 1) 우선 자동으로 외부 브라우저(사파리/크롬) 전환을 시도합니다.
+        location.href = 'kakaotalk://web/openExternal?url=' + encodeURIComponent(location.href);
+        // 2) 전환이 안 먹히는 경우(구버전 카톡 등)를 대비해 잠시 후 안내 배너를 백업으로 띄웁니다.
+        setTimeout(function () {
+            document.getElementById('kakao-browser-notice').style.display = 'block';
+            document.body.style.paddingTop = '44px';
+        }, 800);
+    }
+</script>
+
 <a href="index.html" class="home-btn">🏠 홈으로</a>
+<button class="kakao-share-btn" onclick="shareKakao()">💬 공유</button>
 
 <div class="header-group">
   <div class="sejong-speech">😎 "나라말싸미 듕귁과 다르고, 미귁과도 다르니, 내 이를 배포한다"</div>
@@ -177,12 +202,15 @@ canvas#tetris { background-color: rgba(0, 0, 0, 0.95); transition: background-co
           <div class="config-options">
             <label><input type="radio" name="diff" value="easy" checked> 쉽다 (EASY)</label>
             <label><input type="radio" name="diff" value="normal"> 할만하다 (NORMAL)</label>
-            <label><input type="radio" name="diff" value="hard"> 어렵다 (HARD)</label>
           </div>
         </div>
         <div class="ranking-box">
-          <div class="ranking-title">🏆 장원급제 (전체 랭킹)</div>
+          <div class="ranking-title">🏆 이번 주 장원급제</div>
           <ul id="ranking-list" class="ranking-list"><li class="ranking-loading">불러오는 중...</li></ul>
+        </div>
+        <div class="ranking-box">
+          <div class="ranking-title">👑 역대 최고 기록</div>
+          <ul id="alltime-list" class="ranking-list"><li class="ranking-loading">불러오는 중...</li></ul>
         </div>
         <button class="close-settings-btn" onclick="toggleSettings()">❌ 닫고 게임화면으로</button>
       </div>
@@ -282,6 +310,30 @@ async function loadRankingFromServer() {
   }
 }
 
+// 역대 최고 기록(alltime) 불러오기 — 이 테이블은 주간 초기화 대상이 아닙니다
+async function loadAlltimeFromServer() {
+  const listEl = document.getElementById('alltime-list');
+  if (!supabaseClient) { listEl.innerHTML = '<li style="text-align:center; color:#e63946;">⚠️ 랭킹 서버 미설정</li>'; return; }
+  try {
+    const { data, error } = await supabaseClient
+      .from('tetris_scores_alltime')
+      .select('name, score, diff, achieved_at')
+      .order('score', { ascending: false })
+      .limit(5);
+    if (error) throw error;
+    if (!data || data.length === 0) { listEl.innerHTML = '<li style="text-align:center; color:#888;">기록 없음</li>'; return; }
+    listEl.innerHTML = '';
+    data.forEach((item, index) => {
+      const d = item.achieved_at ? new Date(item.achieved_at) : null;
+      const dateTxt = d ? `${d.getMonth()+1}/${d.getDate()}` : '';
+      listEl.innerHTML += `<li class="ranking-item"><span>${index + 1}. ${item.name} (${item.diff || '-'}) <small style="color:#777;">${dateTxt}</small></span><strong>${item.score}</strong></li>`;
+    });
+  } catch (e) {
+    console.error("역대 기록 불러오기 실패:", e);
+    listEl.innerHTML = '<li style="text-align:center; color:#e63946;">⚠️ 불러오기 실패</li>';
+  }
+}
+
 // 점수를 서버에 저장한 뒤, 다시 랭킹을 새로고침
 async function saveAndRenderRanking(name, finalScore) {
   const diffName = document.querySelector('input[name="diff"]:checked').value;
@@ -300,6 +352,7 @@ async function saveAndRenderRanking(name, finalScore) {
     if (error) throw error;
 
     await loadRankingFromServer();
+    await loadAlltimeFromServer();
   } catch (e) {
     console.error("랭킹 저장 실패:", e);
     alert("랭킹 저장에 실패했습니다. 잠시 후 다시 시도해주세요.");
@@ -323,7 +376,7 @@ const arena = Array.from({length: 20}, () => new Array(12).fill(0));
 const itemMap = Array.from({length: 20}, () => new Array(12).fill(null));
 const player = { pos: {x: 0, y: 0}, matrix: null, itemType: null, itemX: -1, itemY: -1, type: '' };
 let nextPieceObj = null; let score = 0; let combo = 0; let lastTime = 0; let dropCounter = 0; let gameActive = false; let isPaused = false; let hitStopUntil = 0;
-let isLevelUpPaused = false; let currentLevel = 1; let dropInterval = 1000; let baseInterval = 1000; let prevLevelInterval = 1000;
+let isLevelUpPaused = false; let currentLevel = 1; let dropInterval = 1400; let baseInterval = 1400; let prevLevelInterval = 1400;
 let slowTimeLeft = 0; let slowCountdownInterval = null; let ghostTimeLeft = 0; let ghostCountdownInterval = null; let particles = [];
 const colors = [null, '#FF0D72', '#0DC2FF', '#0DFF72', '#F538FF', '#FF8E0D', '#FFE135', '#3877FF'];
 
@@ -386,7 +439,7 @@ function draw() {
     context.fillStyle = 'rgba(0, 0, 0, 0.85)'; context.fillRect(0, 0, 240, 400);
     context.fillStyle = '#ffb703'; context.font = '22px Arial'; context.textAlign = 'center'; context.fillText("과제 통과!", 120, 160);
     context.fillStyle = '#fff'; context.font = '14px Arial';
-    let nextKmh = Math.round(30000 / (baseInterval * 0.7));
+    let nextKmh = Math.round(30000 / (baseInterval * 0.88));
     context.fillText("NEXT LEVEL: " + (currentLevel + 1), 120, 200); context.fillText("SPEED: " + nextKmh + " KM/H", 120, 220);
     context.fillStyle = '#00ffcc'; context.font = '12px Arial'; context.fillText("화면을 터치하여 재개", 120, 270);
   }
@@ -476,7 +529,7 @@ function arenaSweep() {
     hitStopUntil = performance.now() + 150;
     let nextLvl = Math.floor(score / 200) + 1;
     if (nextLvl !== currentLevel) {
-      prevLevelInterval = baseInterval; currentLevel = nextLvl; baseInterval = Math.max(50, baseInterval * 0.7); applySpeedEffects();
+      prevLevelInterval = baseInterval; currentLevel = nextLvl; baseInterval = Math.max(160, baseInterval * 0.88); applySpeedEffects();
       document.getElementById('level-label').innerHTML = `LEVEL (단계) : ${currentLevel}`;
       updateCanvasAlpha(); isLevelUpPaused = true; draw();
     }
@@ -573,13 +626,13 @@ function update(time = performance.now()) {
   draw(); animationId = requestAnimationFrame(update);
 }
 function resumeNextLevel() {
-  isLevelUpPaused = false; prevLevelInterval = baseInterval; currentLevel++; baseInterval = Math.max(50, baseInterval * 0.7); applySpeedEffects();
+  isLevelUpPaused = false; prevLevelInterval = baseInterval; currentLevel++; baseInterval = Math.max(160, baseInterval * 0.88); applySpeedEffects();
   document.getElementById('level-label').innerHTML = `LEVEL (단계) : ${currentLevel}`;
   lastTime = performance.now(); dropCounter = 0; canvas.focus(); animationId = requestAnimationFrame(update);
 }
 function pressStart() {
   if (animationId !== null) cancelAnimationFrame(animationId);
-  baseInterval = 1000; if (slowCountdownInterval) clearInterval(slowCountdownInterval); slowTimeLeft = 0; if (ghostCountdownInterval) clearInterval(ghostCountdownInterval); ghostTimeLeft = 0;
+  baseInterval = 1400; if (slowCountdownInterval) clearInterval(slowCountdownInterval); slowTimeLeft = 0; if (ghostCountdownInterval) clearInterval(ghostCountdownInterval); ghostTimeLeft = 0;
   isPaused = false; isLevelUpPaused = false; context.filter = 'none';
   document.getElementById('start-btn').disabled = true; document.querySelectorAll('input').forEach(r => r.disabled = true);
   score = 0; combo = 0; currentLevel = 1; dropInterval = baseInterval; prevLevelInterval = baseInterval;
@@ -616,6 +669,41 @@ drawLevelBackground(context, 1); drawGrid(context); nextContext.fillStyle = '#11
 
 // ★ 페이지 로드 시 서버 랭킹 즉시 불러오기
 loadRankingFromServer();
+loadAlltimeFromServer();
+</script>
+
+<!-- Google Analytics(GA4) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-CTNNSY6150"></script>
+<script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-CTNNSY6150');
+</script>
+
+<!-- 카카오 공유 SDK -->
+<script src="https://developers.kakao.com/sdk/js/kakao.min.js"></script>
+<script>
+    try { Kakao.init('1747ba005771471984d6560a563cb948'); } catch (e) { console.log('카카오 SDK 초기화 대기 중'); }
+
+    function shareKakao() {
+        if (!Kakao.isInitialized || !Kakao.isInitialized()) {
+            alert('카카오 공유 기능을 준비 중입니다. 잠시 후 다시 시도해주세요.');
+            return;
+        }
+        Kakao.Share.sendDefault({
+            objectType: 'feed',
+            content: {
+                title: '한글 테트리스 - 세종의 과제 | 스웦(SPACEWARP)',
+                description: '세종이 내리는 과제를 줄 맞춰 없애보자! 실시간 랭킹으로 친구와 점수 경쟁.',
+                imageUrl: 'https://spacewarp.co.kr/og-image.png',
+                link: { mobileWebUrl: 'https://spacewarp.co.kr/tetris.html', webUrl: 'https://spacewarp.co.kr/tetris.html' },
+            },
+            buttons: [
+                { title: '한판 하러가기', link: { mobileWebUrl: 'https://spacewarp.co.kr/tetris.html', webUrl: 'https://spacewarp.co.kr/tetris.html' } },
+            ],
+        });
+    }
 </script>
 </body>
 </html>

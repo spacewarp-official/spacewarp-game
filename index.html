@@ -22,15 +22,19 @@
     <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
     <link rel="icon" type="image/png" sizes="192x192" href="favicon-192.png">
     <link rel="apple-touch-icon" href="apple-touch-icon.png">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#0f0c29">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="스웦">
 
-    <!-- ★★★ Google Analytics(GA4) - 아래 G-XXXXXXXXXX를 본인 측정 ID로 교체하세요 ★★★ -->
-    <!-- 측정 ID 발급: analytics.google.com → 관리 → 데이터 스트림 -->
+    <!-- Google Analytics(GA4) - 측정 ID: G-CTNNSY6150 -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-CTNNSY6150"></script>
     <script>
         window.dataLayer = window.dataLayer || [];
         function gtag(){dataLayer.push(arguments);}
         gtag('js', new Date());
-        gtag('config', 'G-XXXXXXXXXX');
+        gtag('config', 'G-CTNNSY6150');
     </script>
 
     <style>
@@ -150,6 +154,13 @@
         }
         .kakao-btn:hover { background: rgba(254, 229, 0, 0.3); }
 
+        .install-btn {
+            background: rgba(0, 240, 255, 0.12); border: 1px solid #00f0ff; color: #00f0ff;
+            padding: 8px 16px; border-radius: 20px; font-weight: bold; cursor: pointer;
+            backdrop-filter: blur(5px); transition: all 0.3s ease; margin-right: 8px;
+        }
+        .install-btn:hover { background: rgba(0, 240, 255, 0.25); }
+
         .footer-links { margin-top: 10px; }
         .footer-links a { color: #666; text-decoration: none; font-size: 12px; margin: 0 8px; }
         .footer-links a:hover { color: #00f0ff; }
@@ -173,8 +184,23 @@
 </head>
 <body>
 
+<div id="kakao-browser-notice" style="display:none; position:fixed; top:0; left:0; width:100%; z-index:5000; background:#3c1e1e; color:#fff; font-size:12px; padding:10px 40px 10px 14px; text-align:center; box-sizing:border-box; line-height:1.5;">
+    ⚠️ 카카오톡 안에서는 일부 화면이 다르게 보일 수 있어요. 우측 하단 <b>'•••'</b> 또는 공유 아이콘에서 <b>'다른 브라우저로 열기'</b>를 눌러주세요.
+    <span onclick="document.getElementById('kakao-browser-notice').style.display='none'" style="position:absolute; right:12px; top:8px; cursor:pointer; font-size:16px;">✕</span>
+</div>
+<script>
+    if (/KAKAOTALK/i.test(navigator.userAgent || '')) {
+        location.href = 'kakaotalk://web/openExternal?url=' + encodeURIComponent(location.href);
+        setTimeout(function () {
+            document.getElementById('kakao-browser-notice').style.display = 'block';
+            document.body.style.paddingTop = '44px';
+        }, 800);
+    }
+</script>
+
     <div class="top-nav">
         <button class="kakao-btn" onclick="shareKakao()">💬 카톡 공유</button>
+        <button class="install-btn" id="installBtn" onclick="handleInstallClick()" style="display:none;">📲 홈화면 추가</button>
         <button class="lang-btn" id="langToggleBtn" onclick="toggleLanguage()">🌐 EN</button>
     </div>
 
@@ -188,10 +214,25 @@
         <div class="search-icon">🛰️</div>
     </div>
 
+    <div id="continueContainer" style="display:none; width:100%; max-width:1000px; margin-bottom:16px;"></div>
+
+    <div id="iosInstallModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.75); z-index:6000; align-items:center; justify-content:center; padding:20px;">
+        <div style="background:#1a1730; border:1px solid rgba(0,240,255,0.4); border-radius:18px; padding:26px 22px; max-width:320px; text-align:center;">
+            <div style="font-size:32px; margin-bottom:10px;">📲</div>
+            <div style="font-weight:bold; color:#fff; font-size:16px; margin-bottom:14px;">홈 화면에 스웦 추가하기</div>
+            <div style="color:#c3cbdb; font-size:13.5px; line-height:1.8; text-align:left;">
+                1. 하단 <b style="color:#00f0ff;">공유 아이콘( ⬆️ )</b>을 눌러주세요<br>
+                2. 메뉴에서 <b style="color:#00f0ff;">'홈 화면에 추가'</b>를 선택하세요<br>
+                3. 완료! 이제 앱처럼 바로 실행돼요
+            </div>
+            <button onclick="document.getElementById('iosInstallModal').style.display='none'" style="margin-top:18px; background:#00f0ff; color:#0f0c29; border:none; padding:9px 22px; border-radius:20px; font-weight:bold; cursor:pointer;">확인</button>
+        </div>
+    </div>
+
     <div class="banner-container" id="bannerContainer"></div>
 
     <div class="game-grid" id="gameGrid">
-        <a href="tetris.html" class="game-card">
+        <a href="tetris.html" class="game-card" onclick="setLastPlayed('tetris.html','한글 테트리스','🧩')">
             <div class="planet-container"><div class="planet-ring"></div><div class="planet planet-tetris">🧩</div></div>
             <div class="card-content">
                 <span class="badge badge-active lang-text" data-ko="WARP READY" data-en="WARP READY">WARP READY</span>
@@ -203,7 +244,7 @@
             </div>
         </a>
 
-        <a href="running.html" class="game-card">
+        <a href="running.html" class="game-card" onclick="setLastPlayed('running.html','칼퇴의 민족','🏃‍♂️')">
             <div class="planet-container"><div class="planet-ring"></div><div class="planet planet-run">🏃‍♂️</div></div>
             <div class="card-content">
                 <span class="badge badge-active lang-text" data-ko="WARP READY" data-en="WARP READY">WARP READY</span>
@@ -215,12 +256,12 @@
             </div>
         </a>
         
-        <a href="jumong_arrow.html" class="game-card">
+        <a href="ggomul_adventure.html" class="game-card" onclick="setLastPlayed('ggomul_adventure.html','꼬물이의 대탐험','🐛')">
             <div class="planet-container"><div class="planet-ring"></div><div class="planet planet-jumong">🐛</div></div>
             <div class="card-content">
                 <span class="badge badge-active lang-text" data-ko="WARP READY" data-en="WARP READY">WARP READY</span>
-                <div class="card-title lang-text" data-ko="꼬물이의 탈출" data-en="Planet: Goguryeo (Jumong's Arrow)">꼬물이의 대탈출</div>
-                <div class="card-desc lang-text" data-ko="지렁이를 순서대로 보내 땅을 비우자. 누가누가 가장빨리 보낼까." data-en="Fire arrows in the right order to clear the board. A logic puzzle.">지렁이를 순서대로 보내 땅을 비우자. 누가누가 가장빨리 보낼까</div>
+                <div class="card-title lang-text" data-ko="꼬물이의 대탐험" data-en="Planet: Kkomul's Adventure">꼬물이의 대탐험</div>
+                <div class="card-desc lang-text" data-ko="지렁이를 순서대로 보내 땅을 비우자. 누가누가 가장빨리 보낼까." data-en="Send the worms out in the right order to clear the board. A logic puzzle.">지렁이를 순서대로 보내 땅을 비우자. 누가누가 가장빨리 보낼까</div>
                 <div class="tag-row">
                     <span class="tag-pill">#퍼즐</span><span class="tag-pill">#논리</span><span class="tag-pill">#귀여움</span><span class="tag-pill">#타임어택</span>
                 </div>
@@ -255,9 +296,7 @@
         <a href="privacy.html" class="lang-text" data-ko="개인정보처리방침" data-en="Privacy Policy">개인정보처리방침</a>
     </div>
 
-    <!-- ★★★ 카카오 공유 SDK - 아래 YOUR_KAKAO_JS_KEY를 developers.kakao.com에서 발급받은 JavaScript 키로 교체하세요 ★★★ -->
-    <!-- 발급 방법: 1) developers.kakao.com 가입(무료) 2) 애플리케이션 추가 3) 앱 키 > JavaScript 키 복사
-         4) 플랫폼 설정 > Web에 https://spacewarp.co.kr 도메인 등록 필수 -->
+    <!-- 카카오 공유 SDK - JS 키 등록 완료 (developers.kakao.com에서 발급) -->
     <script src="https://developers.kakao.com/sdk/js/kakao.min.js"></script>
     <script>
         try {
@@ -268,7 +307,7 @@
 
         function shareKakao() {
             if (!Kakao.isInitialized || !Kakao.isInitialized()) {
-                alert('1747ba005771471984d6560a563cb948');
+                alert('카카오 공유 기능을 준비 중입니다. 잠시 후 다시 시도해주세요.');
                 return;
             }
             Kakao.Share.sendDefault({
@@ -304,7 +343,7 @@
         // ★★★★★ 배너/공지 슬라이드 - 여기 배열만 수정하면 배너 내용이 바뀝니다 ★★★★★
         // tag: 작은 태그 문구 / title: 큰 제목 / desc: 설명 / link: 클릭시 이동할 주소 (없으면 "#")
         const BANNER_SLIDES = [
-            { tag: "NEW", title: "새 행성 발견! 꼬물이의 대탈출", desc: "지렁이 퍼즐로 최단시간 랭킹에 도전하세요", link: "jumong_arrow.html" },
+            { tag: "NEW", title: "새 행성 발견! 꼬물이의 대탐험", desc: "지렁이 퍼즐로 최단시간 랭킹에 도전하세요", link: "ggomul_adventure.html" },
             { tag: "NOTICE", title: "게임 아이디어를 보내주세요", desc: "여러분의 제안이 다음 행성이 됩니다", link: "#submitCard" },
             // 광고를 넣고 싶으면 아래처럼 한 줄 추가하면 됩니다:
             // { tag: "AD", title: "광고 제목", desc: "광고 설명", link: "https://광고링크.com" },
@@ -326,6 +365,66 @@
         function goToBanner(i) { bannerIndex = i; renderBanner(); }
         function nextBanner() { bannerIndex = (bannerIndex + 1) % BANNER_SLIDES.length; renderBanner(); }
         renderBanner();
+
+        // ★ 이어하기(최근 플레이 1개) 기능
+        function setLastPlayed(url, title, emoji) {
+            try { localStorage.setItem('spacewarp_last_played', JSON.stringify({ url, title, emoji, ts: Date.now() })); } catch(e) {}
+        }
+        function renderContinueCard() {
+            const box = document.getElementById('continueContainer');
+            try {
+                const raw = localStorage.getItem('spacewarp_last_played');
+                if (!raw) return;
+                const last = JSON.parse(raw);
+                box.style.display = 'block';
+                box.innerHTML = `
+                    <a href="${last.url}" style="display:flex; align-items:center; gap:14px; background:rgba(255,255,255,0.05); border:1px solid rgba(0,240,255,0.35); border-radius:16px; padding:14px 20px; text-decoration:none; color:#e0e6ed;">
+                        <span style="font-size:28px;">${last.emoji}</span>
+                        <span style="flex:1;">
+                            <span style="display:block; font-size:11px; color:#7fe9ff; font-weight:bold; letter-spacing:1px;">▶ 이어하기</span>
+                            <span style="display:block; font-size:16px; font-weight:bold;">${last.title}</span>
+                        </span>
+                        <span style="color:#00f0ff; font-size:13px;">바로가기 →</span>
+                    </a>`;
+            } catch(e) {}
+        }
+        renderContinueCard();
+
+        // ★ 홈 화면에 추가(PWA 설치) 로직
+        let deferredInstallPrompt = null;
+        const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent) && !window.MSStream;
+        const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+
+        if (!isStandalone) {
+            if (isIOS) {
+                // iOS는 beforeinstallprompt를 지원하지 않으므로 버튼을 바로 노출
+                document.getElementById('installBtn').style.display = 'inline-block';
+            }
+            window.addEventListener('beforeinstallprompt', (e) => {
+                e.preventDefault();
+                deferredInstallPrompt = e;
+                document.getElementById('installBtn').style.display = 'inline-block';
+            });
+        }
+
+        function handleInstallClick() {
+            if (deferredInstallPrompt) {
+                deferredInstallPrompt.prompt();
+                deferredInstallPrompt.userChoice.finally(() => {
+                    deferredInstallPrompt = null;
+                    document.getElementById('installBtn').style.display = 'none';
+                });
+            } else if (isIOS) {
+                document.getElementById('iosInstallModal').style.display = 'flex';
+            } else {
+                alert('이 브라우저에서는 홈 화면 추가가 지원되지 않을 수 있어요. 브라우저 메뉴에서 "홈 화면에 추가"를 찾아보세요.');
+            }
+        }
+
+        // 서비스워커 등록 (설치 요건 충족용, 오프라인 캐싱은 하지 않음)
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('sw.js').catch(() => {});
+        }
         setInterval(nextBanner, 5000);
 
         // 1. 다국어 로컬라이제이션 엔진

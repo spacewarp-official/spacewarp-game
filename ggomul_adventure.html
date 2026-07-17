@@ -109,8 +109,11 @@ h1 { margin: 0 0 4px 0; font-size: 28px; letter-spacing: 1px; color: #d97a8e; fo
 </div>
 <script>
     if (/KAKAOTALK/i.test(navigator.userAgent || '')) {
-        document.getElementById('kakao-browser-notice').style.display = 'block';
-        document.body.style.paddingTop = '44px';
+        location.href = 'kakaotalk://web/openExternal?url=' + encodeURIComponent(location.href);
+        setTimeout(function () {
+            document.getElementById('kakao-browser-notice').style.display = 'block';
+            document.body.style.paddingTop = '44px';
+        }, 800);
     }
 </script>
 

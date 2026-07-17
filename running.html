@@ -117,8 +117,11 @@
 </div>
 <script>
     if (/KAKAOTALK/i.test(navigator.userAgent || '')) {
-        document.getElementById('kakao-browser-notice').style.display = 'block';
-        document.body.style.paddingTop = '44px';
+        location.href = 'kakaotalk://web/openExternal?url=' + encodeURIComponent(location.href);
+        setTimeout(function () {
+            document.getElementById('kakao-browser-notice').style.display = 'block';
+            document.body.style.paddingTop = '44px';
+        }, 800);
     }
 </script>
 

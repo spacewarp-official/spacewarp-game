@@ -15,7 +15,7 @@ body {
   background: linear-gradient(180deg, #f3f0ea 0%, #eceee9 50%, #e8ecec 100%) !important;
   color: #4a4640; font-family: 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
   display: flex; flex-direction: column; align-items: center; justify-content: center;
-  min-height: 100vh; margin: 0; overflow: hidden; touch-action: manipulation;
+  min-height: 100vh; min-height: 100svh; max-height: 100svh; margin: 0; overflow: hidden; touch-action: manipulation;
   -webkit-user-select: none; user-select: none;
   -webkit-touch-callout: none;
   -webkit-tap-highlight-color: transparent;
@@ -67,26 +67,23 @@ h1 { margin: 0 0 4px 0; font-size: 28px; letter-spacing: 1px; color: #d97a8e; fo
 .overlay p { color: #9a9488; font-size: 12px; margin: 0; }
 .dev-footer { margin-top: 18px; color: #cbb; font-size: 10px; letter-spacing: 1px; }
 
-/* 홈 버튼 */
-.home-btn {
-  position: fixed; top: 10px; left: 10px; z-index: 999; background: rgba(255,255,255,0.85); color: #7a6a55;
-  border: 1px solid #e2ddd0; border-radius: 20px; padding: 7px 14px; font-size: 12px; font-weight: bold;
-  text-decoration: none; cursor: pointer;
+/* 햄버거 메뉴 */
+.menu-wrap { position: fixed; top: 10px; right: 10px; z-index: 1000; }
+.hamburger-btn {
+  background: rgba(255,255,255,0.85); color: #7a6a55; border: 1px solid #e2ddd0; border-radius: 20px;
+  width: 40px; height: 36px; font-size: 18px; cursor: pointer;
 }
-.top-right-group { position: fixed; top: 10px; right: 10px; z-index: 999; display: flex; gap: 6px; align-items: center; }
-.info-btn {
-  background: rgba(255,255,255,0.85); color: #7a6a55;
-  border: 1px solid #e2ddd0; border-radius: 50%; width: 30px; height: 30px; font-size: 14px; font-weight: bold;
-  cursor: pointer; display: flex; align-items: center; justify-content: center;
+.dropdown-menu {
+  display: none; position: absolute; top: 44px; right: 0; background: #fdfcfa; border: 1px solid #e2ddd0;
+  border-radius: 12px; overflow: hidden; min-width: 175px; box-shadow: 0 8px 24px rgba(0,0,0,0.15);
 }
-.kakao-share-btn {
-  color: #3a2e2a; border: 1px solid #FEE500; background-color: rgba(254,229,0,0.85); border-radius: 20px; padding: 7px 14px;
-  font-size: 12px; font-weight: bold; cursor: pointer;
+.dropdown-menu.show { display: block; }
+.dropdown-menu a, .dropdown-menu button {
+  display: flex; align-items: center; gap: 8px; width: 100%; padding: 12px 16px; background: none; border: none;
+  color: #5a5248; font-size: 14px; text-align: left; text-decoration: none; cursor: pointer; box-sizing: border-box;
 }
-.bug-report-btn {
-  color: #7a3a3a; text-decoration: none; border: 1px solid #ffb3bd; background-color: rgba(255,179,189,0.55);
-  border-radius: 20px; padding: 7px 12px; font-size: 12px; font-weight: bold; display: inline-flex; align-items: center;
-}
+.dropdown-menu a:hover, .dropdown-menu button:hover { background: rgba(0,0,0,0.05); }
+.dropdown-menu .divider { height: 1px; background: #eee2d8; margin: 4px 0; }
 .info-modal-overlay {
   display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5);
   z-index: 2000; align-items: center; justify-content: center;
@@ -125,11 +122,16 @@ h1 { margin: 0 0 4px 0; font-size: 28px; letter-spacing: 1px; color: #d97a8e; fo
     }
 </script>
 
-<a href="index.html" class="home-btn">🏠 홈으로</a>
-<div class="top-right-group">
-    <button class="info-btn" onclick="toggleInfoModal(true)">i</button>
-    <button class="kakao-share-btn" onclick="shareKakao()">💬 공유</button>
-    <a class="bug-report-btn" href="https://forms.gle/YOUR_BUG_REPORT_FORM_ID" target="_blank" rel="noopener">🐞 제보</a>
+<div class="menu-wrap">
+    <button class="hamburger-btn" onclick="toggleMenu()">☰</button>
+    <div class="dropdown-menu" id="dropdownMenu">
+        <a href="index.html">🏠 홈으로</a>
+        <button onclick="toggleInfoModal(true); closeMenuIfOpen();">📖 게임 규칙</button>
+        <button onclick="shareKakao()">💬 카톡 공유</button>
+        <a href="https://forms.gle/N6wUYUUzjqY2yRGDA" target="_blank" rel="noopener">🐛 버그 리포트</a>
+        <div class="divider"></div>
+        <a href="privacy.html">📄 개인정보처리방침</a>
+    </div>
 </div>
 
 <div class="info-modal-overlay" id="infoModalOverlay">
@@ -449,7 +451,20 @@ loadAlltime();
 <script>
     try { Kakao.init('1747ba005771471984d6560a563cb948'); } catch (e) { console.log('카카오 SDK 초기화 대기 중'); }
 
+    function toggleMenu() {
+        document.getElementById('dropdownMenu').classList.toggle('show');
+    }
+    function closeMenuIfOpen() {
+        const m = document.getElementById('dropdownMenu');
+        if (m) m.classList.remove('show');
+    }
+    document.addEventListener('click', function (e) {
+        const wrap = document.querySelector('.menu-wrap');
+        if (wrap && !wrap.contains(e.target)) closeMenuIfOpen();
+    });
+
     function shareKakao() {
+        closeMenuIfOpen();
         if (!Kakao.isInitialized || !Kakao.isInitialized()) {
             alert('카카오 공유 기능을 준비 중입니다. 잠시 후 다시 시도해주세요.');
             return;

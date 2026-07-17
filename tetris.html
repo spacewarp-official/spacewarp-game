@@ -81,7 +81,11 @@ canvas#tetris { background-color: rgba(0, 0, 0, 0.95); transition: background-co
 .dev-footer { width: 100%; text-align: center; color: #555; font-size: 11px; font-weight: bold; margin-top: 25px; letter-spacing: 1px; text-transform: uppercase; }
 
 @media (max-width: 768px) {
-  body { padding: 4px; overflow: hidden; justify-content: flex-start; }
+  html { height: 100%; }
+  body {
+    padding: 4px; overflow: hidden; justify-content: flex-start;
+    height: 100vh; height: 100svh; max-height: 100svh;
+  }
   .header-group { margin-bottom: 4px; }
   .sejong-speech { font-size: 11px; padding: 4px 10px; margin-bottom: 3px; }
   h1 { font-size: 17px; margin-bottom: 1px; }
@@ -114,10 +118,10 @@ canvas#tetris { background-color: rgba(0, 0, 0, 0.95); transition: background-co
   #start-btn { padding: 8px 2px; font-size: 11px; }
   #mobile-gameboy-controls {
     display: flex !important; width: 100%; justify-content: space-around; align-items: center;
-    padding: 12px 10px; box-sizing: border-box;
-    margin-top: 5px;
-    margin-bottom: 60px;
-    padding-bottom: calc(20px + env(safe-area-inset-bottom));
+    padding: 10px 10px; box-sizing: border-box;
+    margin-top: 4px;
+    margin-bottom: 0;
+    padding-bottom: calc(10px + env(safe-area-inset-bottom));
     background: #d8d8d8; border-radius: 10px 10px 35px 10px; border: 2px solid #888;
     box-shadow: inset -4px -4px 12px rgba(0,0,0,0.2), 0 4px 12px rgba(0,0,0,0.5);
   }
@@ -136,28 +140,23 @@ canvas#tetris { background-color: rgba(0, 0, 0, 0.95); transition: background-co
   .dev-footer { margin-top: 2px; font-size: 9px; letter-spacing: 0.5px; }
 }
 
-/* 홈으로 버튼 */
-.home-btn {
-  position: fixed; top: 10px; left: 10px; z-index: 999; background: rgba(0,0,0,0.6); color: #00ffcc;
-  border: 1px solid #00ffcc; border-radius: 20px; padding: 7px 14px; font-size: 12px; font-weight: bold;
-  text-decoration: none; cursor: pointer; backdrop-filter: blur(4px);
+/* 햄버거 메뉴 */
+.menu-wrap { position: fixed; top: 10px; right: 10px; z-index: 1000; }
+.hamburger-btn {
+  background: rgba(0,0,0,0.6); color: #00ffcc; border: 1px solid #00ffcc; border-radius: 20px;
+  width: 40px; height: 36px; font-size: 18px; cursor: pointer; backdrop-filter: blur(4px);
 }
-.home-btn:hover { background: rgba(0,255,204,0.15); }
-
-/* 우측 상단 버튼 그룹(공유/버그제보) */
-.top-right-group { position: fixed; top: 10px; right: 10px; z-index: 999; display: flex; gap: 6px; }
-.kakao-share-btn {
-  background: rgba(0,0,0,0.6); color: #FEE500;
-  border: 1px solid #FEE500; border-radius: 20px; padding: 7px 14px; font-size: 12px; font-weight: bold;
-  cursor: pointer; backdrop-filter: blur(4px);
+.dropdown-menu {
+  display: none; position: absolute; top: 44px; right: 0; background: #161616; border: 1px solid #333;
+  border-radius: 12px; overflow: hidden; min-width: 170px; box-shadow: 0 8px 24px rgba(0,0,0,0.6);
 }
-.kakao-share-btn:hover { background: rgba(254,229,0,0.15); }
-.bug-report-btn {
-  background: rgba(0,0,0,0.6); color: #ff6b81; text-decoration: none;
-  border: 1px solid #ff6b81; border-radius: 20px; padding: 7px 12px; font-size: 12px; font-weight: bold;
-  cursor: pointer; backdrop-filter: blur(4px); display: inline-flex; align-items: center;
+.dropdown-menu.show { display: block; }
+.dropdown-menu a, .dropdown-menu button {
+  display: flex; align-items: center; gap: 8px; width: 100%; padding: 12px 16px; background: none; border: none;
+  color: #eee; font-size: 14px; text-align: left; text-decoration: none; cursor: pointer; box-sizing: border-box;
 }
-.bug-report-btn:hover { background: rgba(255,107,129,0.15); }
+.dropdown-menu a:hover, .dropdown-menu button:hover { background: rgba(255,255,255,0.08); }
+.dropdown-menu .divider { height: 1px; background: #333; margin: 4px 0; }
 
 /* ★ 서버 랭킹 로딩 표시 */
 .ranking-loading { text-align:center; color:#888; font-size: 11px; }
@@ -181,10 +180,15 @@ canvas#tetris { background-color: rgba(0, 0, 0, 0.95); transition: background-co
     }
 </script>
 
-<a href="index.html" class="home-btn">🏠 홈으로</a>
-<div class="top-right-group">
-    <button class="kakao-share-btn" onclick="shareKakao()">💬 공유</button>
-    <a class="bug-report-btn" href="https://forms.gle/YOUR_BUG_REPORT_FORM_ID" target="_blank" rel="noopener">🐞 제보</a>
+<div class="menu-wrap">
+    <button class="hamburger-btn" onclick="toggleMenu()">☰</button>
+    <div class="dropdown-menu" id="dropdownMenu">
+        <a href="index.html">🏠 홈으로</a>
+        <button onclick="shareKakao()">💬 카톡 공유</button>
+        <a href="https://forms.gle/N6wUYUUzjqY2yRGDA" target="_blank" rel="noopener">🐛 버그 리포트</a>
+        <div class="divider"></div>
+        <a href="privacy.html">📄 개인정보처리방침</a>
+    </div>
 </div>
 
 <div class="header-group">
@@ -701,7 +705,20 @@ loadAlltimeFromServer();
 <script>
     try { Kakao.init('1747ba005771471984d6560a563cb948'); } catch (e) { console.log('카카오 SDK 초기화 대기 중'); }
 
+    function toggleMenu() {
+        document.getElementById('dropdownMenu').classList.toggle('show');
+    }
+    function closeMenuIfOpen() {
+        const m = document.getElementById('dropdownMenu');
+        if (m) m.classList.remove('show');
+    }
+    document.addEventListener('click', function (e) {
+        const wrap = document.querySelector('.menu-wrap');
+        if (wrap && !wrap.contains(e.target)) closeMenuIfOpen();
+    });
+
     function shareKakao() {
+        closeMenuIfOpen();
         if (!Kakao.isInitialized || !Kakao.isInitialized()) {
             alert('카카오 공유 기능을 준비 중입니다. 잠시 후 다시 시도해주세요.');
             return;

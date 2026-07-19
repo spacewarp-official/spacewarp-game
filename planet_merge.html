@@ -1,0 +1,803 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>행성 합체 | 스웦(SPACEWARP)</title>
+<meta name="description" content="우주먼지부터 은하까지! 같은 천체를 합쳐 우주를 진화시키는 무료 브라우저 퍼즐 게임.">
+<link rel="canonical" href="https://spacewarp.co.kr/planet_merge.html">
+<meta property="og:title" content="행성 합체 - 스웦 SPACEWARP">
+<meta property="og:description" content="우주먼지부터 은하까지, 같은 천체를 합쳐 우주를 진화시키세요!">
+<meta property="og:image" content="https://spacewarp.co.kr/og-image.png">
+<meta name="robots" content="index, follow">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
+<link rel="icon" type="image/png" sizes="192x192" href="favicon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link href="https://fonts.googleapis.com/css2?family=Jua&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; }
+  html { background:#05030f; height:100%; overscroll-behavior:none; }
+  body {
+    margin: 0; padding: 0;
+    background: radial-gradient(ellipse at top, #1b1042 0%, #0a0620 60%, #05030f 100%);
+    display: flex; justify-content: center; align-items: center;
+    min-height: 100vh; overflow: hidden; font-family: 'Jua', sans-serif;
+    touch-action: none; user-select: none;
+    -webkit-user-select: none; -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent;
+  }
+
+  /* 햄버거 메뉴 (사이트 공통 패턴) */
+  .menu-wrap { position: fixed; top: 10px; right: 10px; z-index: 1000; }
+  .hamburger-btn {
+    background: rgba(0,0,0,0.55); color: #fff; border: 1px solid rgba(255,255,255,0.6); border-radius: 20px;
+    width: 40px; height: 36px; font-size: 18px; cursor: pointer; backdrop-filter: blur(4px);
+  }
+  .dropdown-menu {
+    display: none; position: absolute; top: 44px; right: 0; background: #161626; border: 1px solid #333;
+    border-radius: 12px; overflow: hidden; min-width: 175px; box-shadow: 0 8px 24px rgba(0,0,0,0.6);
+  }
+  .dropdown-menu.show { display: block; }
+  .dropdown-menu a, .dropdown-menu button {
+    display: flex; align-items: center; gap: 8px; width: 100%; padding: 12px 16px; background: none; border: none;
+    color: #eee; font-size: 14px; text-align: left; text-decoration: none; cursor: pointer; box-sizing: border-box;
+    font-family: 'Jua', sans-serif;
+  }
+  .dropdown-menu a:hover, .dropdown-menu button:hover { background: rgba(255,255,255,0.08); }
+  .dropdown-menu .divider { height: 1px; background: #333; margin: 4px 0; }
+
+  #kakao-browser-notice {
+    display:none; position:fixed; top:0; left:0; width:100%; z-index:5000; background:#3c1e1e; color:#fff;
+    font-size:12px; padding:10px 40px 10px 14px; text-align:center; box-sizing:border-box; line-height:1.5;
+    font-family: sans-serif;
+  }
+
+  #game-wrapper {
+    position: relative;
+    display: flex; flex-direction: column;
+    width: min(400px, 92vw);
+    background-color: rgba(20, 14, 48, 0.75);
+    border: 8px solid rgba(255, 255, 255, 0.15);
+    border-radius: 20px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5), 0 0 40px rgba(120, 100, 255, 0.15);
+    overflow: hidden;
+  }
+
+  #header-bar {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 6px; padding: 8px 10px;
+    border-bottom: 2px dashed rgba(180, 170, 255, 0.25);
+    background: rgba(255,255,255,0.04);
+  }
+  .header-bubble {
+    background: rgba(255, 255, 255, 0.10); backdrop-filter: blur(6px);
+    border: 2px solid rgba(180, 170, 255, 0.35); border-radius: 14px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    padding: 3px 10px; color: #e8e4ff; box-shadow: 0 3px 8px rgba(0,0,0,0.25);
+    min-width: 52px;
+  }
+  .header-title { font-size: clamp(9px,3vw,12px); line-height:1.3; color: #b7aaff; }
+  #score-val { font-size: clamp(14px,4.5vw,19px); font-weight: bold; line-height:1.2; color: #fff; }
+  #next-val { display: flex; align-items: center; justify-content: center; min-height: 34px; }
+  #time-val { font-size: clamp(13px,4vw,17px); font-weight: bold; line-height:1.2; color: #fff; }
+  .best-score-line { font-size: 9px; color: #9d8fd6; margin-top: 1px; }
+
+  .action-btn {
+    width: clamp(30px,9vw,38px); aspect-ratio: 1; border-radius: 50%;
+    background: rgba(255,255,255,0.08); color: #ffd76a; font-size: clamp(12px,4vw,17px); font-weight: bold;
+    border: 2px solid #6a5acd; display: flex; justify-content: center; align-items: center;
+    cursor: pointer; box-shadow: 0 3px 6px rgba(0,0,0,0.25); flex-shrink: 0;
+  }
+
+  /* [핵심 구조] canvas 렌더링을 배제하고 물리는 Matter.js(비가시), 시각은 전부 DOM으로 동기화 */
+  #canvas-container {
+    position: relative; width: 100%; aspect-ratio: 400 / 600; overflow: hidden;
+    background:
+      radial-gradient(1px 1px at 10% 15%, #fff, transparent),
+      radial-gradient(1px 1px at 25% 45%, #fff, transparent),
+      radial-gradient(1.5px 1.5px at 40% 20%, #fff, transparent),
+      radial-gradient(1px 1px at 60% 65%, #fff, transparent),
+      radial-gradient(1px 1px at 75% 30%, #fff, transparent),
+      radial-gradient(1.5px 1.5px at 85% 55%, #fff, transparent),
+      radial-gradient(1px 1px at 15% 75%, #fff, transparent),
+      radial-gradient(1px 1px at 92% 80%, #fff, transparent),
+      radial-gradient(1.5px 1.5px at 50% 90%, #fff, transparent),
+      linear-gradient(180deg, #140c33, #08051b);
+    background-repeat: no-repeat;
+  }
+
+  #deadline-line {
+    position: absolute; left: 0; width: 100%; border-top: 2px dashed rgba(255, 107, 107, 0.65);
+    z-index: 2;
+  }
+
+  /* 물리 오브젝트(떨어지는/쌓인 행성) 래퍼 — transform으로만 위치/회전을 움직인다 */
+  .animal-sprite { position: absolute; top: 0; left: 0; pointer-events: none; z-index: 1; }
+
+  /* [캐릭터성 부여] 행성 하나 = 몸체(그라디언트 구체) + 얼굴(눈/입). 눈·입 모양과 색은
+     levels[] 데이터에서 단계별로 다르게 지정해 "성격"을 표현한다. */
+  .planet { position: relative; width: 100%; height: 100%; }
+  .p-body { position: absolute; inset: 0; z-index: 1; }
+  .p-ring {
+    position: absolute; top: 50%; left: 50%; width: 172%; height: 34%;
+    background: rgba(235, 220, 185, 0.9); border-radius: 50%;
+    box-shadow: 0 0 4px rgba(0,0,0,0.15);
+    transform: translate(-50%, -50%) rotate(-16deg);
+    z-index: 0;
+  }
+  .p-face { position: absolute; inset: 0; z-index: 2; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+  .p-eyes { font-weight: bold; line-height: 1; letter-spacing: 0.12em; white-space: nowrap; }
+  .p-mouth { font-weight: bold; line-height: 1; margin-top: 4%; }
+
+  #aim-holder {
+    position: absolute; top: 4%; left: 50%; width: 24%; aspect-ratio: 1;
+    transform: translateX(-50%); pointer-events: none; z-index: 3;
+    transition: left 0.05s linear, opacity 0.15s;
+    display: flex; align-items: center; justify-content: center;
+  }
+  #aim-holder .star-bg {
+    position: absolute; inset: 0;
+    background: radial-gradient(circle at 35% 28%, #fffde7, #ffe082 75%);
+    clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
+    box-shadow: 0 4px 6px rgba(0,0,0,0.18);
+  }
+  /* 크기는 CSS 고정값이 아니라 JS(syncAimUI)에서 실제 반지름 기준으로 매 순간 지정 */
+  #aim-holder .aim-emoji { position: relative; z-index: 2; display: flex; align-items: center; justify-content: center; }
+
+  .modal-overlay { display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); justify-content: center; align-items: center; z-index: 200; }
+  .modal-content { background: #fff; width: 80%; max-height: 80%; border-radius: 15px; padding: 20px; overflow-y: auto; text-align: center; color: #4a3f6b; box-shadow: 0 10px 30px rgba(0,0,0,0.3); }
+  .modal-close { margin-top: 15px; padding: 10px 20px; border: none; border-radius: 10px; background: #6a5acd; color: white; font-family: 'Jua'; font-size: 18px; cursor: pointer; width: 100%; }
+  .evo-tree { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; margin-top: 15px; }
+  .evo-item { display: flex; flex-direction: column; align-items: center; width: 27%; }
+  .evo-planet-holder { width: 40px; height: 40px; margin-bottom: 4px; }
+  .evo-text { font-size: 12px; font-weight: bold; }
+  .evo-personality { font-size: 10px; color: #8a7fae; }
+  .rank-list { text-align: left; margin-top: 15px; font-size: 15px; line-height: 1.9; }
+  .rank-list div { display: flex; justify-content: space-between; gap: 8px; }
+  .rank-time { font-size: 11px; color: #999; font-weight: normal; }
+  #game-over-text { color: #e74c3c; font-size: 40px; font-weight: bold; margin-bottom: 20px; }
+
+  #boot-error {
+    display: none; position: fixed; top: 0; left: 0; width: 100%; z-index: 999;
+    background: #e74c3c; color: #fff; font-family: sans-serif; font-size: 13px;
+    padding: 10px; text-align: center; line-height: 1.5;
+  }
+
+  @media (max-width: 768px) {
+    body { align-items: flex-start !important; padding-top: 55px; padding-bottom: 70px; }
+    .menu-wrap { top: 55px; }
+  }
+</style>
+</head>
+<body>
+<div id="boot-error"></div>
+
+<div id="kakao-browser-notice">
+    ⚠️ 카카오톡 안에서는 버튼이 가려질 수 있어요. 우측 하단 <b>'•••'</b> 또는 공유 아이콘에서 <b>'다른 브라우저로 열기'</b>를 눌러주세요.
+    <span onclick="document.getElementById('kakao-browser-notice').style.display='none'" style="position:absolute; right:12px; top:8px; cursor:pointer; font-size:16px;">✕</span>
+</div>
+<script>
+    if (/KAKAOTALK/i.test(navigator.userAgent || '')) {
+        location.href = 'kakaotalk://web/openExternal?url=' + encodeURIComponent(location.href);
+        setTimeout(function () {
+            document.getElementById('kakao-browser-notice').style.display = 'block';
+        }, 800);
+    }
+</script>
+
+<div class="menu-wrap">
+    <button class="hamburger-btn" onclick="toggleMenu()">☰</button>
+    <div class="dropdown-menu" id="dropdownMenu">
+        <a href="index.html">🏠 홈으로</a>
+        <button onclick="shareKakao()">💬 카톡 공유</button>
+        <a href="https://forms.gle/N6wUYUUzjqY2yRGDA" target="_blank" rel="noopener">🐛 버그 리포트</a>
+        <div class="divider"></div>
+        <a href="privacy.html">📄 개인정보처리방침</a>
+    </div>
+</div>
+
+<div id="game-wrapper">
+  <div id="header-bar">
+    <div class="header-bubble" id="score-board">
+      <div class="header-title">스코어</div>
+      <div id="score-val">0</div>
+      <div class="best-score-line">최고 <span id="best-score-val">0</span></div>
+    </div>
+    <div class="header-bubble" id="next-board"><div class="header-title">다음</div><div id="next-val"></div></div>
+    <div class="header-bubble" id="time-board">
+      <div class="header-title">시간</div>
+      <div id="time-val">0:00</div>
+      <div class="best-score-line">누적 <span id="total-count-val">0</span>개</div>
+    </div>
+    <button class="action-btn" id="rank-btn" type="button">🏆</button>
+    <button class="action-btn" id="info-btn" type="button">i</button>
+  </div>
+
+  <div id="canvas-container">
+    <div id="deadline-line"></div>
+    <div id="aim-holder">
+      <div class="star-bg"></div>
+      <div class="aim-emoji" id="aim-emoji"></div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="info-modal">
+    <div class="modal-content">
+      <h2>게임 설명 &amp; 천체의 진화</h2>
+      <p style="font-size: 14px;">같은 천체를 합쳐 더 크고 무거운 천체를 만드세요!<br>선 위로 천체가 3초간 쌓이면 게임 오버!</p>
+      <div class="evo-tree" id="evo-tree-container"></div>
+      <button class="modal-close" id="close-info" type="button">닫기</button>
+    </div>
+  </div>
+  <div class="modal-overlay" id="rank-modal">
+    <div class="modal-content">
+      <h2>🏆 리더보드 (Top 5)</h2>
+      <p style="font-size:12px;color:#8a7fae;margin-top:-8px;">점수 우선, 동점이면 더 빠른 시간이 상위</p>
+      <div class="rank-list" id="rank-list-container">데이터를 불러오는 중...</div>
+      <button class="modal-close" id="close-rank" type="button">닫기</button>
+    </div>
+  </div>
+  <div class="modal-overlay" id="game-over-modal">
+    <div class="modal-content">
+      <div id="game-over-text">게임 오버!</div>
+      <input type="text" id="user-name" maxlength="10" placeholder="이름 입력 (최대 10자)" style="padding: 10px; font-family: 'Jua'; font-size: 16px; width: 80%; margin-bottom: 15px; text-align: center; border: 2px solid #6a5acd; border-radius: 8px;">
+      <button class="modal-close" id="save-restart-btn" type="button">점수 저장 및 재시작</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  'use strict';
+
+  function showBootError(msg){
+    var el = document.getElementById('boot-error');
+    el.style.display = 'block';
+    el.textContent = '⚠ 게임 로드 실패: ' + msg;
+    console.error(msg);
+  }
+  window.addEventListener('error', function(e){
+    showBootError(e.message + ' (' + (e.filename||'') + ':' + (e.lineno||'') + ')');
+  });
+
+  if (typeof Matter === 'undefined') {
+    showBootError('Matter.js 로드 실패 — CDN 접속이 차단되었거나 네트워크 오류입니다.');
+    return;
+  }
+
+  let supabase = null;
+  try {
+    const SUPABASE_URL = 'https://pvjrbhsgffadiklpiknk.supabase.co';
+    const SUPABASE_ANON_KEY = 'sb_publishable_d4NBdGqpxrg__1SXiRA-YA_TDutoT7B';
+    if (!SUPABASE_URL.includes('YOUR') && window.supabase) {
+      supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    }
+  } catch (error) { console.error('Supabase Init Error:', error); }
+
+  const { Engine, Runner, Bodies, Composite, Events } = Matter;
+  const engine = Engine.create();
+  const runner = Runner.create();
+
+  const W = 400, H = 600;
+  const DEADLINE_Y = 150;
+
+  // [캐릭터성] 각 단계마다 실제 천체의 특징에 맞춰 몸체 색/눈/입 모양을 다르게 부여.
+  // eyes/mouth는 유니코드 문자로 표현 — 크기(font-size)만 조절하면 어떤 크기에서도
+  // 깨지지 않고 또렷하게 보인다.
+  const levels = [
+    { radius: 15, name: '우주먼지', personality: '수줍고 여린', bg: 'radial-gradient(circle at 35% 30%, #e4e7ee, #9aa1b3)', eyes: '‑ ‑', mouth: '', shape: 'blob' },
+    { radius: 25, name: '운석', personality: '저돌적이고 성급한', bg: 'radial-gradient(circle at 35% 30%, #ffb26b, #7a3b12)', eyes: 'ˋ ˊ', mouth: '︿' },
+    { radius: 35, name: '소행성', personality: '무뚝뚝하고 단단한', bg: 'radial-gradient(circle at 35% 30%, #b7ae9e, #55493c)', eyes: '─ ─', mouth: '―' },
+    { radius: 45, name: '위성', personality: '차분하고 다정한', bg: 'radial-gradient(circle at 35% 30%, #eef1f4, #aab2bd)', eyes: '⌒ ⌒', mouth: '‿' },
+    { radius: 55, name: '왜행성', personality: '작지만 자존심 강한', bg: 'radial-gradient(circle at 35% 30%, #f0d3ab, #a9714f)', eyes: '● ‑', mouth: '︿' },
+    { radius: 70, name: '행성', personality: '포근하고 다정한', bg: 'radial-gradient(circle at 35% 30%, #8fd3f4, #2b6cb0)', eyes: '◕ ◕', mouth: '‿' },
+    { radius: 85, name: '가스행성', personality: '느긋하고 호탕한', bg: 'repeating-linear-gradient(0deg, #f3c98b 0 10%, #d99a52 10% 20%)', eyes: '⌒ ⌒', mouth: '▽', hasRing: true },
+    { radius: 100, name: '항성', personality: '밝고 열정적인', bg: 'radial-gradient(circle, #fff8dc, #ffb300)', glow: '0 0 24px rgba(255,200,60,0.8)', eyes: '★ ★', mouth: '‿' },
+    { radius: 115, name: '초신성', personality: '격정적이고 극적인', bg: 'radial-gradient(circle, #fff0fb, #ff6bd6 45%, #6b2bd6 85%)', glow: '0 0 30px rgba(255,120,220,0.7)', eyes: '◉ ◉', mouth: '○' },
+    { radius: 130, name: '블랙홀', personality: '신비롭고 압도적인', bg: 'radial-gradient(circle, #050505 55%, #ff8a3d 62%, #050505 68%)', glow: '0 0 26px rgba(255,138,61,0.45)', eyes: '@ @', mouth: '' },
+    { radius: 150, name: '은하', personality: '지혜롭고 초월적인', bg: 'conic-gradient(from 180deg, #2b1055, #7b5ee6, #d16bd6, #2b1055)', glow: '0 0 30px rgba(180,140,255,0.55)', eyes: '⌣ ⌣', mouth: '‿', eyeColor: '#ffe9a8' }
+  ];
+  const MAX_DROP_LEVEL = 4;
+
+  function buildPlanetInner(levelIdx, sizePx){
+    const lv = levels[levelIdx];
+    const inner = document.createElement('div');
+    inner.className = 'planet';
+
+    // [요청] 토성처럼 고리를 가진 캐릭터 — 몸체보다 먼저(뒤에) 그려서 양옆으로만 삐져나와 보이게 함
+    if (lv.hasRing) {
+      const ring = document.createElement('div');
+      ring.className = 'p-ring';
+      inner.appendChild(ring);
+    }
+
+    const bodyEl = document.createElement('div');
+    bodyEl.className = 'p-body';
+    bodyEl.style.background = lv.bg;
+    let shadow = lv.glow ? lv.glow : '';
+    if (lv.shape === 'blob') {
+      // [요청] 우주먼지는 동그란 구가 아니라, 끝은 흐릿하지만 경계는 보이는 둥근 사각형 느낌으로
+      bodyEl.style.borderRadius = '38% 42% 40% 36% / 42% 38% 44% 40%';
+      const blur = Math.max(3, sizePx * 0.16);
+      const blobShadow = 'inset 0 0 ' + blur + 'px rgba(255,255,255,0.55), 0 0 ' + blur + 'px rgba(255,255,255,0.25)';
+      shadow = shadow ? (shadow + ', ' + blobShadow) : blobShadow;
+    } else {
+      bodyEl.style.borderRadius = '50%';
+    }
+    if (shadow) bodyEl.style.boxShadow = shadow;
+
+    const face = document.createElement('div');
+    face.className = 'p-face';
+    const eyesEl = document.createElement('div');
+    eyesEl.className = 'p-eyes';
+    eyesEl.textContent = lv.eyes;
+    eyesEl.style.color = lv.eyeColor || '#2b2b2b';
+    face.appendChild(eyesEl);
+    if (lv.mouth) {
+      const mouthEl = document.createElement('div');
+      mouthEl.className = 'p-mouth';
+      mouthEl.textContent = lv.mouth;
+      mouthEl.style.color = lv.eyeColor || '#2b2b2b';
+      face.appendChild(mouthEl);
+    }
+    inner.appendChild(bodyEl);
+    inner.appendChild(face);
+    setPlanetSize(inner, sizePx);
+    return inner;
+  }
+
+  function setPlanetSize(inner, sizePx){
+    const eyesEl = inner.querySelector('.p-eyes');
+    if (eyesEl) eyesEl.style.fontSize = Math.max(6, sizePx * 0.26) + 'px';
+    const mouthEl = inner.querySelector('.p-mouth');
+    if (mouthEl) mouthEl.style.fontSize = Math.max(5, sizePx * 0.2) + 'px';
+  }
+
+  const canvasContainer = document.getElementById('canvas-container');
+  const deadlineLineEl = document.getElementById('deadline-line');
+  deadlineLineEl.style.top = (DEADLINE_Y / H * 100) + '%';
+
+  const wallOpts = { isStatic: true, friction: 0.5 };
+  const ground = Bodies.rectangle(W/2, H+10, W, 20, wallOpts);
+  const leftWall = Bodies.rectangle(-10, H/2, 20, H, wallOpts);
+  const rightWall = Bodies.rectangle(W+10, H/2, 20, H, wallOpts);
+  Composite.add(engine.world, [ground, leftWall, rightWall]);
+
+  const animalVisuals = new Map(); // body.id -> { body, div, level }
+
+  function createAnimalVisual(body, level){
+    const scale = canvasContainer.clientWidth / W;
+    const sizePx = levels[level].radius * 2 * scale;
+    const wrapper = document.createElement('div');
+    wrapper.className = 'animal-sprite';
+    wrapper.style.width = sizePx + 'px';
+    wrapper.style.height = sizePx + 'px';
+    wrapper.appendChild(buildPlanetInner(level, sizePx));
+    canvasContainer.appendChild(wrapper);
+    animalVisuals.set(body.id, { body: body, div: wrapper, level: level });
+  }
+
+  function removeAnimalVisual(body){
+    const entry = animalVisuals.get(body.id);
+    if (entry) { entry.div.remove(); animalVisuals.delete(body.id); }
+  }
+
+  function resizeOneSprite(entry){
+    const scale = canvasContainer.clientWidth / W;
+    const sizePx = levels[entry.level].radius * 2 * scale;
+    entry.div.style.width = sizePx + 'px';
+    entry.div.style.height = sizePx + 'px';
+    setPlanetSize(entry.div.firstElementChild, sizePx);
+  }
+
+  function syncAllSpriteSizes(){
+    animalVisuals.forEach(resizeOneSprite);
+    syncAimUI();
+  }
+
+  function syncVisualPositions(){
+    const scale = canvasContainer.clientWidth / W;
+    animalVisuals.forEach(function(entry){
+      const b = entry.body;
+      const x = b.position.x * scale;
+      const y = b.position.y * scale;
+      entry.div.style.transform = 'translate(' + x + 'px,' + y + 'px) translate(-50%,-50%) rotate(' + b.angle + 'rad)';
+    });
+  }
+  Events.on(engine, 'afterUpdate', syncVisualPositions);
+  window.addEventListener('resize', syncAllSpriteSizes);
+
+  let audioCtx = null;
+  function ensureAudio(){
+    if (audioCtx) return;
+    try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
+    catch (e) { console.warn('오디오 초기화 실패(무음으로 진행):', e); }
+  }
+  function playPop(freq){
+    if (!audioCtx) return;
+    try {
+      const t = audioCtx.currentTime;
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(freq, t);
+      osc.frequency.exponentialRampToValueAtTime(freq * 1.7, t + 0.09);
+      gain.gain.setValueAtTime(0.16, t);
+      gain.gain.exponentialRampToValueAtTime(0.001, t + 0.2);
+      osc.connect(gain).connect(audioCtx.destination);
+      osc.start(t); osc.stop(t + 0.22);
+    } catch (e) { /* 무시 */ }
+  }
+
+  const BEST_KEY = 'planetMergeBestScore';
+  let bestScore = 0;
+  try { bestScore = parseInt(localStorage.getItem(BEST_KEY) || '0', 10) || 0; } catch (e) {}
+  const bestScoreVal = document.getElementById('best-score-val');
+  bestScoreVal.textContent = bestScore;
+
+  let score = 0;
+  let isGameOver = false;
+  let gameOverTimer = 0;
+  let lastDropTime = 0;
+  let canDrop = true;
+  let aimX = W / 2;
+  let mergeCount = 0;
+  const sessionStart = Date.now();
+
+  const scoreVal = document.getElementById('score-val');
+  const nextVal = document.getElementById('next-val');
+  const aimHolder = document.getElementById('aim-holder');
+  const aimEmoji = document.getElementById('aim-emoji');
+  const timeVal = document.getElementById('time-val');
+  const totalCountVal = document.getElementById('total-count-val');
+  let totalCreated = 0;
+  function bumpTotalCreated(){
+    totalCreated += 1;
+    totalCountVal.textContent = totalCreated;
+  }
+  function formatElapsed(totalSec){
+    const m = Math.floor(totalSec / 60);
+    const s = totalSec % 60;
+    return m + ':' + String(s).padStart(2, '0');
+  }
+  function getElapsedSec(){
+    return Math.floor((Date.now() - sessionStart) / 1000);
+  }
+  setInterval(function(){
+    if (isGameOver) return;
+    timeVal.textContent = formatElapsed(getElapsedSec());
+  }, 1000);
+
+  function updateScore(delta){
+    score += delta;
+    scoreVal.textContent = score;
+    if (score > bestScore) {
+      bestScore = score;
+      bestScoreVal.textContent = bestScore;
+      try { localStorage.setItem(BEST_KEY, String(bestScore)); } catch (e) {}
+    }
+  }
+
+  function getRandomLevel() {
+    const rand = Math.random();
+    if (rand < 0.40) return 0;
+    if (rand < 0.68) return 1;
+    if (rand < 0.85) return 2;
+    if (rand < 0.95) return 3;
+    return MAX_DROP_LEVEL;
+  }
+
+  let currentLevel = getRandomLevel();
+  let nextLevel = getRandomLevel();
+
+  function syncAimUI() {
+    const scale = canvasContainer.clientWidth / W;
+    aimEmoji.innerHTML = '';
+    const aimSizePx = Math.max(18, levels[currentLevel].radius * 2 * scale);
+    aimEmoji.style.width = aimSizePx + 'px';
+    aimEmoji.style.height = aimSizePx + 'px';
+    aimEmoji.appendChild(buildPlanetInner(currentLevel, aimSizePx));
+
+    nextVal.innerHTML = '';
+    nextVal.appendChild(buildPlanetInner(nextLevel, 30));
+  }
+  syncAimUI();
+
+  function clientXToGameX(clientX) {
+    const bounds = canvasContainer.getBoundingClientRect();
+    const scale = W / bounds.width;
+    return (clientX - bounds.left) * scale;
+  }
+
+  function updateAim(clientX) {
+    if (isGameOver) return;
+    const radius = levels[currentLevel].radius;
+    let x = clientXToGameX(clientX);
+    x = Math.max(radius, Math.min(x, W - radius));
+    aimX = x;
+    const pct = (x / W) * 100;
+    aimHolder.style.left = pct + '%';
+  }
+
+  window.addEventListener('pointermove', function(e){ updateAim(e.clientX); });
+
+  window.addEventListener('pointerdown', function(e){
+    ensureAudio();
+    if (isGameOver || !canDrop) return;
+    if (!e.target.closest('#canvas-container')) return;
+    if (e.target.closest('.modal-overlay')) return;
+
+    updateAim(e.clientX);
+
+    const now = Date.now();
+    if (now - lastDropTime < 550) return;
+    lastDropTime = now;
+    canDrop = false;
+    aimHolder.style.opacity = '0';
+
+    const lvl = currentLevel;
+    const animal = Bodies.circle(aimX, 40, levels[lvl].radius, {
+      restitution: 0.15, friction: 0.3, frictionAir: 0.001,
+      label: 'animal_' + lvl
+    });
+    Composite.add(engine.world, animal);
+    createAnimalVisual(animal, lvl);
+    bumpTotalCreated();
+
+    setTimeout(function(){
+      if (isGameOver) return;
+      currentLevel = nextLevel;
+      nextLevel = getRandomLevel();
+      syncAimUI();
+      aimHolder.style.opacity = '1';
+      canDrop = true;
+    }, 550);
+  });
+
+  Events.on(engine, 'collisionStart', function(event){
+    event.pairs.forEach(function(pair){
+      const bodyA = pair.bodyA, bodyB = pair.bodyB;
+      if (bodyA.label.startsWith('animal_') && bodyA.label === bodyB.label) {
+        const level = parseInt(bodyA.label.split('_')[1], 10);
+        if (level < levels.length - 1 && !bodyA.isRemoving && !bodyB.isRemoving) {
+          bodyA.isRemoving = true; bodyB.isRemoving = true;
+          const newX = (bodyA.position.x + bodyB.position.x) / 2;
+          const newY = (bodyA.position.y + bodyB.position.y) / 2;
+          Composite.remove(engine.world, [bodyA, bodyB]);
+          removeAnimalVisual(bodyA);
+          removeAnimalVisual(bodyB);
+
+          updateScore((level + 1) * 10);
+          mergeCount += 1;
+
+          const mergedLevel = level + 1;
+          const newAnimal = Bodies.circle(newX, newY, levels[mergedLevel].radius, {
+            label: 'animal_' + mergedLevel, restitution: 0.15, friction: 0.3, frictionAir: 0.001
+          });
+          Composite.add(engine.world, newAnimal);
+          createAnimalVisual(newAnimal, mergedLevel);
+          bumpTotalCreated();
+          spawnPopEffect(newX, newY, mergedLevel);
+        }
+      }
+    });
+  });
+
+  function spawnPopEffect(x, y, level){
+    const scale = canvasContainer.clientWidth / W;
+    const cx = x * scale, cy = y * scale;
+
+    const main = document.createElement('div');
+    main.style.cssText = 'position:absolute;left:' + cx + 'px;top:' + cy + 'px;width:30px;height:30px;' +
+      'transform:translate(-50%,-50%) scale(1);pointer-events:none;z-index:50;' +
+      'transition:transform .35s ease-out, opacity .35s ease-out;';
+    main.appendChild(buildPlanetInner(level, 30));
+    canvasContainer.appendChild(main);
+    requestAnimationFrame(function(){
+      main.style.transform = 'translate(-50%,-90%) scale(1.7)';
+      main.style.opacity = '0';
+    });
+    setTimeout(function(){ main.remove(); }, 380);
+
+    const sparkles = ['✨', '⭐', '💫'];
+    const count = 6;
+    for (let i = 0; i < count; i++) {
+      const p = document.createElement('div');
+      p.textContent = sparkles[i % sparkles.length];
+      const angle = (Math.PI * 2 / count) * i + Math.random() * 0.4;
+      const dist = 26 + Math.random() * 14;
+      const dx = Math.cos(angle) * dist, dy = Math.sin(angle) * dist;
+      p.style.cssText = 'position:absolute;left:' + cx + 'px;top:' + cy + 'px;' +
+        'transform:translate(-50%,-50%) scale(0.8);font-size:14px;pointer-events:none;z-index:49;opacity:1;' +
+        'transition:transform .45s ease-out, opacity .45s ease-out;';
+      canvasContainer.appendChild(p);
+      (function(p, dx, dy){
+        requestAnimationFrame(function(){
+          p.style.transform = 'translate(' + (dx - 8) + 'px,' + (dy - 8) + 'px) scale(1.1)';
+          p.style.opacity = '0';
+        });
+      })(p, dx, dy);
+      setTimeout(function(){ p.remove(); }, 470);
+    }
+
+    playPop(320 + level * 30);
+  }
+
+  Events.on(engine, 'beforeUpdate', function(){
+    if (isGameOver) return;
+    let overLineDetected = false;
+    Composite.allBodies(engine.world).forEach(function(body){
+      if (body.label.startsWith('animal_')) {
+        const topY = body.position.y - body.circleRadius;
+        if (topY < DEADLINE_Y && Math.abs(body.velocity.y) < 0.5) overLineDetected = true;
+      }
+    });
+
+    if (overLineDetected) {
+      gameOverTimer++;
+      if (gameOverTimer > 180) {
+        isGameOver = true;
+        Runner.stop(runner);
+        document.getElementById('game-over-modal').style.display = 'flex';
+      }
+    } else {
+      gameOverTimer = 0;
+    }
+  });
+
+  Runner.run(runner, engine);
+
+  document.getElementById('info-btn').addEventListener('click', function(){
+    const container = document.getElementById('evo-tree-container');
+    container.innerHTML = '';
+    levels.forEach(function(lv, idx){
+      const item = document.createElement('div');
+      item.className = 'evo-item';
+      const holder = document.createElement('div');
+      holder.className = 'evo-planet-holder';
+      holder.appendChild(buildPlanetInner(idx, 40));
+      const textSpan = document.createElement('span');
+      textSpan.className = 'evo-text';
+      textSpan.textContent = lv.name + ' Lv.' + (idx+1);
+      const personalitySpan = document.createElement('span');
+      personalitySpan.className = 'evo-personality';
+      personalitySpan.textContent = lv.personality;
+      item.appendChild(holder);
+      item.appendChild(textSpan);
+      item.appendChild(personalitySpan);
+      container.appendChild(item);
+    });
+    document.getElementById('info-modal').style.display = 'flex';
+  });
+
+  document.getElementById('close-info').addEventListener('click', function(){
+    document.getElementById('info-modal').style.display = 'none';
+  });
+
+  document.getElementById('rank-btn').addEventListener('click', async function(){
+    document.getElementById('rank-modal').style.display = 'flex';
+    const container = document.getElementById('rank-list-container');
+    container.innerHTML = '';
+
+    if (!supabase) {
+      // 오프라인/DB 미연동 상태의 임시 표시 데이터(점수 우선, 동점시 시간 빠른 순)
+      const fallback = [
+        ['관리자', 9999, 95], ['유저', 8500, 130]
+      ];
+      fallback.forEach(function(row, i){ appendRankRow(container, i+1, row[0], row[1], row[2]); });
+      const note = document.createElement('div');
+      note.style.cssText = 'font-size:12px;color:#999;margin-top:8px;';
+      note.textContent = '(DB 미연동 — 임시 데이터)';
+      container.appendChild(note);
+      return;
+    }
+
+    container.textContent = '데이터 로딩 중...';
+    try {
+      // 정렬 기준: 점수 내림차순 → 동점이면 소요시간(elapsed_sec) 오름차순(더 빠른 사람이 위)
+      // ※ Supabase의 rankings 테이블에 elapsed_sec(정수, 초 단위) 컬럼이 있어야 함.
+      const { data, error } = await supabase
+        .from('planet_scores')
+        .select('username, score, elapsed_sec')
+        .order('score', { ascending: false })
+        .order('elapsed_sec', { ascending: true })
+        .limit(5);
+      if (error) throw error;
+      container.innerHTML = '';
+      data.forEach(function(row, i){ appendRankRow(container, i+1, row.username, row.score, row.elapsed_sec); });
+    } catch (e) {
+      container.textContent = '데이터 불러오기 실패';
+    }
+  });
+
+  function appendRankRow(container, rank, username, scoreVal, elapsedSec){
+    const row = document.createElement('div');
+    const left = document.createElement('span');
+    left.textContent = rank + '. ' + String(username);
+    const right = document.createElement('span');
+    const scoreB = document.createElement('b');
+    scoreB.textContent = String(scoreVal);
+    right.appendChild(scoreB);
+    if (elapsedSec !== undefined && elapsedSec !== null) {
+      const timeSpan = document.createElement('span');
+      timeSpan.className = 'rank-time';
+      timeSpan.textContent = ' (' + formatElapsed(elapsedSec) + ')';
+      right.appendChild(timeSpan);
+    }
+    row.appendChild(left);
+    row.appendChild(right);
+    container.appendChild(row);
+  }
+
+  document.getElementById('close-rank').addEventListener('click', function(){
+    document.getElementById('rank-modal').style.display = 'none';
+  });
+
+  document.getElementById('save-restart-btn').addEventListener('click', async function(){
+    const raw = document.getElementById('user-name').value || '';
+    const name = raw.trim().slice(0, 10) || '익명';
+
+    const elapsedSec = getElapsedSec();
+    const plausible = mergeCount >= 0 && score <= (mergeCount + 1) * 150 && elapsedSec > 1;
+
+    if (supabase && plausible) {
+      try {
+        await supabase.from('planet_scores').insert([{ username: name, score: score, elapsed_sec: elapsedSec }]);
+      } catch (e) { console.error('Save Error', e); }
+    } else if (supabase && !plausible) {
+      console.warn('비정상 점수로 판단되어 저장을 건너뜁니다.');
+    }
+    location.reload();
+  });
+})();
+</script>
+
+<!-- Google Analytics(GA4) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-CTNNSY6150"></script>
+<script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-CTNNSY6150');
+</script>
+
+<!-- 카카오 공유 SDK -->
+<script src="https://developers.kakao.com/sdk/js/kakao.min.js"></script>
+<script>
+    try { Kakao.init('1747ba005771471984d6560a563cb948'); } catch (e) { console.log('카카오 SDK 초기화 대기 중'); }
+
+    function toggleMenu() {
+        document.getElementById('dropdownMenu').classList.toggle('show');
+    }
+    function closeMenuIfOpen() {
+        const m = document.getElementById('dropdownMenu');
+        if (m) m.classList.remove('show');
+    }
+    document.addEventListener('click', function (e) {
+        const wrap = document.querySelector('.menu-wrap');
+        if (wrap && !wrap.contains(e.target)) closeMenuIfOpen();
+    });
+
+    function shareKakao() {
+        closeMenuIfOpen();
+        if (!Kakao.isInitialized || !Kakao.isInitialized()) {
+            alert('카카오 공유 기능을 준비 중입니다. 잠시 후 다시 시도해주세요.');
+            return;
+        }
+        Kakao.Share.sendDefault({
+            objectType: 'feed',
+            content: {
+                title: '행성 합체 - 스웦(SPACEWARP)',
+                description: '우주먼지부터 은하까지, 같은 천체를 합쳐 우주를 진화시키세요!',
+                imageUrl: 'https://spacewarp.co.kr/og-image.png',
+                link: { mobileWebUrl: 'https://spacewarp.co.kr/planet_merge.html', webUrl: 'https://spacewarp.co.kr/planet_merge.html' },
+            },
+            buttons: [
+                { title: '합체하러 가기', link: { mobileWebUrl: 'https://spacewarp.co.kr/planet_merge.html', webUrl: 'https://spacewarp.co.kr/planet_merge.html' } },
+            ],
+        });
+    }
+</script>
+</body>
+</html>

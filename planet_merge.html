@@ -286,7 +286,8 @@
   // eyes/mouth는 유니코드 문자로 표현 — 크기(font-size)만 조절하면 어떤 크기에서도
   // 깨지지 않고 또렷하게 보인다.
   const levels = [
-    { radius: 15, name: '우주먼지', personality: '수줍고 여린', bg: 'radial-gradient(circle at 35% 30%, #e4e7ee, #9aa1b3)', eyes: '‑ ‑', mouth: '', shape: 'blob' },
+    { radius: 15, name: '우주먼지', personality: '수줍고 여린', bg: 'radial-gradient(circle at 35% 30%, #e4e7ee, #9aa1b3)', eyes: '‑ ‑', mouth: '', shape: 'blob',
+      cloudImg: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj4KPGVsbGlwc2UgY3g9IjUwIiBjeT0iNjIiIHJ4PSIzNiIgcnk9IjIwIiBmaWxsPSIjZmRmYmZmIi8+CjxjaXJjbGUgY3g9IjI3IiBjeT0iNTAiIHI9IjE3IiBmaWxsPSIjZmRmYmZmIi8+CjxjaXJjbGUgY3g9IjUwIiBjeT0iNDIiIHI9IjIxIiBmaWxsPSIjZmRmYmZmIi8+CjxjaXJjbGUgY3g9IjczIiBjeT0iNTIiIHI9IjE1IiBmaWxsPSIjZmRmYmZmIi8+CjxjaXJjbGUgY3g9IjM5IiBjeT0iNjAiIHI9IjQuMiIgZmlsbD0iIzRhM2Y2YiIvPgo8Y2lyY2xlIGN4PSI2MSIgY3k9IjYwIiByPSI0LjIiIGZpbGw9IiM0YTNmNmIiLz4KPGVsbGlwc2UgY3g9IjMyIiBjeT0iNjgiIHJ4PSI0LjUiIHJ5PSIyLjgiIGZpbGw9IiNmZmIzYzYiIG9wYWNpdHk9IjAuNzUiLz4KPGVsbGlwc2UgY3g9IjY4IiBjeT0iNjgiIHJ4PSI0LjUiIHJ5PSIyLjgiIGZpbGw9IiNmZmIzYzYiIG9wYWNpdHk9IjAuNzUiLz4KPHBhdGggZD0iTTQ1IDY4IFE1MCA3Mi41IDU1IDY4IiBzdHJva2U9IiM0YTNmNmIiIHN0cm9rZS13aWR0aD0iMi42IiBmaWxsPSJub25lIiBzdHJva2UtbGluZWNhcD0icm91bmQiLz4KPC9zdmc+' },
     { radius: 25, name: '운석', personality: '저돌적이고 성급한', bg: 'radial-gradient(circle at 35% 30%, #ffb26b, #7a3b12)', eyes: 'ˋ ˊ', mouth: '︿' },
     { radius: 35, name: '소행성', personality: '무뚝뚝하고 단단한', bg: 'radial-gradient(circle at 35% 30%, #b7ae9e, #55493c)', eyes: '─ ─', mouth: '―' },
     { radius: 45, name: '위성', personality: '차분하고 다정한', bg: 'radial-gradient(circle at 35% 30%, #eef1f4, #aab2bd)', eyes: '⌒ ⌒', mouth: '‿' },
@@ -314,6 +315,20 @@
 
     const bodyEl = document.createElement('div');
     bodyEl.className = 'p-body';
+
+    // [수정] 우주먼지는 index.html 썸네일과 동일한 "눈 달린 구름" 이미지를 그대로 사용
+    if (lv.cloudImg) {
+      bodyEl.style.background = 'transparent';
+      bodyEl.style.backgroundImage = 'url("' + lv.cloudImg + '")';
+      bodyEl.style.backgroundSize = '92% 92%';
+      bodyEl.style.backgroundRepeat = 'no-repeat';
+      bodyEl.style.backgroundPosition = 'center';
+      bodyEl.style.borderRadius = '0';
+      inner.appendChild(bodyEl);
+      setPlanetSize(inner, sizePx);
+      return inner;
+    }
+
     bodyEl.style.background = lv.bg;
     let shadow = lv.glow ? lv.glow : '';
     if (lv.shape === 'blob') {

@@ -135,6 +135,7 @@
         .planet-unknown { background: radial-gradient(circle at 30% 30%, #2b5876 0%, #4e4376 100%); opacity: 0.8; animation-delay: 1s; }
         .planet-jumong { background: radial-gradient(circle at 30% 30%, #a8e6b0 0%, #4a9e63 100%); animation-delay: 0.6s; }
         .planet-merge { background: radial-gradient(circle at 30% 30%, #b892ff 0%, #4b2ba0 60%, #1b1042 100%); animation-delay: 1.2s; }
+        .planet-pk { background: radial-gradient(circle at 30% 30%, #6fe08a 0%, #1e7a3d 60%, #0a3a1c 100%); animation-delay: 1.5s; }
         .planet-submit { background: radial-gradient(circle at 30% 30%, #43e97b 0%, #38f9d7 100%); animation-delay: 0.9s; }
 
         .card-content { padding: 30px 25px; border-top: 1px solid rgba(255, 255, 255, 0.05); flex-grow: 1; }
@@ -301,6 +302,18 @@
             </div>
         </a>
 
+        <a href="penalty_shootout.html" class="game-card" onclick="setLastPlayed('penalty_shootout.html','승부차기 PK 대결','⚽')">
+            <div class="planet-container"><div class="planet-ring"></div><div class="planet planet-pk">⚽</div></div>
+            <div class="card-content">
+                <span class="badge badge-active lang-text" data-ko="WARP READY" data-en="WARP READY">WARP READY</span>
+                <div class="card-title lang-text" data-ko="승부차기 PK 대결" data-en="Planet: Penalty Shootout">승부차기 PK 대결</div>
+                <div class="card-desc lang-text" data-ko="1인 도전 또는 2인 대결! 픽셀 감성 승부차기를 즐겨보세요." data-en="Solo challenge or 1v1! A pixel-style penalty shootout game.">1인 도전 또는 2인 대결! 픽셀 감성 승부차기를 즐겨보세요.</div>
+                <div class="tag-row">
+                    <span class="tag-pill">#스포츠</span><span class="tag-pill">#대전</span><span class="tag-pill">#반사신경</span><span class="tag-pill">#픽셀</span>
+                </div>
+            </div>
+        </a>
+
         <div class="game-card" style="cursor: default;">
             <div class="planet-container"><div class="planet-ring"></div><div class="planet planet-unknown">🚀</div></div>
             <div class="card-content">
@@ -376,6 +389,7 @@
         // ★★★★★ 배너/공지 슬라이드 - 여기 배열만 수정하면 배너 내용이 바뀝니다 ★★★★★
         // tag: 작은 태그 문구 / title: 큰 제목 / desc: 설명 / link: 클릭시 이동할 주소 (없으면 "#")
         const BANNER_SLIDES = [
+            { tag: "NEW", title: "신작! 승부차기 PK 대결", desc: "1인 도전 또는 친구와 2인 대결로 즐겨보세요", link: "penalty_shootout.html" },
             { tag: "NEW", title: "신작! 행성 합체", desc: "우주먼지부터 은하까지, 합쳐서 우주를 진화시키세요", link: "planet_merge.html" },
             { tag: "NEW", title: "새 행성 발견! 꼬물이의 대탐험", desc: "지렁이 퍼즐로 최단시간 랭킹에 도전하세요", link: "ggomul_adventure.html" },
             { tag: "NOTICE", title: "게임 아이디어를 보내주세요", desc: "여러분의 제안이 다음 행성이 됩니다", link: "#submitCard" },

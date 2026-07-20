@@ -1,0 +1,1426 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>승부차기 PK 대결 | 스웦(SPACEWARP)</title>
+    <meta name="description" content="1인 도전 또는 2인 대결! 픽셀 감성 승부차기 게임. 슛과 골키퍼 방어까지 직접 즐겨보세요.">
+    <link rel="canonical" href="https://spacewarp.co.kr/penalty_shootout.html">
+    <meta property="og:title" content="승부차기 PK 대결 - 스웦 SPACEWARP">
+    <meta property="og:description" content="1인 도전 또는 2인 대결! 픽셀 감성 승부차기 게임.">
+    <meta property="og:image" content="https://spacewarp.co.kr/og-image.png">
+    <meta name="robots" content="index, follow">
+    <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="favicon-192.png">
+    <link rel="apple-touch-icon" href="apple-touch-icon.png">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; -webkit-user-select: none; touch-action: manipulation; -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent; }
+        html { background: #111; height: 100%; overscroll-behavior: none; }
+        body {
+            background-color: #111;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            font-family: 'Courier New', Courier, monospace;
+            overflow: hidden;
+        }
+        #gameContainer {
+            position: relative;
+            width: 400px;
+            height: 700px;
+            box-shadow: 0 10px 50px rgba(0,0,0,0.9);
+            background-color: #2ecc71;
+            overflow: hidden;
+            transform-origin: center center;
+            flex-shrink: 0;
+        }
+
+        /* 햄버거 메뉴 (사이트 공통 패턴) */
+        .menu-wrap { position: fixed; top: 10px; right: 10px; z-index: 2000; }
+        .hamburger-btn {
+            background: rgba(0,0,0,0.55); color: #fff; border: 1px solid rgba(255,255,255,0.6); border-radius: 20px;
+            width: 40px; height: 36px; font-size: 18px; cursor: pointer; backdrop-filter: blur(4px);
+            font-family: 'Courier New', Courier, monospace;
+        }
+        .dropdown-menu {
+            display: none; position: absolute; top: 44px; right: 0; background: #161616; border: 1px solid #333;
+            border-radius: 12px; overflow: hidden; min-width: 175px; box-shadow: 0 8px 24px rgba(0,0,0,0.6);
+        }
+        .dropdown-menu.show { display: block; }
+        .dropdown-menu a, .dropdown-menu button {
+            display: flex; align-items: center; gap: 8px; width: 100%; padding: 12px 16px; background: none; border: none;
+            color: #eee; font-size: 13px; text-align: left; text-decoration: none; cursor: pointer; box-sizing: border-box;
+            font-family: 'Courier New', Courier, monospace;
+        }
+        .dropdown-menu a:hover, .dropdown-menu button:hover { background: rgba(255,255,255,0.08); }
+        .dropdown-menu .divider { height: 1px; background: #333; margin: 4px 0; }
+
+        #kakao-browser-notice {
+            display:none; position:fixed; top:0; left:0; width:100%; z-index:5000; background:#3c1e1e; color:#fff;
+            font-size:12px; padding:10px 40px 10px 14px; text-align:center; box-sizing:border-box; line-height:1.5;
+            font-family: sans-serif;
+        }
+
+        @media (max-width: 768px) {
+            body { padding-top: 55px; padding-bottom: 20px; height: auto; min-height: 100vh; }
+            .menu-wrap { top: 55px; }
+        }
+        canvas { display: block; image-rendering: pixelated; image-rendering: crisp-edges; }
+
+        .btn {
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 14px 36px;
+            font-size: 20px;
+            font-weight: 900;
+            background: #ffea00;
+            color: #000;
+            border: 4px solid #000;
+            cursor: pointer;
+            box-shadow: 4px 4px 0px #000;
+            text-transform: uppercase;
+            z-index: 20;
+            border-radius: 8px;
+        }
+        .btn:active { transform: translateX(-50%) translate(2px, 2px); box-shadow: 2px 2px 0px #000; }
+
+        #startBtn { position: static; transform: none; display: block; margin: 10px 0 4px; }
+        #restartBtn { top: 45%; display: none; }
+
+        #actionBtn {
+            position: absolute;
+            bottom: 20px;
+            width: 85%;
+            padding: 18px 0;
+            font-size: 24px;
+            background: #e74c3c;
+            color: white;
+            display: none;
+        }
+        #actionBtn:active { background: #c0392b; }
+
+        #turnIndicator {
+            position: absolute;
+            top: 130px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #fff;
+            font-weight: 900;
+            font-size: 14px;
+            text-shadow: 1px 1px 0 #000;
+            z-index: 20;
+            display: none;
+            background: rgba(0,0,0,0.5);
+            padding: 4px 12px;
+            border-radius: 10px;
+        }
+
+        #setupScreen {
+            position: absolute;
+            top: 6%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 94%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 7px;
+            z-index: 25;
+        }
+        .setupLabel {
+            color: #fff;
+            font-weight: 900;
+            font-size: 11px;
+            text-shadow: 1px 1px 0 #000;
+            width: 100%;
+            text-align: center;
+            margin-top: 2px;
+        }
+        #mainTitle {
+            width: 100%;
+            text-align: center;
+            margin-bottom: 4px;
+        }
+        #mainTitle .titleBig {
+            display: block;
+            color: #fff;
+            font-weight: 900;
+            font-size: 26px;
+            letter-spacing: 1px;
+            text-shadow: 2px 2px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000;
+            -webkit-text-stroke: 1px #000;
+        }
+        #mainTitle .titleSub {
+            display: block;
+            color: #ffea00;
+            font-weight: 900;
+            font-size: 12px;
+            letter-spacing: 3px;
+            text-shadow: 1px 1px 0 #000;
+            margin-top: 2px;
+        }
+        .spinBall {
+            display: inline-block;
+            animation: spinBallAnim 3.5s linear infinite;
+        }
+        @keyframes spinBallAnim {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        #heroArtWrap {
+            width: 132px;
+            height: 132px;
+            margin: 2px auto 4px;
+            border: 3px solid #000;
+            border-radius: 10px;
+            box-shadow: 4px 4px 0 #000;
+            overflow: hidden;
+            animation: heroFloat 3s ease-in-out infinite;
+        }
+        #heroArtWrap svg { display: block; width: 100%; height: 100%; }
+        @keyframes heroFloat {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-5px); }
+        }
+        .setupRow {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 5px;
+        }
+        .smallBtn {
+            padding: 6px 10px;
+            font-size: 11px;
+            font-weight: 900;
+            background: #ffea00;
+            border: 2px solid #000;
+            border-radius: 6px;
+            cursor: pointer;
+            box-shadow: 2px 2px 0 #000;
+        }
+        .smallBtn.selected { background: #2ecc71; color: #fff; }
+        .kitSwatchSmall {
+            width: 34px;
+            height: 34px;
+            border: 2px solid #000;
+            border-radius: 5px;
+            cursor: pointer;
+            box-shadow: 2px 2px 0 #000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #fff;
+            overflow: hidden;
+        }
+        .kitSwatchSmall svg {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+        .kitSwatchSmall.selected {
+            outline: 3px solid #ffea00;
+            outline-offset: 2px;
+            animation: selectedPulse 1s ease-in-out infinite;
+        }
+        @keyframes selectedPulse {
+            0%, 100% { box-shadow: 2px 2px 0 #000, 0 0 0px rgba(255,234,0,0.8); }
+            50% { box-shadow: 2px 2px 0 #000, 0 0 10px rgba(255,234,0,0.9); }
+        }
+        #startBtnWrap { margin-top: 4px; }
+
+        #defendPicker {
+            display: none;
+            position: absolute;
+            inset: 0;
+            background: rgba(0,0,0,0.78);
+            z-index: 40;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 16px;
+        }
+        #defendHeading {
+            color: #fff;
+            font-weight: 900;
+            font-size: 15px;
+            text-align: center;
+            padding: 0 24px;
+            text-shadow: 1px 1px 0 #000;
+        }
+        #defendGrid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            grid-template-rows: repeat(2, 1fr);
+            gap: 10px;
+            width: 280px;
+            height: 190px;
+        }
+        .zoneBtn {
+            background: #ffea00;
+            border: 4px solid #000;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 900;
+            font-size: 13px;
+            cursor: pointer;
+            box-shadow: 3px 3px 0 #000;
+            text-align: center;
+        }
+        .zoneBtn:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0 #000; }
+    </style>
+</head>
+<body>
+
+<div id="kakao-browser-notice">
+    ⚠️ 카카오톡 안에서는 버튼이 가려질 수 있어요. 우측 하단 <b>'•••'</b> 또는 공유 아이콘에서 <b>'다른 브라우저로 열기'</b>를 눌러주세요.
+    <span onclick="document.getElementById('kakao-browser-notice').style.display='none'" style="position:absolute; right:12px; top:8px; cursor:pointer; font-size:16px;">✕</span>
+</div>
+<script>
+    if (/KAKAOTALK/i.test(navigator.userAgent || '')) {
+        location.href = 'kakaotalk://web/openExternal?url=' + encodeURIComponent(location.href);
+        setTimeout(function () {
+            document.getElementById('kakao-browser-notice').style.display = 'block';
+        }, 800);
+    }
+</script>
+
+<div class="menu-wrap">
+    <button class="hamburger-btn" onclick="toggleMenu()">☰</button>
+    <div class="dropdown-menu" id="dropdownMenu">
+        <a href="index.html">🏠 홈으로</a>
+        <button onclick="shareKakao()">💬 카톡 공유</button>
+        <a href="https://forms.gle/N6wUYUUzjqY2yRGDA" target="_blank" rel="noopener">🐛 버그 리포트</a>
+        <div class="divider"></div>
+        <a href="privacy.html">📄 개인정보처리방침</a>
+    </div>
+</div>
+
+<div id="gameContainer">
+    <canvas id="gameCanvas"></canvas>
+
+    <div id="setupScreen">
+        <div id="mainTitle">
+            <span class="titleBig"><span class="spinBall">⚽</span> PENALTY SHOOTOUT</span>
+            <span class="titleSub">WINNER TAKES ALL</span>
+        </div>
+        <div id="heroArtWrap">
+            <svg viewBox="0 0 300 300" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                    <pattern id="crowdPattern" width="7" height="6" patternUnits="userSpaceOnUse">
+                        <rect width="7" height="6" fill="#7a1f1f"/>
+                        <circle cx="2" cy="2.5" r="1.3" fill="#c0392b"/>
+                        <circle cx="5.5" cy="4.5" r="1.3" fill="#932020"/>
+                    </pattern>
+                </defs>
+                <rect width="300" height="300" fill="#1b3a26"/>
+                <rect width="300" height="112" fill="url(#crowdPattern)"/>
+                <rect y="106" width="300" height="8" fill="#fff" opacity="0.85"/>
+                <rect y="114" width="300" height="186" fill="#2ecc71"/>
+                <polygon points="150,130 90,300 210,300" fill="#27ae60" opacity="0.55"/>
+                <rect x="98" y="16" width="104" height="46" rx="6" fill="#0a0a0a" stroke="#1e7a3d" stroke-width="5"/>
+                <circle cx="122" cy="40" r="6" fill="#2ecc71"/>
+                <circle cx="139" cy="40" r="6" fill="#2ecc71"/>
+                <circle cx="156" cy="40" r="6" fill="#333"/>
+                <circle cx="173" cy="40" r="6" fill="#333"/>
+                <circle cx="190" cy="40" r="6" fill="#333"/>
+                <rect x="98" y="128" width="104" height="6" fill="#ecf0f1"/>
+                <rect x="98" y="128" width="6" height="70" fill="#ecf0f1"/>
+                <rect x="196" y="128" width="6" height="70" fill="#ecf0f1"/>
+                <g stroke="#ffffff" stroke-opacity="0.35" stroke-width="1.5">
+                    <line x1="104" y1="134" x2="104" y2="196"/>
+                    <line x1="115" y1="134" x2="115" y2="196"/>
+                    <line x1="126" y1="134" x2="126" y2="196"/>
+                    <line x1="137" y1="134" x2="137" y2="196"/>
+                    <line x1="148" y1="134" x2="148" y2="196"/>
+                    <line x1="159" y1="134" x2="159" y2="196"/>
+                    <line x1="170" y1="134" x2="170" y2="196"/>
+                    <line x1="181" y1="134" x2="181" y2="196"/>
+                    <line x1="192" y1="134" x2="192" y2="196"/>
+                    <line x1="98" y1="140" x2="202" y2="140"/>
+                    <line x1="98" y1="152" x2="202" y2="152"/>
+                    <line x1="98" y1="164" x2="202" y2="164"/>
+                    <line x1="98" y1="176" x2="202" y2="176"/>
+                    <line x1="98" y1="188" x2="202" y2="188"/>
+                </g>
+                <g transform="translate(150,178)">
+                    <ellipse cx="0" cy="24" rx="15" ry="4" fill="#000" opacity="0.3"/>
+                    <path d="M-9,-18 L9,-18 L7,4 L-7,4 Z" fill="#e84393"/>
+                    <rect x="-15" y="-18" width="6" height="16" fill="#e84393"/>
+                    <rect x="9" y="-18" width="6" height="16" fill="#e84393"/>
+                    <circle cx="-12" cy="4" r="4.5" fill="#fff"/>
+                    <circle cx="12" cy="4" r="4.5" fill="#fff"/>
+                    <circle cx="0" cy="-26" r="6.5" fill="#ffccaa"/>
+                    <rect x="-7" y="4" width="14" height="10" fill="#222"/>
+                </g>
+                <g transform="translate(105,246)">
+                    <ellipse cx="0" cy="30" rx="17" ry="4" fill="#000" opacity="0.3"/>
+                    <rect x="-9" y="8" width="7" height="20" fill="#046a38"/>
+                    <rect x="2" y="8" width="7" height="20" fill="#046a38"/>
+                    <rect x="-10" y="-14" width="20" height="24" fill="#da020e"/>
+                    <text x="0" y="0" font-family="Courier New" font-weight="900" font-size="11" fill="#fff" text-anchor="middle">7</text>
+                    <circle cx="0" cy="-24" r="7.5" fill="#ffccaa"/>
+                    <circle cx="0" cy="-29" r="5.5" fill="#2b2018"/>
+                    <rect x="-15" y="-14" width="6" height="18" fill="#da020e"/>
+                    <rect x="9" y="-14" width="6" height="18" fill="#da020e"/>
+                </g>
+                <g transform="translate(150,272)">
+                    <ellipse cx="0" cy="8" rx="11" ry="3" fill="#000" opacity="0.25"/>
+                    <circle cx="0" cy="0" r="10" fill="#fff" stroke="#222" stroke-width="1.5"/>
+                    <polygon points="0,-6 5,-2 3,4 -3,4 -5,-2" fill="#222"/>
+                </g>
+            </svg>
+        </div>
+        <div class="setupLabel">모드 선택</div>
+        <div class="setupRow" id="modeRow"></div>
+
+        <div class="setupLabel" id="diffLabel">난이도 (골키퍼 방어율)</div>
+        <div class="setupRow" id="diffRow"></div>
+
+        <div class="setupLabel" id="p1Label">P1 유니폼</div>
+        <div class="setupRow" id="p1KitRow"></div>
+
+        <div class="setupLabel" id="p2Label" style="display:none;">P2 유니폼</div>
+        <div class="setupRow" id="p2KitRow" style="display:none;"></div>
+
+        <div id="startBtnWrap">
+            <button id="startBtn" class="btn" onclick="startGame()">GAME START</button>
+        </div>
+    </div>
+
+    <div id="turnIndicator"></div>
+    <div id="defendPicker">
+        <div id="defendHeading"></div>
+        <div id="defendGrid"></div>
+    </div>
+    <button id="restartBtn" class="btn" onclick="resetGame()">PLAY AGAIN</button>
+    <button id="actionBtn" class="btn" onclick="handleAction(event)">SHOOT (SPACE)</button>
+</div>
+
+<script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const startBtn = document.getElementById('startBtn');
+    const restartBtn = document.getElementById('restartBtn');
+    const actionBtn = document.getElementById('actionBtn');
+    const setupScreen = document.getElementById('setupScreen');
+    const turnIndicator = document.getElementById('turnIndicator');
+
+    const WIDTH = 400;
+    const HEIGHT = 700;
+    canvas.width = WIDTH;
+    canvas.height = HEIGHT;
+    ctx.imageSmoothingEnabled = false;
+
+    // 픽셀아트 파이프라인 (1 = 다운샘플 없이 원본 해상도로 선명하게)
+    const PIXEL_SCALE = 1;
+    const OFF_WIDTH = WIDTH / PIXEL_SCALE;
+    const OFF_HEIGHT = HEIGHT / PIXEL_SCALE;
+    const offCanvas = document.createElement('canvas');
+    offCanvas.width = OFF_WIDTH;
+    offCanvas.height = OFF_HEIGHT;
+    const offCtx = offCanvas.getContext('2d');
+    offCtx.imageSmoothingEnabled = false;
+
+    // ===== 유니폼 프리셋 (국기 배색 조합만 사용, 공식 엠블럼/스폰서 로고 없음) =====
+    const JERSEYS = [
+        { name: '스페인',     shirt: '#c0392b', shorts: '#1e3799', sock: '#c0392b',
+          flagSvg: '<svg viewBox="0 0 24 16" preserveAspectRatio="xMidYMid slice"><rect width="24" height="16" fill="#c60b1e"/><rect y="4" width="24" height="8" fill="#ffc400"/></svg>' },
+        { name: '프랑스',     shirt: '#1e3799', shorts: '#ffffff', sock: '#c0392b',
+          flagSvg: '<svg viewBox="0 0 24 16" preserveAspectRatio="xMidYMid slice"><rect width="8" height="16" fill="#0055a4"/><rect x="8" width="8" height="16" fill="#fff"/><rect x="16" width="8" height="16" fill="#ef4135"/></svg>' },
+        { name: '잉글랜드',   shirt: '#ffffff', shorts: '#1e3799', sock: '#ffffff',
+          flagSvg: '<svg viewBox="0 0 24 16" preserveAspectRatio="xMidYMid slice"><rect width="24" height="16" fill="#fff"/><rect y="6" width="24" height="4" fill="#ce1124"/><rect x="10" width="4" height="16" fill="#ce1124"/></svg>' },
+        { name: '아르헨티나', shirt: '#87ceeb', shorts: '#111111', sock: '#ffffff', stripe: true,
+          flagSvg: '<svg viewBox="0 0 24 16" preserveAspectRatio="xMidYMid slice"><rect width="24" height="16" fill="#75aadb"/><rect y="5.33" width="24" height="5.33" fill="#fff"/><circle cx="12" cy="8" r="2.1" fill="#f6b40e" stroke="#85340a" stroke-width="0.3"/></svg>' },
+        { name: '한국',       shirt: '#c0392b', shorts: '#1e3799', sock: '#c0392b',
+          flagSvg: '<svg viewBox="0 0 24 16" preserveAspectRatio="xMidYMid slice"><rect width="24" height="16" fill="#fff"/><circle cx="12" cy="8" r="4" fill="#cd2e3a"/><path d="M12,4 a2,2 0 0,1 0,4 a2,2 0 0,0 0,4 a4,4 0 0,1 0,-8 z" fill="#003478"/></svg>' },
+        { name: '일본',       shirt: '#1e3799', shorts: '#ffffff', sock: '#1e3799',
+          flagSvg: '<svg viewBox="0 0 24 16" preserveAspectRatio="xMidYMid slice"><rect width="24" height="16" fill="#fff"/><circle cx="12" cy="8" r="4.4" fill="#bc002d"/></svg>' },
+        { name: '브라질',     shirt: '#f1c40f', shorts: '#1e3799', sock: '#ffffff',
+          flagSvg: '<svg viewBox="0 0 24 16" preserveAspectRatio="xMidYMid slice"><rect width="24" height="16" fill="#009c3b"/><polygon points="12,2 21,8 12,14 3,8" fill="#ffdf00"/><circle cx="12" cy="8" r="3.3" fill="#002776"/></svg>' },
+        { name: '포르투갈',   shirt: '#8b0000', shorts: '#046a38', sock: '#8b0000',
+          flagSvg: '<svg viewBox="0 0 24 16" preserveAspectRatio="xMidYMid slice"><rect width="9.6" height="16" fill="#046a38"/><rect x="9.6" width="14.4" height="16" fill="#da020e"/><circle cx="9.6" cy="8" r="2.8" fill="#ffcc00" stroke="#c8102e" stroke-width="0.4"/></svg>' }
+    ];
+
+    let gameMode = '1P';       // '1P' | '2P'
+    let difficulty = 'NORMAL'; // 'EASY' | 'NORMAL' | 'HARD'
+    let p1Kit = JERSEYS[0];
+    let p2Kit = JERSEYS[1];
+
+    // ===== 설정 화면 UI 빌드 =====
+    const modeRow = document.getElementById('modeRow');
+    const diffRow = document.getElementById('diffRow');
+    const diffLabel = document.getElementById('diffLabel');
+    const p1KitRow = document.getElementById('p1KitRow');
+    const p2KitRow = document.getElementById('p2KitRow');
+    const p2Label = document.getElementById('p2Label');
+
+    function buildKitRow(row, playerNum) {
+        JERSEYS.forEach((j, i) => {
+            const b = document.createElement('div');
+            b.className = 'kitSwatchSmall' + (i === 0 ? ' selected' : '');
+            b.title = j.name;
+            b.innerHTML = j.flagSvg;
+            b.onclick = () => {
+                if (playerNum === 1) p1Kit = j; else p2Kit = j;
+                [...row.children].forEach(c => c.classList.remove('selected'));
+                b.classList.add('selected');
+            };
+            row.appendChild(b);
+        });
+    }
+    [['1P', '1인 플레이'], ['2P', '2인 플레이']].forEach(([val, label]) => {
+        const b = document.createElement('div');
+        b.className = 'smallBtn' + (val === gameMode ? ' selected' : '');
+        b.textContent = label;
+        b.onclick = () => {
+            gameMode = val;
+            [...modeRow.children].forEach(c => c.classList.remove('selected'));
+            b.classList.add('selected');
+            const is2P = gameMode === '2P';
+            diffLabel.style.display = is2P ? 'none' : 'block';
+            diffRow.style.display = is2P ? 'none' : 'flex';
+            p2Label.style.display = is2P ? 'block' : 'none';
+            p2KitRow.style.display = is2P ? 'flex' : 'none';
+            document.getElementById('p1Label').textContent = is2P ? 'P1 유니폼' : '내 유니폼';
+        };
+        modeRow.appendChild(b);
+    });
+
+    [['EASY', '쉬움'], ['NORMAL', '보통'], ['HARD', '어려움']].forEach(([val, label]) => {
+        const b = document.createElement('div');
+        b.className = 'smallBtn' + (val === difficulty ? ' selected' : '');
+        b.textContent = label;
+        b.onclick = () => {
+            difficulty = val;
+            [...diffRow.children].forEach(c => c.classList.remove('selected'));
+            b.classList.add('selected');
+        };
+        diffRow.appendChild(b);
+    });
+
+    buildKitRow(p1KitRow, 1);
+    buildKitRow(p2KitRow, 2);
+    // 기본값: P2는 두 번째 유니폼으로 시작 (P1과 겹치지 않게)
+    p2KitRow.children[1].classList.add('selected');
+    p2KitRow.children[0].classList.remove('selected');
+    p2Kit = JERSEYS[1];
+
+    // ===== 게임 상태 =====
+    let gameState = 'START_SCREEN';
+    let maxAttempts = 5;
+    let matchDecided = false;
+    let winner = null; // 1 또는 2
+    let opponentKit = null; // 1P 모드에서 랜덤으로 정해지는 상대 국가
+
+    // 두 팀(플레이어/상대) 스코어
+    let score1 = 0, score2 = 0;
+    let shotResults1 = [], shotResults2 = [];
+    let currentKicker = 1; // 1 또는 2 (번갈아 사용)
+    let kicksTaken1 = 0, kicksTaken2 = 0;
+
+    let resultText = '';
+    let resultTimer = 0;
+    let confetti = [];
+    let fireworks = [];
+    let fireworkSpawnTimer = 0;
+    let celebrationPlayers = [];
+    let celebrationActive = false;
+    let gameFrame = 0;
+
+    const goal = { x: 50, y: 220, width: 300, height: 130 };
+    const ballStart = { x: WIDTH / 2, y: 530 };
+    const playerStart = { x: 130, y: 550 };
+
+    let ball = { x: ballStart.x, y: ballStart.y, radius: 10, targetX: 0, targetY: 0, rotation: 0 };
+    let targetCursor = { x: WIDTH / 2, y: goal.y + goal.height / 2, dirX: 1, dirY: 1, speed: 6, radius: 15 };
+    let powerBar = { value: 0, dir: 1, speed: 3.5, locked: false, power: '', timeLimit: 300, startFrame: 0 };
+    let keeper = { x: WIDTH / 2, y: 310, targetX: WIDTH / 2, targetY: 310, state: 'IDLE' };
+    let player = { x: playerStart.x, y: playerStart.y, state: 'IDLE' };
+    let opponentPrepTimer = 0;
+    let opponentKickTriggered = false;
+
+    const ZONE_LABELS = ['왼쪽 위', '가운데 위', '오른쪽 위', '왼쪽 아래', '가운데 아래', '오른쪽 아래'];
+
+    function getZone(x, y) {
+        const col = x < goal.x + goal.width / 3 ? 0 : (x < goal.x + goal.width * 2 / 3 ? 1 : 2);
+        const row = y < goal.y + goal.height / 2 ? 0 : 1;
+        return row * 3 + col;
+    }
+    function zoneCenter(z) {
+        const col = z % 3, row = Math.floor(z / 3);
+        return {
+            x: goal.x + (col + 0.5) * (goal.width / 3),
+            y: goal.y + (row + 0.5) * (goal.height / 2)
+        };
+    }
+    function aiGuessChance() {
+        if (difficulty === 'EASY') return 0.08;
+        if (difficulty === 'HARD') return 0.42;
+        return 0.20;
+    }
+
+    function currentKit() {
+        if (gameMode === '1P') return currentKicker === 1 ? p1Kit : opponentKit;
+        return currentKicker === 1 ? p1Kit : p2Kit;
+    }
+
+    const defendPicker = document.getElementById('defendPicker');
+    const defendHeading = document.getElementById('defendHeading');
+    const defendGrid = document.getElementById('defendGrid');
+    ZONE_LABELS.forEach((label, i) => {
+        const b = document.createElement('div');
+        b.className = 'zoneBtn';
+        b.textContent = label;
+        b.onclick = () => resolveDefend(i);
+        defendGrid.appendChild(b);
+    });
+    function openDefendPicker() {
+        if (gameMode === '1P') {
+            defendHeading.textContent = `${opponentKit.name}의 슈팅입니다! 막을 곳을 고르세요`;
+            defendTimer = 100;
+        } else {
+            const defenderIsP1 = currentKicker === 2;
+            const name = defenderIsP1 ? `P1 (${p1Kit.name})` : `P2 (${p2Kit.name})`;
+            defendHeading.textContent = `${name} 수비 차례 - 막을 곳을 고르세요`;
+        }
+        defendPicker.style.display = 'flex';
+    }
+    function closeDefendPicker() {
+        defendPicker.style.display = 'none';
+    }
+
+    function updateTurnIndicator() {
+        turnIndicator.style.display = 'block';
+        if (gameMode === '1P') {
+            const oppName = opponentKit ? opponentKit.name : '상대팀';
+            turnIndicator.textContent = currentKicker === 1
+                ? `내 차례 (${p1Kit.name})   ${p1Kit.name} ${score1} : ${score2} ${oppName}`
+                : `${oppName} 차례   ${p1Kit.name} ${score1} : ${score2} ${oppName}`;
+        } else {
+            turnIndicator.textContent = `P${currentKicker} 차례 (${currentKicker === 1 ? p1Kit.name : p2Kit.name})  P1 ${score1} : ${score2} P2`;
+        }
+    }
+
+    function startGame() {
+        if (gameMode === '1P') {
+            const pool = JERSEYS.filter(j => j !== p1Kit);
+            opponentKit = pool[Math.floor(Math.random() * pool.length)];
+        }
+        setupScreen.style.display = 'none';
+        actionBtn.style.display = 'block';
+        resetRound();
+    }
+
+    canvas.addEventListener('mousedown', handleAction);
+    canvas.addEventListener('touchstart', function(e) { e.preventDefault(); handleAction(e); }, {passive: false});
+    window.addEventListener('keydown', function(e) {
+        if (e.code === 'Space') { e.preventDefault(); handleAction(e); }
+    });
+
+    function handleAction(e) {
+        if (gameState === 'AIM_Y') {
+            gameState = 'AIM_X';
+            actionBtn.innerText = "LOCK X (SPACE)";
+        } else if (gameState === 'AIM_X') {
+            ball.targetX = targetCursor.x;
+            ball.targetY = targetCursor.y;
+            gameState = 'POWER_RUN';
+            player.state = 'RUNNING';
+            powerBar.locked = false;
+            powerBar.value = 0;
+            powerBar.startFrame = gameFrame;
+            actionBtn.innerText = "POWER! (SPACE)";
+        } else if (gameState === 'POWER_RUN' && !powerBar.locked) {
+            powerBar.locked = true;
+            if (powerBar.value < 40) powerBar.power = 'WEAK';
+            else if (powerBar.value < 85) powerBar.power = 'PERFECT';
+            else powerBar.power = 'OVERPOWER';
+            actionBtn.innerText = "WAIT...";
+        }
+    }
+
+    function aiPickZone(trueZone) {
+        if (Math.random() < aiGuessChance()) return trueZone;
+        let z;
+        do { z = Math.floor(Math.random() * 6); } while (z === trueZone);
+        return z;
+    }
+
+    let kickZone = 0;
+    let defendTimer = 0;
+
+    function recordResult(outcome) {
+        if (outcome === 'GOAL') { resultText = 'GOAL!'; createConfetti(); }
+        else if (outcome === 'SAVED') resultText = 'SAVED!';
+        else resultText = 'MISS...';
+
+        if (currentKicker === 1) {
+            shotResults1.push(outcome);
+            if (outcome === 'GOAL') score1++;
+            kicksTaken1++;
+        } else {
+            shotResults2.push(outcome);
+            if (outcome === 'GOAL') score2++;
+            kicksTaken2++;
+        }
+        checkDecision();
+        gameState = 'RESULT';
+        resultTimer = 80;
+    }
+
+    // 승부 판정: 정규 라운드 중 조기 승부 확정 + 동점 시 서든데스(연장) 자동 연장
+    function checkDecision() {
+        if (matchDecided) return;
+        const remainingA = maxAttempts - kicksTaken1;
+        const remainingB = maxAttempts - kicksTaken2;
+        if (score1 > score2 + remainingB) { matchDecided = true; winner = 1; return; }
+        if (score2 > score1 + remainingA) { matchDecided = true; winner = 2; return; }
+        if (kicksTaken1 >= maxAttempts && kicksTaken2 >= maxAttempts) {
+            if (score1 !== score2) { matchDecided = true; winner = score1 > score2 ? 1 : 2; }
+            else { maxAttempts++; } // 동점 -> 서든데스 한 라운드씩 연장
+        }
+    }
+
+    function evaluateShot() {
+        const perfect = powerBar.power === 'PERFECT';
+
+        if (!perfect) {
+            // 초록존(PERFECT)이 아니면 골대를 벗어남 - 수비 판정 없이 즉시 미스
+            if (powerBar.power === 'OVERPOWER') {
+                ball.targetY = goal.y - (55 + Math.random() * 45);
+                ball.targetX = Math.max(goal.x - 45, Math.min(goal.x + goal.width + 45,
+                    ball.targetX + (Math.random() > 0.5 ? 1 : -1) * (30 + Math.random() * 50)));
+            } else { // WEAK
+                ball.targetX = (Math.random() > 0.5)
+                    ? goal.x + goal.width + (35 + Math.random() * 35)
+                    : goal.x - (35 + Math.random() * 35);
+                ball.targetY = goal.y + goal.height * 0.55;
+            }
+            keeper.state = 'IDLE';
+            gameState = 'KICKED';
+            setTimeout(() => recordResult('MISS'), 420);
+            return;
+        }
+
+        kickZone = getZone(ball.targetX, ball.targetY);
+        keeper.state = 'READY';
+        gameState = 'DEFEND_PICK';
+
+        if (gameMode === '1P') {
+            defendTimer = 45;
+        } else {
+            openDefendPicker();
+        }
+    }
+
+    // ===== 1P 모드: 상대팀(AI)의 자동 슈팅 =====
+    function aiTakeShot() {
+        const chances = {
+            EASY:   { PERFECT: 0.45, WEAK: 0.35, OVERPOWER: 0.20 },
+            NORMAL: { PERFECT: 0.65, WEAK: 0.20, OVERPOWER: 0.15 },
+            HARD:   { PERFECT: 0.82, WEAK: 0.08, OVERPOWER: 0.10 }
+        };
+        const c = chances[difficulty] || chances.NORMAL;
+        const r = Math.random();
+        let quality;
+        if (r < c.PERFECT) quality = 'PERFECT';
+        else if (r < c.PERFECT + c.WEAK) quality = 'WEAK';
+        else quality = 'OVERPOWER';
+        powerBar.power = quality;
+
+        const tz = Math.floor(Math.random() * 6);
+        const zc = zoneCenter(tz);
+        ball.targetX = zc.x + (Math.random() * 30 - 15);
+        ball.targetY = zc.y + (Math.random() * 20 - 10);
+
+        if (quality !== 'PERFECT') {
+            if (quality === 'OVERPOWER') {
+                ball.targetY = goal.y - (55 + Math.random() * 45);
+                ball.targetX = Math.max(goal.x - 45, Math.min(goal.x + goal.width + 45,
+                    ball.targetX + (Math.random() > 0.5 ? 1 : -1) * (30 + Math.random() * 50)));
+            } else { // WEAK
+                ball.targetX = (Math.random() > 0.5)
+                    ? goal.x + goal.width + (35 + Math.random() * 35)
+                    : goal.x - (35 + Math.random() * 35);
+                ball.targetY = goal.y + goal.height * 0.55;
+            }
+            keeper.state = 'IDLE';
+            gameState = 'KICKED';
+            setTimeout(() => recordResult('MISS'), 420);
+            return;
+        }
+
+        kickZone = getZone(ball.targetX, ball.targetY);
+        keeper.state = 'READY';
+        gameState = 'DEFEND_PICK';
+        openDefendPicker();
+    }
+
+    function resolveDefend(zone) {
+        closeDefendPicker();
+        const c = zoneCenter(zone);
+        keeper.state = 'DIVING';
+        keeper.targetX = c.x;
+        keeper.targetY = c.y - 10;
+        gameState = 'KICKED';
+        setTimeout(() => recordResult(zone === kickZone ? 'SAVED' : 'GOAL'), 380);
+    }
+
+    function createConfetti() {
+        for (let i = 0; i < 60; i++) {
+            confetti.push({
+                x: goal.x + Math.random() * goal.width, y: goal.y + Math.random() * 50,
+                size: Math.random() * 6 + 4, color: `hsl(${Math.random() * 360}, 100%, 50%)`,
+                vx: (Math.random() - 0.5) * 8, vy: -Math.random() * 6 - 2, gravity: 0.2
+            });
+        }
+    }
+
+    function spawnFirework() {
+        const x = 60 + Math.random() * (WIDTH - 120);
+        const y = 100 + Math.random() * 150;
+        const hue = Math.floor(Math.random() * 360);
+        const count = 24;
+        for (let i = 0; i < count; i++) {
+            const angle = (Math.PI * 2 * i) / count;
+            const speed = 1.5 + Math.random() * 2;
+            fireworks.push({
+                x, y, vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed,
+                life: 40 + Math.random() * 20, maxLife: 60, color: `hsl(${hue}, 100%, 60%)`
+            });
+        }
+    }
+
+    function drawFireworks(ctx) {
+        fireworkSpawnTimer--;
+        if (fireworkSpawnTimer <= 0) { spawnFirework(); fireworkSpawnTimer = 35 + Math.floor(Math.random() * 25); }
+        for (const p of fireworks) {
+            p.x += p.vx; p.y += p.vy; p.vy += 0.03; p.life--;
+            ctx.globalAlpha = Math.max(0, p.life / p.maxLife);
+            ctx.fillStyle = p.color;
+            ctx.beginPath(); ctx.arc(p.x, p.y, 2.2, 0, Math.PI * 2); ctx.fill();
+        }
+        ctx.globalAlpha = 1;
+        fireworks = fireworks.filter(p => p.life > 0);
+    }
+
+    function spawnCelebrationPlayers(winningSide) {
+        const kit = gameMode === '1P' ? p1Kit : (winningSide === 1 ? p1Kit : p2Kit);
+        celebrationPlayers = [];
+        const count = 7;
+        for (let i = 0; i < count; i++) {
+            const fromLeft = i % 2 === 0;
+            celebrationPlayers.push({
+                x: fromLeft ? -30 - Math.random() * 60 : WIDTH + 30 + Math.random() * 60,
+                y: 150 + Math.random() * 20,
+                targetX: 60 + Math.random() * 280,
+                targetY: 390 + Math.random() * 110,
+                kit: kit,
+                phase: 'RUN',
+                bobOffset: Math.random() * Math.PI * 2,
+                speed: 2.2 + Math.random() * 1.6
+            });
+        }
+    }
+
+    function drawMiniPlayer(ctx, x, y, kit) {
+        ctx.save(); ctx.translate(x, y);
+        ctx.fillStyle = 'rgba(0,0,0,0.3)'; ctx.beginPath(); ctx.ellipse(0, 12, 10, 3, 0, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = kit.shorts; ctx.fillRect(-6, -4, 12, 10);
+        ctx.fillStyle = kit.sock; ctx.fillRect(-6, 6, 5, 8); ctx.fillRect(1, 6, 5, 8);
+        ctx.fillStyle = kit.shirt;
+        ctx.beginPath(); ctx.moveTo(-9, -24); ctx.lineTo(9, -24); ctx.lineTo(7, -4); ctx.lineTo(-7, -4); ctx.fill();
+        ctx.fillStyle = '#ffccaa'; ctx.beginPath(); ctx.arc(0, -29, 5, 0, Math.PI * 2); ctx.fill();
+        ctx.strokeStyle = kit.shirt; ctx.lineWidth = 4; ctx.lineCap = 'round';
+        ctx.beginPath(); ctx.moveTo(-8, -22); ctx.lineTo(-14, -34); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(8, -22); ctx.lineTo(14, -34); ctx.stroke();
+        ctx.restore();
+    }
+
+    function updateAndDrawCelebration(ctx) {
+        for (const p of celebrationPlayers) {
+            if (p.phase === 'RUN') {
+                const dx = p.targetX - p.x, dy = p.targetY - p.y;
+                const dist = Math.hypot(dx, dy);
+                if (dist < 6) { p.phase = 'CHEER'; }
+                else { p.x += (dx / dist) * p.speed; p.y += (dy / dist) * p.speed; }
+            }
+            const bob = p.phase === 'CHEER' ? Math.abs(Math.sin(gameFrame * 0.25 + p.bobOffset)) * 10 : Math.sin(gameFrame * 0.5 + p.bobOffset) * 3;
+            drawMiniPlayer(ctx, p.x, p.y - bob, p.kit);
+        }
+    }
+
+    function enterGameOver() {
+        gameState = 'GAMEOVER';
+        restartBtn.style.display = 'block';
+        actionBtn.style.display = 'none';
+        turnIndicator.style.display = 'none';
+        celebrationPlayers = [];
+        fireworks = [];
+        celebrationActive = (gameMode === '1P') ? (winner === 1) : true;
+        if (celebrationActive) {
+            createConfetti();
+            spawnCelebrationPlayers(winner);
+            fireworkSpawnTimer = 20;
+        }
+    }
+
+    function resetRound() {
+        ball.x = ballStart.x; ball.y = ballStart.y; ball.rotation = 0; ball.radius = 10;
+        player.state = 'IDLE'; player.x = playerStart.x; player.y = playerStart.y;
+        keeper.x = WIDTH / 2; keeper.y = 310; keeper.targetX = WIDTH / 2; keeper.targetY = 310; keeper.state = 'IDLE';
+
+        if (matchDecided) {
+            enterGameOver();
+            return;
+        }
+
+        let roundCount = Math.max(kicksTaken1, kicksTaken2);
+        targetCursor.speed = 6 + (roundCount * 0.8);
+        powerBar.speed = 3.5 + (roundCount * 0.5);
+        targetCursor.x = WIDTH / 2;
+        targetCursor.y = goal.y + goal.height / 2;
+        // 매 라운드 방향을 무작위로 재설정 -> 조준 패턴 고정으로 인한 슈팅 방향 쏠림(및 그 결과 키퍼 쏠림) 방지
+        targetCursor.dirX = Math.random() < 0.5 ? 1 : -1;
+        targetCursor.dirY = Math.random() < 0.5 ? 1 : -1;
+        powerBar.power = ''; powerBar.locked = false; powerBar.value = 0;
+
+        actionBtn.innerText = "LOCK Y (SPACE)";
+
+        // 번갈아 차기: 두 팀 모두 이번 라운드 몫을 안 찼으면 교대
+        if (kicksTaken1 <= kicksTaken2 && kicksTaken1 < maxAttempts) currentKicker = 1;
+        else if (kicksTaken2 < maxAttempts) currentKicker = 2;
+
+        updateTurnIndicator();
+
+        if (gameMode === '1P' && currentKicker === 2) {
+            gameState = 'OPP_PREP';
+            opponentPrepTimer = 55;
+            opponentKickTriggered = false;
+            actionBtn.style.display = 'none';
+        } else {
+            gameState = 'AIM_Y';
+            actionBtn.style.display = 'block';
+        }
+    }
+
+    function resetGame() {
+        score1 = 0; score2 = 0; shotResults1 = []; shotResults2 = [];
+        kicksTaken1 = 0; kicksTaken2 = 0; currentKicker = 1; confetti = [];
+        fireworks = []; celebrationPlayers = []; celebrationActive = false;
+        maxAttempts = 5; matchDecided = false; winner = null;
+        restartBtn.style.display = 'none';
+        actionBtn.style.display = 'block';
+        if (gameMode === '1P') {
+            const pool = JERSEYS.filter(j => j !== p1Kit);
+            opponentKit = pool[Math.floor(Math.random() * pool.length)];
+        }
+        resetRound();
+    }
+
+    // ===== 렌더링 =====
+    function drawStadium(ctx) {
+        ctx.fillStyle = '#1e3016'; ctx.fillRect(0, 0, WIDTH, 175);
+        for (let i = 0; i < 500; i++) {
+            let px = Math.random() * WIDTH; let py = Math.random() * 165;
+            let colors = ['#2c4c1e', '#13210d', '#ffffff', '#4d4d4d'];
+            ctx.fillStyle = colors[Math.floor(Math.random() * colors.length)];
+            ctx.fillRect(px, py, 2, 2);
+        }
+        ctx.fillStyle = '#27ae60'; ctx.fillRect(0, 165, WIDTH, 10);
+        ctx.fillStyle = '#fff'; ctx.fillRect(0, 175, WIDTH, 3);
+        ctx.fillStyle = '#2ecc71'; ctx.fillRect(0, 178, WIDTH, HEIGHT - 178);
+
+        ctx.fillStyle = '#27ae60';
+        let vanishY = 178;
+        for (let i = -6; i <= 6; i += 2) {
+            ctx.beginPath(); ctx.moveTo(WIDTH/2 + i*30, vanishY); ctx.lineTo(WIDTH/2 + (i+1)*30, vanishY);
+            ctx.lineTo(WIDTH/2 + (i+1)*180, HEIGHT); ctx.lineTo(WIDTH/2 + i*180, HEIGHT); ctx.fill();
+        }
+        ctx.fillStyle = 'rgba(255,255,255,0.85)';
+        ctx.fillRect(0, 480, WIDTH, 5);
+        ctx.beginPath(); ctx.moveTo(50, 178); ctx.lineTo(10, 480);
+        ctx.moveTo(350, 178); ctx.lineTo(390, 480);
+        ctx.lineWidth = 4; ctx.strokeStyle = 'rgba(255,255,255,0.85)'; ctx.stroke();
+    }
+
+    function drawGoal(ctx) {
+        ctx.fillStyle = 'rgba(255,255,255,0.2)';
+        for (let x = goal.x; x <= goal.x + goal.width; x += 12) ctx.fillRect(x, goal.y, 2, goal.height);
+        for (let y = goal.y; y <= goal.y + goal.height; y += 12) ctx.fillRect(goal.x, y, goal.width, 2);
+
+        ctx.fillStyle = '#ecf0f1';
+        ctx.fillRect(goal.x - 8, goal.y - 8, goal.width + 16, 8);
+        ctx.fillRect(goal.x - 8, goal.y, 8, goal.height + 15);
+        ctx.fillRect(goal.x + goal.width, goal.y, 8, goal.height + 15);
+    }
+
+    function drawJoint(ctx, x, y) {
+        ctx.fillStyle = 'rgba(0,0,0,0.35)';
+        ctx.beginPath(); ctx.arc(x, y, 2, 0, Math.PI * 2); ctx.fill();
+    }
+
+    function drawKeeper(ctx) {
+        ctx.save(); ctx.translate(keeper.x, keeper.y);
+
+        ctx.fillStyle = 'rgba(0,0,0,0.3)'; ctx.beginPath(); ctx.ellipse(0, 5, 15, 5, 0, 0, Math.PI*2); ctx.fill();
+
+        ctx.fillStyle = '#e84393';
+        ctx.beginPath();
+        ctx.moveTo(-10, -30); ctx.lineTo(10, -30);
+        ctx.lineTo(8, -5); ctx.lineTo(-8, -5); ctx.fill();
+
+        ctx.fillStyle = '#ffccaa';
+        ctx.beginPath(); ctx.arc(0, -38, 7, 0, Math.PI * 2); ctx.fill();
+
+        ctx.fillStyle = '#e84393';
+        if (keeper.state === 'IDLE') {
+            ctx.fillRect(-16, -30, 6, 18); ctx.fillRect(10, -30, 6, 18);
+            drawJoint(ctx, -13, -19); drawJoint(ctx, 13, -19);
+            ctx.fillStyle = '#fff';
+            ctx.beginPath(); ctx.arc(-13, -8, 5, 0, Math.PI*2); ctx.fill();
+            ctx.beginPath(); ctx.arc(13, -8, 5, 0, Math.PI*2); ctx.fill();
+        } else {
+            ctx.fillRect(-22, -45, 8, 20); ctx.fillRect(14, -45, 8, 20);
+            drawJoint(ctx, -18, -33); drawJoint(ctx, 18, -33);
+            ctx.fillStyle = '#fff';
+            ctx.beginPath(); ctx.arc(-18, -48, 5, 0, Math.PI*2); ctx.fill();
+            ctx.beginPath(); ctx.arc(18, -48, 5, 0, Math.PI*2); ctx.fill();
+        }
+
+        ctx.fillStyle = '#222'; ctx.fillRect(-8, -5, 16, 12);
+        drawJoint(ctx, -5, 1); drawJoint(ctx, 5, 1);
+
+        ctx.restore();
+    }
+
+    function drawPlayer(ctx) {
+        const kit = currentKit();
+        ctx.save(); ctx.translate(player.x, player.y);
+
+        let bob = player.state === 'RUNNING' ? Math.sin(gameFrame * 0.6) * 4 : 0;
+
+        ctx.fillStyle = 'rgba(0,0,0,0.3)'; ctx.beginPath(); ctx.ellipse(0, 15, 16, 4, 0, 0, Math.PI*2); ctx.fill();
+
+        ctx.fillStyle = kit.shorts; ctx.fillRect(-9, -10 + bob, 18, 12);
+
+        ctx.fillStyle = kit.sock;
+        if (player.state === 'IDLE' || Math.floor(gameFrame / 5) % 2 === 0) {
+            ctx.fillRect(-8, 2 + bob, 6, 12); ctx.fillRect(2, 2 + bob, 6, 12);
+            drawJoint(ctx, -5, 8 + bob); drawJoint(ctx, 5, 8 + bob);
+            ctx.fillStyle = '#111';
+            ctx.beginPath(); ctx.ellipse(-5, 15 + bob, 5, 3, 0, 0, Math.PI*2); ctx.fill();
+            ctx.beginPath(); ctx.ellipse(5, 15 + bob, 5, 3, 0, 0, Math.PI*2); ctx.fill();
+        } else {
+            ctx.fillRect(-8, -2 + bob, 6, 14); ctx.fillRect(2, 6 + bob, 6, 8);
+            drawJoint(ctx, -5, 5 + bob); drawJoint(ctx, 5, 10 + bob);
+            ctx.fillStyle = '#111';
+            ctx.beginPath(); ctx.ellipse(-5, 12 + bob, 5, 3, 0, 0, Math.PI*2); ctx.fill();
+            ctx.beginPath(); ctx.ellipse(5, 16 + bob, 5, 3, 0, 0, Math.PI*2); ctx.fill();
+        }
+
+        ctx.fillStyle = kit.shirt;
+        ctx.beginPath();
+        ctx.moveTo(-13, -38 + bob); ctx.lineTo(13, -38 + bob);
+        ctx.lineTo(10, -10 + bob); ctx.lineTo(-10, -10 + bob); ctx.fill();
+
+        if (kit.stripe) {
+            ctx.fillStyle = 'rgba(255,255,255,0.55)';
+            for (let sx = -12; sx < 12; sx += 6) {
+                ctx.fillRect(sx, -38 + bob, 3, 28);
+            }
+        }
+
+        ctx.fillStyle = '#fff'; ctx.font = 'bold 16px "Courier New"'; ctx.textAlign = 'center'; ctx.fillText('7', 0, -28 + bob);
+
+        ctx.fillStyle = '#ffccaa'; ctx.beginPath(); ctx.arc(0, -46 + bob, 7, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = '#3e2723'; ctx.beginPath(); ctx.arc(0, -50 + bob, 6, 0, Math.PI * 2); ctx.fill();
+
+        ctx.fillStyle = kit.shirt;
+        ctx.fillRect(-17, -38 + bob, 5, 16); ctx.fillRect(12, -38 + bob, 5, 16);
+        drawJoint(ctx, -14.5, -28 + bob); drawJoint(ctx, 14.5, -28 + bob);
+        ctx.fillStyle = '#ffccaa';
+        ctx.beginPath(); ctx.arc(-14.5, -20 + bob, 3, 0, Math.PI*2); ctx.fill();
+        ctx.beginPath(); ctx.arc(14.5, -20 + bob, 3, 0, Math.PI*2); ctx.fill();
+
+        ctx.restore();
+    }
+
+    function drawBall(ctx) {
+        ctx.save();
+        let hFactor = (ballStart.y - ball.y) / (ballStart.y - goal.y);
+
+        ctx.fillStyle = 'rgba(0,0,0,0.3)';
+        ctx.beginPath(); ctx.ellipse(ball.x, ball.y + hFactor*25 + 10, ball.radius, ball.radius*0.4, 0, 0, Math.PI * 2); ctx.fill();
+
+        ctx.translate(ball.x, ball.y); ctx.rotate(ball.rotation);
+
+        ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(0, 0, ball.radius, 0, Math.PI * 2); ctx.fill();
+        ctx.strokeStyle = '#222'; ctx.lineWidth = 1.5; ctx.stroke();
+
+        ctx.fillStyle = '#222';
+        ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(-ball.radius*0.5, -ball.radius*0.5); ctx.lineTo(0, -ball.radius*0.8); ctx.fill();
+        ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(ball.radius*0.7, 0); ctx.lineTo(ball.radius*0.5, ball.radius*0.5); ctx.fill();
+        ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(-ball.radius*0.6, ball.radius*0.4); ctx.lineTo(-ball.radius*0.2, ball.radius*0.7); ctx.fill();
+
+        ctx.restore();
+    }
+
+    function drawTargetCursor(ctx) {
+        if (gameState !== 'AIM_Y' && gameState !== 'AIM_X') return;
+
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)'; ctx.lineWidth = 2;
+        if (gameState === 'AIM_Y') {
+            ctx.beginPath(); ctx.moveTo(0, targetCursor.y); ctx.lineTo(WIDTH, targetCursor.y); ctx.stroke();
+        } else {
+            ctx.beginPath(); ctx.moveTo(targetCursor.x, goal.y - 20); ctx.lineTo(targetCursor.x, goal.y + goal.height + 20); ctx.stroke();
+        }
+
+        ctx.strokeStyle = '#fff'; ctx.lineWidth = 3;
+        ctx.beginPath(); ctx.arc(targetCursor.x, targetCursor.y, targetCursor.radius, 0, Math.PI * 2); ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(targetCursor.x - 22, targetCursor.y); ctx.lineTo(targetCursor.x + 22, targetCursor.y);
+        ctx.moveTo(targetCursor.x, targetCursor.y - 22); ctx.lineTo(targetCursor.x, targetCursor.y + 22);
+        ctx.stroke();
+
+        ctx.fillStyle = '#e74c3c'; ctx.beginPath(); ctx.arc(targetCursor.x, targetCursor.y, 3, 0, Math.PI * 2); ctx.fill();
+    }
+
+    function drawPowerBar(ctx) {
+        if (gameState !== 'POWER_RUN' && gameState !== 'KICKED' && gameState !== 'DEFEND_PICK' && gameState !== 'RESULT') return;
+
+        const barW = 280; const barH = 26;
+        const barX = WIDTH/2 - barW/2; const barY = 560;
+
+        ctx.fillStyle = '#f1c40f'; ctx.fillRect(barX, barY, barW * 0.4, barH);
+        ctx.fillStyle = '#2ecc71'; ctx.fillRect(barX + barW * 0.4, barY, barW * 0.45, barH);
+        ctx.fillStyle = '#e74c3c'; ctx.fillRect(barX + barW * 0.85, barY, barW * 0.15, barH);
+
+        ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.strokeRect(barX, barY, barW, barH);
+
+        let cursorX = barX + (powerBar.value / 100) * barW;
+        ctx.fillStyle = '#fff'; ctx.fillRect(cursorX - 4, barY - 6, 8, barH + 12);
+        ctx.strokeStyle = '#111'; ctx.lineWidth = 2; ctx.strokeRect(cursorX - 4, barY - 6, 8, barH + 12);
+
+        if (gameState === 'POWER_RUN' && !powerBar.locked) {
+            ctx.textAlign = 'center';
+            if (Math.floor(gameFrame / 8) % 2 === 0) {
+                ctx.font = 'bold 17px "Courier New"';
+                ctx.fillStyle = '#fff'; ctx.strokeStyle = '#111'; ctx.lineWidth = 4;
+                ctx.strokeText('초록 구간에서 지금 탭!', WIDTH/2, barY - 16);
+                ctx.fillText('초록 구간에서 지금 탭!', WIDTH/2, barY - 16);
+            }
+
+            const elapsed = gameFrame - powerBar.startFrame;
+            const remainSec = Math.max(0, Math.ceil((powerBar.timeLimit - elapsed) / 60));
+            ctx.font = 'bold 28px "Courier New"'; ctx.textAlign = 'center';
+            ctx.fillStyle = remainSec <= 2 ? '#e74c3c' : '#fff';
+            ctx.strokeStyle = '#111'; ctx.lineWidth = 4;
+            ctx.strokeText(String(remainSec), barX - 22, barY + barH / 2 + 9);
+            ctx.fillText(String(remainSec), barX - 22, barY + barH / 2 + 9);
+        } else if (powerBar.locked && powerBar.power) {
+            ctx.font = 'bold 24px "Courier New"'; ctx.textAlign = 'center';
+            let color = powerBar.power === 'PERFECT' ? '#2ecc71' : (powerBar.power === 'WEAK' ? '#f1c40f' : '#e74c3c');
+            ctx.fillStyle = color; ctx.strokeStyle = '#111'; ctx.lineWidth = 4;
+            ctx.strokeText(powerBar.power, WIDTH/2, barY - 18);
+            ctx.fillText(powerBar.power, WIDTH/2, barY - 18);
+        }
+    }
+
+    function drawScoreboardUI(ctx) {
+        const n = maxAttempts;
+        const dotSpacing = Math.min(20, 130 / n);
+        const boardW = Math.max(190, 60 + n * dotSpacing);
+        const boardH = 90; const boardX = WIDTH / 2 - boardW / 2; const boardY = 15;
+
+        ctx.fillStyle = '#0a0a0a';
+        ctx.beginPath(); ctx.roundRect(boardX, boardY, boardW, boardH, 6); ctx.fill();
+        ctx.strokeStyle = '#1e7a3d'; ctx.lineWidth = 6;
+        ctx.beginPath(); ctx.roundRect(boardX, boardY, boardW, boardH, 6); ctx.stroke();
+
+        const nameA = p1Kit ? p1Kit.name : 'P1';
+        const nameB = gameMode === '1P' ? (opponentKit ? opponentKit.name : 'AI') : p2Kit.name;
+
+        ctx.textAlign = 'center';
+        ctx.fillStyle = '#fff'; ctx.font = 'bold 10px "Courier New"';
+        ctx.fillText(nameA.slice(0, 3), boardX + 20, boardY + 20);
+        ctx.fillText(nameB.slice(0, 3), boardX + 20, boardY + 55);
+
+        for (let i = 0; i < n; i++) {
+            let cx = boardX + 42 + (i * dotSpacing);
+            let cy1 = boardY + 20; let cy2 = boardY + 55;
+            if (shotResults1[i] === 'GOAL') ctx.fillStyle = '#2ecc71';
+            else if (shotResults1[i] === 'SAVED' || shotResults1[i] === 'MISS') ctx.fillStyle = '#e74c3c';
+            else ctx.fillStyle = '#333';
+            ctx.beginPath(); ctx.arc(cx, cy1, 5, 0, Math.PI * 2); ctx.fill();
+            ctx.strokeStyle = '#fff'; ctx.lineWidth = 1; ctx.stroke();
+
+            if (shotResults2[i] === 'GOAL') ctx.fillStyle = '#2ecc71';
+            else if (shotResults2[i] === 'SAVED' || shotResults2[i] === 'MISS') ctx.fillStyle = '#e74c3c';
+            else ctx.fillStyle = '#333';
+            ctx.beginPath(); ctx.arc(cx, cy2, 5, 0, Math.PI * 2); ctx.fill();
+            ctx.strokeStyle = '#fff'; ctx.lineWidth = 1; ctx.stroke();
+        }
+        ctx.fillStyle = '#fff'; ctx.font = 'bold 12px "Courier New"';
+        ctx.fillText(`${score1} : ${score2}`, boardX + boardW - 22, boardY + 40);
+    }
+
+    // ===== 메인 루프 =====
+    function gameLoop() {
+        gameFrame++;
+
+        if (gameState !== 'START_SCREEN') {
+
+            if (gameState === 'AIM_Y') {
+                targetCursor.y += targetCursor.speed * targetCursor.dirY;
+                if (targetCursor.y > goal.y + goal.height - 10 || targetCursor.y < goal.y + 10) targetCursor.dirY *= -1;
+            } else if (gameState === 'AIM_X') {
+                targetCursor.x += targetCursor.speed * targetCursor.dirX;
+                if (targetCursor.x > goal.x + goal.width - 15 || targetCursor.x < goal.x + 15) targetCursor.dirX *= -1;
+            }
+
+            if (gameState === 'POWER_RUN') {
+                if (!powerBar.locked) {
+                    powerBar.value += powerBar.speed * powerBar.dir;
+                    if (powerBar.value > 100 || powerBar.value < 0) powerBar.dir *= -1;
+
+                    const elapsed = gameFrame - powerBar.startFrame;
+                    if (elapsed >= powerBar.timeLimit) {
+                        powerBar.locked = true;
+                        if (powerBar.value < 40) powerBar.power = 'WEAK';
+                        else if (powerBar.value < 85) powerBar.power = 'PERFECT';
+                        else powerBar.power = 'OVERPOWER';
+                    }
+                }
+
+                if (Math.hypot(player.x - (ballStart.x - 12), player.y - (ballStart.y + 5)) > 5) {
+                    player.x += (ballStart.x - player.x - 12) * 0.045;
+                    player.y += (ballStart.y - player.y + 5) * 0.045;
+                }
+
+                if (powerBar.locked) {
+                    gameState = 'KICKED';
+                    evaluateShot();
+                }
+            }
+
+            if (gameState === 'OPP_PREP') {
+                player.state = 'RUNNING';
+                player.x += (ballStart.x - player.x - 12) * 0.045;
+                player.y += (ballStart.y - player.y + 5) * 0.045;
+                opponentPrepTimer--;
+                if (!opponentKickTriggered && (opponentPrepTimer <= 0 || Math.hypot(player.x - (ballStart.x - 12), player.y - (ballStart.y + 5)) < 5)) {
+                    opponentKickTriggered = true;
+                    aiTakeShot();
+                }
+            }
+
+            if (gameState === 'DEFEND_PICK') {
+                if (gameMode === '1P' && currentKicker === 1) {
+                    defendTimer--;
+                    if (defendTimer <= 0) resolveDefend(aiPickZone(kickZone));
+                } else if (gameMode === '1P' && currentKicker === 2) {
+                    defendTimer--;
+                    if (defendTimer <= 0) resolveDefend(Math.floor(Math.random() * 6));
+                }
+            }
+
+            if (gameState === 'KICKED' || gameState === 'RESULT') {
+                let dx = ball.targetX - ball.x; let dy = ball.targetY - ball.y;
+                let ballSpeed = powerBar.power === 'PERFECT' ? 0.22 : (powerBar.power === 'WEAK' ? 0.10 : 0.25);
+
+                if (Math.hypot(dx, dy) > 5) {
+                    ball.x += dx * ballSpeed; ball.y += dy * ballSpeed; ball.rotation += (ballSpeed * 2);
+                } else { ball.x = ball.targetX; ball.y = ball.targetY; }
+
+                let progress = (ballStart.y - ball.y) / (ballStart.y - goal.y);
+                ball.radius = 10 * (1 - progress * 0.4);
+            }
+
+            if (keeper.state === 'DIVING') {
+                keeper.x += (keeper.targetX - keeper.x) * 0.15; keeper.y += (keeper.targetY - keeper.y) * 0.15;
+            }
+
+            offCtx.clearRect(0, 0, OFF_WIDTH, OFF_HEIGHT);
+            offCtx.save();
+            offCtx.scale(1 / PIXEL_SCALE, 1 / PIXEL_SCALE);
+
+            drawStadium(offCtx);
+            drawGoal(offCtx);
+            drawKeeper(offCtx);
+            if (gameState !== 'RESULT' || resultTimer > 0) drawBall(offCtx);
+            if (gameState !== 'GAMEOVER') drawPlayer(offCtx);
+            drawTargetCursor(offCtx);
+            drawPowerBar(offCtx);
+            if (gameState !== 'GAMEOVER') drawScoreboardUI(offCtx);
+
+            confetti = confetti.filter(p => p.y < HEIGHT + 60);
+            for (let p of confetti) {
+                offCtx.fillStyle = p.color; offCtx.fillRect(p.x, p.y, p.size, p.size);
+                p.x += p.vx; p.y += p.vy; p.vy += p.gravity;
+            }
+
+            if (gameState === 'DEFEND_PICK' && gameMode === '1P' && currentKicker === 1) {
+                offCtx.save();
+                offCtx.textAlign = 'center';
+                offCtx.font = 'bold 16px "Courier New"'; offCtx.fillStyle = '#fff';
+                offCtx.strokeStyle = '#111'; offCtx.lineWidth = 3;
+                offCtx.strokeText('골키퍼가 방향을 고르는 중...', WIDTH / 2, 470);
+                offCtx.fillText('골키퍼가 방향을 고르는 중...', WIDTH / 2, 470);
+                offCtx.restore();
+            }
+
+            if (gameState === 'OPP_PREP') {
+                offCtx.save();
+                offCtx.textAlign = 'center';
+                offCtx.font = 'bold 15px "Courier New"'; offCtx.fillStyle = '#fff';
+                offCtx.strokeStyle = '#111'; offCtx.lineWidth = 3;
+                const msg = `${opponentKit.name} 선수가 슈팅 준비 중...`;
+                offCtx.strokeText(msg, WIDTH / 2, 470);
+                offCtx.fillText(msg, WIDTH / 2, 470);
+                offCtx.restore();
+            }
+
+            if (gameState === 'RESULT') {
+                resultTimer--;
+                offCtx.save();
+                offCtx.font = 'bold 54px "Courier New"'; offCtx.textAlign = 'center';
+                offCtx.fillStyle = resultText === 'GOAL!' ? '#f1c40f' : '#e74c3c';
+                offCtx.strokeStyle = '#111'; offCtx.lineWidth = 6;
+                offCtx.strokeText(resultText, WIDTH / 2, HEIGHT / 2 - 30);
+                offCtx.fillText(resultText, WIDTH / 2, HEIGHT / 2 - 30);
+                offCtx.restore();
+                if (resultTimer <= 0) resetRound();
+            }
+
+            if (gameState === 'GAMEOVER') {
+                offCtx.fillStyle = '#1b3a26'; offCtx.fillRect(0, 0, WIDTH, HEIGHT);
+                if (celebrationActive) {
+                    drawFireworks(offCtx);
+                    updateAndDrawCelebration(offCtx);
+                }
+
+                offCtx.fillStyle = 'rgba(0, 0, 0, 0.45)'; offCtx.fillRect(0, 0, WIDTH, HEIGHT);
+                offCtx.fillStyle = '#1e3016'; offCtx.beginPath(); offCtx.roundRect(30, HEIGHT/2 - 145, 340, 260, 15); offCtx.fill();
+                offCtx.strokeStyle = '#f1c40f'; offCtx.lineWidth = 4; offCtx.stroke();
+                offCtx.textAlign = 'center';
+
+                if (gameMode === '1P') {
+                    const isWin = winner === 1;
+                    offCtx.font = 'bold 46px "Courier New"';
+                    offCtx.fillStyle = isWin ? '#3498db' : '#e74c3c';
+                    offCtx.strokeStyle = '#111'; offCtx.lineWidth = 5;
+                    const label = isWin ? 'WIN!' : 'LOSE...';
+                    offCtx.strokeText(label, WIDTH / 2, HEIGHT / 2 - 80);
+                    offCtx.fillText(label, WIDTH / 2, HEIGHT / 2 - 80);
+
+                    offCtx.font = 'bold 14px "Courier New"'; offCtx.fillStyle = '#fff';
+                    offCtx.fillText(`${p1Kit.name} vs ${opponentKit.name}`, WIDTH / 2, HEIGHT / 2 - 45);
+
+                    offCtx.font = 'bold 50px "Courier New"'; offCtx.fillStyle = '#f1c40f';
+                    offCtx.fillText(`${score1} : ${score2}`, WIDTH / 2, HEIGHT / 2 + 15);
+
+                    if (maxAttempts > 5) {
+                        offCtx.font = 'bold 12px "Courier New"'; offCtx.fillStyle = '#ccc';
+                        offCtx.fillText('(승부차기 연장 끝에 결정)', WIDTH / 2, HEIGHT / 2 + 50);
+                    }
+                } else {
+                    offCtx.font = 'bold 18px "Courier New"'; offCtx.fillStyle = '#fff';
+                    offCtx.fillText('RESULT', WIDTH / 2, HEIGHT / 2 - 95);
+                    offCtx.font = 'bold 44px "Courier New"'; offCtx.fillStyle = '#f1c40f';
+                    offCtx.fillText(`${score1} : ${score2}`, WIDTH / 2, HEIGHT / 2 - 40);
+                    offCtx.font = 'bold 26px "Courier New"';
+                    offCtx.fillStyle = '#3498db';
+                    offCtx.strokeStyle = '#111'; offCtx.lineWidth = 4;
+                    const winnerName = winner === 1 ? p1Kit.name : p2Kit.name;
+                    const winnerText = `${winnerName} (P${winner}) WIN!`;
+                    offCtx.strokeText(winnerText, WIDTH / 2, HEIGHT / 2 + 5);
+                    offCtx.fillText(winnerText, WIDTH / 2, HEIGHT / 2 + 5);
+                    if (maxAttempts > 5) {
+                        offCtx.font = 'bold 12px "Courier New"'; offCtx.fillStyle = '#ccc';
+                        offCtx.fillText('(승부차기 연장 끝에 결정)', WIDTH / 2, HEIGHT / 2 + 35);
+                    }
+                }
+            }
+
+            offCtx.restore();
+
+            ctx.clearRect(0, 0, WIDTH, HEIGHT);
+            ctx.drawImage(offCanvas, 0, 0, OFF_WIDTH, OFF_HEIGHT, 0, 0, WIDTH, HEIGHT);
+        } else {
+            ctx.clearRect(0, 0, WIDTH, HEIGHT);
+        }
+        requestAnimationFrame(gameLoop);
+    }
+    gameLoop();
+
+    // ★ 화면 크기에 맞춰 400x700 게임판을 통째로 축소/확대 (반응형 처리)
+    function fitGameContainer() {
+        const el = document.getElementById('gameContainer');
+        const isMobile = window.innerWidth <= 768;
+        const topSafe = isMobile ? 65 : 20;
+        const bottomSafe = isMobile ? 30 : 20;
+        const availW = window.innerWidth - 16;
+        const availH = window.innerHeight - topSafe - bottomSafe;
+        const scale = Math.min(1, availW / 400, availH / 700);
+        el.style.transform = 'scale(' + scale + ')';
+    }
+    window.addEventListener('resize', fitGameContainer);
+    window.addEventListener('orientationchange', fitGameContainer);
+    fitGameContainer();
+</script>
+
+<!-- Google Analytics(GA4) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-CTNNSY6150"></script>
+<script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-CTNNSY6150');
+</script>
+
+<!-- 카카오 공유 SDK -->
+<script src="https://developers.kakao.com/sdk/js/kakao.min.js"></script>
+<script>
+    try { Kakao.init('1747ba005771471984d6560a563cb948'); } catch (e) { console.log('카카오 SDK 초기화 대기 중'); }
+
+    function toggleMenu() {
+        document.getElementById('dropdownMenu').classList.toggle('show');
+    }
+    function closeMenuIfOpen() {
+        const m = document.getElementById('dropdownMenu');
+        if (m) m.classList.remove('show');
+    }
+    document.addEventListener('click', function (e) {
+        const wrap = document.querySelector('.menu-wrap');
+        if (wrap && !wrap.contains(e.target)) closeMenuIfOpen();
+    });
+
+    function shareKakao() {
+        closeMenuIfOpen();
+        if (!Kakao.isInitialized || !Kakao.isInitialized()) {
+            alert('카카오 공유 기능을 준비 중입니다. 잠시 후 다시 시도해주세요.');
+            return;
+        }
+        Kakao.Share.sendDefault({
+            objectType: 'feed',
+            content: {
+                title: '승부차기 PK 대결 - 스웦(SPACEWARP)',
+                description: '1인 도전 또는 2인 대결! 픽셀 감성 승부차기 게임.',
+                imageUrl: 'https://spacewarp.co.kr/og-image.png',
+                link: { mobileWebUrl: 'https://spacewarp.co.kr/penalty_shootout.html', webUrl: 'https://spacewarp.co.kr/penalty_shootout.html' },
+            },
+            buttons: [
+                { title: '한판 하러가기', link: { mobileWebUrl: 'https://spacewarp.co.kr/penalty_shootout.html', webUrl: 'https://spacewarp.co.kr/penalty_shootout.html' } },
+            ],
+        });
+    }
+</script>
+
+</body>
+</html>

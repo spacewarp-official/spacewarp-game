@@ -33,6 +33,11 @@
             height: 700px;
             box-shadow: 0 10px 50px rgba(0,0,0,0.9);
             background-color: #2ecc71;
+            background-image:
+                repeating-linear-gradient(180deg, rgba(0,0,0,0.07) 0px, rgba(0,0,0,0.07) 38px, rgba(255,255,255,0.05) 38px, rgba(255,255,255,0.05) 76px),
+                radial-gradient(circle at 50% 42%, transparent 46px, rgba(255,255,255,0.4) 46px, rgba(255,255,255,0.4) 49px, transparent 49px),
+                linear-gradient(180deg, transparent 41.5%, rgba(255,255,255,0.4) 41.5%, rgba(255,255,255,0.4) 43%, transparent 43%),
+                linear-gradient(180deg, transparent calc(100% - 3px), rgba(255,255,255,0.35) calc(100% - 3px));
             overflow: hidden;
             transform-origin: center center;
             flex-shrink: 0;
@@ -65,8 +70,8 @@
         }
 
         @media (max-width: 768px) {
-            body { padding-top: 55px; padding-bottom: 20px; height: auto; min-height: 100vh; }
-            .menu-wrap { top: 55px; }
+            body { padding-top: 42px; padding-bottom: 10px; height: auto; min-height: 100vh; align-items: flex-start; }
+            .menu-wrap { top: 42px; }
         }
         canvas { display: block; image-rendering: pixelated; image-rendering: crisp-edges; }
 
@@ -89,12 +94,14 @@
         .btn:active { transform: translateX(-50%) translate(2px, 2px); box-shadow: 2px 2px 0px #000; }
 
         #startBtn { position: static; transform: none; display: block; margin: 10px 0 4px; }
-        #restartBtn { top: 428px; display: none; padding: 12px 30px; font-size: 18px; }
+        #restartBtn { top: 450px; left: 28%; width: 148px; display: none; padding: 12px 8px; font-size: 14px; }
         #menuBtn {
-            top: 478px;
+            top: 450px;
+            left: 74%;
+            width: 148px;
             display: none;
-            padding: 9px 26px;
-            font-size: 13px;
+            padding: 12px 8px;
+            font-size: 14px;
             background: #eeeeee;
             color: #111;
         }
@@ -222,13 +229,14 @@
             padding: 6px 10px;
             font-size: 11px;
             font-weight: 900;
-            background: #ffea00;
+            background: #8a8a8a;
+            color: #fff;
             border: 2px solid #000;
             border-radius: 6px;
             cursor: pointer;
             box-shadow: 2px 2px 0 #000;
         }
-        .smallBtn.selected { background: #2ecc71; color: #fff; }
+        .smallBtn.selected { background: #ffea00; color: #000; }
         .kitSwatchSmall {
             width: 34px;
             height: 34px;
@@ -457,22 +465,33 @@
 
     // ===== 유니폼 프리셋 (국기 배색 조합만 사용, 공식 엠블럼/스폰서 로고 없음) =====
     const JERSEYS = [
-        { name: '스페인', code: 'ESP',     shirt: '#c0392b', shorts: '#1e3799', sock: '#c0392b',
+        { name: '스페인', code: 'ESP',     shirt: '#e2241c', shirt2: '#142a6b', pattern: 'sleeve',
+          shorts: '#142a6b', shortsAccent: '#ffcc00', sock: '#142a6b', sockStripe: '#e2241c',
           flagSvg: '<svg viewBox="0 0 24 16" preserveAspectRatio="xMidYMid slice"><rect width="24" height="16" fill="#c60b1e"/><rect y="4" width="24" height="8" fill="#ffc400"/></svg>' },
-        { name: '프랑스', code: 'FRA',     shirt: '#1e3799', shorts: '#ffffff', sock: '#c0392b',
+        { name: '프랑스', code: 'FRA',     shirt: '#0a1a4a', shirt2: '#3a6fd8', pattern: 'sleeve',
+          shorts: '#ffffff', shortsAccent: '#0a1a4a', sock: '#d21034',
           flagSvg: '<svg viewBox="0 0 24 16" preserveAspectRatio="xMidYMid slice"><rect width="8" height="16" fill="#0055a4"/><rect x="8" width="8" height="16" fill="#fff"/><rect x="16" width="8" height="16" fill="#ef4135"/></svg>' },
-        { name: '잉글랜드', code: 'ENG',   shirt: '#ffffff', shorts: '#1e3799', sock: '#ffffff',
+        { name: '잉글랜드', code: 'ENG',   shirt: '#ffffff', shirt2: '#0b1f4b', pattern: 'sleeve',
+          shorts: '#0b1f4b', shortsAccent: '#d21034', sock: '#ffffff', sockStripe: '#0b1f4b',
           flagSvg: '<svg viewBox="0 0 24 16" preserveAspectRatio="xMidYMid slice"><rect width="24" height="16" fill="#fff"/><rect y="6" width="24" height="4" fill="#ce1124"/><rect x="10" width="4" height="16" fill="#ce1124"/></svg>' },
-        { name: '아르헨티나', code: 'ARG', shirt: '#87ceeb', shorts: '#111111', sock: '#ffffff', stripe: true,
+        { name: '아르헨티나', code: 'ARG', shirt: '#ffffff', shirt2: '#78c2f0', pattern: 'stripe',
+          shorts: '#0b1f4b', sock: '#ffffff', sockStripe: '#d21034',
           flagSvg: '<svg viewBox="0 0 24 16" preserveAspectRatio="xMidYMid slice"><rect width="24" height="16" fill="#75aadb"/><rect y="5.33" width="24" height="5.33" fill="#fff"/><circle cx="12" cy="8" r="2.1" fill="#f6b40e" stroke="#85340a" stroke-width="0.3"/></svg>' },
-        { name: '한국', code: 'KOR',       shirt: '#c0392b', shorts: '#1e3799', sock: '#c0392b',
-          flagSvg: '<svg viewBox="0 0 24 16" preserveAspectRatio="xMidYMid slice"><rect width="24" height="16" fill="#fff"/><circle cx="12" cy="8" r="4" fill="#cd2e3a"/><path d="M12,4 a2,2 0 0,1 0,4 a2,2 0 0,0 0,4 a4,4 0 0,1 0,-8 z" fill="#003478"/></svg>' },
-        { name: '일본', code: 'JPN',       shirt: '#1e3799', shorts: '#ffffff', sock: '#1e3799',
+        { name: '한국', code: 'KOR',       shirt: '#d6222e', shirt2: '#96181c', pattern: 'tiger',
+          shorts: '#111111', sock: '#d6222e', sockStripe: '#ffffff',
+          flagSvg: '<svg viewBox="0 0 24 16" preserveAspectRatio="xMidYMid slice"><rect width="24" height="16" fill="#fff"/><g transform="translate(12,8) rotate(30) scale(-1,1) translate(-12,-8)"><circle cx="12" cy="8" r="4.4" fill="#003478"/><path d="M7.6,8 A4.4,4.4 0 0 1 16.4,8 A2.2,2.2 0 0 1 12,8 A2.2,2.2 0 0 0 7.6,8 Z" fill="#cd2e3a"/></g><g fill="#111"><g transform="translate(4.6,3.8) rotate(135)"><rect x="-1.8" y="-1.475" width="3.6" height="0.65"/><rect x="-1.8" y="-0.325" width="3.6" height="0.65"/><rect x="-1.8" y="0.825" width="3.6" height="0.65"/></g><g transform="translate(19.4,3.8) rotate(45)"><rect x="-1.8" y="-1.475" width="1.45" height="0.65"/><rect x="0.35" y="-1.475" width="1.45" height="0.65"/><rect x="-1.8" y="-0.325" width="3.6" height="0.65"/><rect x="-1.8" y="0.825" width="1.45" height="0.65"/><rect x="0.35" y="0.825" width="1.45" height="0.65"/></g><g transform="translate(4.6,12.2) rotate(225)"><rect x="-1.8" y="-1.475" width="3.6" height="0.65"/><rect x="-1.8" y="-0.325" width="1.45" height="0.65"/><rect x="0.35" y="-0.325" width="1.45" height="0.65"/><rect x="-1.8" y="0.825" width="3.6" height="0.65"/></g><g transform="translate(19.4,12.2) rotate(315)"><rect x="-1.8" y="-1.475" width="1.45" height="0.65"/><rect x="0.35" y="-1.475" width="1.45" height="0.65"/><rect x="-1.8" y="-0.325" width="1.45" height="0.65"/><rect x="0.35" y="-0.325" width="1.45" height="0.65"/><rect x="-1.8" y="0.825" width="1.45" height="0.65"/><rect x="0.35" y="0.825" width="1.45" height="0.65"/></g></g></svg>' },
+        { name: '일본', code: 'JPN',       shirt: '#0f2a6b', shirt2: '#2e5bb8', pattern: 'stripe',
+          shorts: '#ffffff', shortsAccent: '#0f2a6b', sock: '#ffffff', sockStripe: '#0f2a6b',
           flagSvg: '<svg viewBox="0 0 24 16" preserveAspectRatio="xMidYMid slice"><rect width="24" height="16" fill="#fff"/><circle cx="12" cy="8" r="4.4" fill="#bc002d"/></svg>' },
-        { name: '브라질', code: 'BRA',     shirt: '#f1c40f', shorts: '#1e3799', sock: '#ffffff',
+        { name: '브라질', code: 'BRA',     shirt: '#f6cc0d', shirt2: '#0a8a3c', pattern: 'sleeve',
+          shorts: '#0a2f6b', sock: '#ffffff', sockStripe: '#0a2f6b',
           flagSvg: '<svg viewBox="0 0 24 16" preserveAspectRatio="xMidYMid slice"><rect width="24" height="16" fill="#009c3b"/><polygon points="12,2 21,8 12,14 3,8" fill="#ffdf00"/><circle cx="12" cy="8" r="3.3" fill="#002776"/></svg>' },
-        { name: '포르투갈', code: 'POR',   shirt: '#8b0000', shorts: '#046a38', sock: '#8b0000',
-          flagSvg: '<svg viewBox="0 0 24 16" preserveAspectRatio="xMidYMid slice"><rect width="9.6" height="16" fill="#046a38"/><rect x="9.6" width="14.4" height="16" fill="#da020e"/><circle cx="9.6" cy="8" r="2.8" fill="#ffcc00" stroke="#c8102e" stroke-width="0.4"/></svg>' }
+        { name: '포르투갈', code: 'POR',   shirt: '#c8102e', shirt2: '#046a38', pattern: 'diagonal',
+          shorts: '#046a38', sock: '#c8102e', sockStripe: '#046a38',
+          flagSvg: '<svg viewBox="0 0 24 16" preserveAspectRatio="xMidYMid slice"><rect width="9.6" height="16" fill="#046a38"/><rect x="9.6" width="14.4" height="16" fill="#da020e"/><circle cx="9.6" cy="8" r="2.8" fill="#ffcc00" stroke="#c8102e" stroke-width="0.4"/></svg>' },
+        { name: '모로코', code: 'MAR',     shirt: '#c1272d', shirt2: '#046a38', pattern: 'sleeve',
+          shorts: '#ffffff', shortsAccent: '#046a38', sock: '#c1272d', sockStripe: '#046a38',
+          flagSvg: '<svg viewBox="0 0 24 16" preserveAspectRatio="xMidYMid slice"><rect width="24" height="16" fill="#c1272d"/><path d="M12,4.6 L14,10.75 L8.77,6.95 L15.23,6.95 L10,10.75 Z" fill="#006233"/></svg>' }
     ];
 
     let gameMode = '1P';       // '1P' | '2P'
@@ -574,6 +593,12 @@
     let opponentPrepTimer = 0;
     let roundShirtNumber = 7;
     let opponentKickTriggered = false;
+    let pendingShot = null;
+    let tellActive = false;
+    let tellDir = 0;
+    let tellAngle = 0;
+    let tellDuration = 0;
+    let tellWindowStart = 30;
 
     const ZONE_LABELS = ['왼쪽 위', '가운데 위', '오른쪽 위', '왼쪽 아래', '가운데 아래', '오른쪽 아래'];
 
@@ -763,7 +788,9 @@
     }
 
     // ===== 1P 모드: 상대팀(AI)의 자동 슈팅 =====
-    function aiTakeShot() {
+    // 상대팀 슈팅을 미리 '결정'만 해두고(아직 공은 안참), 러닝 도중 살짝 텔(자세 힌트)을 보여준다.
+    // 난이도가 높을수록 텔이 더 짧고 미묘해져서, 순수 운이 아니라 관찰력/반응속도가 중요해진다.
+    function decideOpponentShot() {
         const chances = {
             EASY:   { PERFECT: 0.45, WEAK: 0.35, OVERPOWER: 0.20 },
             NORMAL: { PERFECT: 0.65, WEAK: 0.20, OVERPOWER: 0.15 },
@@ -775,31 +802,61 @@
         if (r < c.PERFECT) quality = 'PERFECT';
         else if (r < c.PERFECT + c.WEAK) quality = 'WEAK';
         else quality = 'OVERPOWER';
-        powerBar.power = quality;
 
         const tz = Math.floor(Math.random() * 6);
         const zc = zoneCenter(tz);
-        ball.targetX = zc.x + (Math.random() * 30 - 15);
-        ball.targetY = zc.y + (Math.random() * 20 - 10);
+        let targetX = zc.x + (Math.random() * 30 - 15);
+        let targetY = zc.y + (Math.random() * 20 - 10);
 
         if (quality !== 'PERFECT') {
             if (quality === 'OVERPOWER') {
-                ball.targetY = goal.y - (55 + Math.random() * 45);
-                ball.targetX = Math.max(goal.x - 45, Math.min(goal.x + goal.width + 45,
-                    ball.targetX + (Math.random() > 0.5 ? 1 : -1) * (30 + Math.random() * 50)));
+                targetY = goal.y - (55 + Math.random() * 45);
+                targetX = Math.max(goal.x - 45, Math.min(goal.x + goal.width + 45,
+                    targetX + (Math.random() > 0.5 ? 1 : -1) * (30 + Math.random() * 50)));
             } else { // WEAK
-                ball.targetX = (Math.random() > 0.5)
+                targetX = (Math.random() > 0.5)
                     ? goal.x + goal.width + (35 + Math.random() * 35)
                     : goal.x - (35 + Math.random() * 35);
-                ball.targetY = goal.y + goal.height * 0.55;
+                targetY = goal.y + goal.height * 0.55;
             }
+        }
+
+        pendingShot = { quality, targetX, targetY, tz };
+
+        // 텔(눈치) 방향/강도 설정 - PERFECT 슈팅일 때만 의미 있는 힌트를 준다
+        const tellParams = {
+            EASY:   { dur: 30, angle: 0.32 },
+            NORMAL: { dur: 16, angle: 0.20 },
+            HARD:   { dur: 7,  angle: 0.11 }
+        };
+        const tp = tellParams[difficulty] || tellParams.NORMAL;
+        tellDuration = tp.dur;
+        tellAngle = tp.angle;
+        if (quality === 'PERFECT') {
+            const col = tz % 3; // 0=왼쪽, 1=가운데, 2=오른쪽
+            tellDir = col === 0 ? -1 : (col === 2 ? 1 : 0);
+        } else {
+            tellDir = 0;
+        }
+        tellActive = false;
+    }
+
+    function executeOpponentShot() {
+        const s = pendingShot;
+        tellActive = false;
+        if (!s) return;
+        powerBar.power = s.quality;
+        ball.targetX = s.targetX;
+        ball.targetY = s.targetY;
+
+        if (s.quality !== 'PERFECT') {
             keeper.state = 'IDLE';
             gameState = 'KICKED';
             setTimeout(() => recordResult('MISS'), 420);
             return;
         }
 
-        kickZone = getZone(ball.targetX, ball.targetY);
+        kickZone = s.tz;
         keeper.state = 'READY';
         gameState = 'DEFEND_PICK';
         openDefendPicker();
@@ -884,15 +941,56 @@
         ];
     }
 
+    function applyMiniPattern(ctx, kit, torso) {
+        // torso: {top, bottom, halfTop, halfBottom} local torso geometry for mini sprites
+        if (!kit.pattern || !kit.shirt2) return;
+        if (kit.pattern === 'diagonal') {
+            ctx.fillStyle = kit.shirt2;
+            ctx.beginPath();
+            ctx.moveTo(torso.halfTop, torso.top); ctx.lineTo(torso.halfBottom, torso.bottom); ctx.lineTo(-torso.halfBottom, torso.bottom);
+            ctx.closePath(); ctx.fill();
+        } else if (kit.pattern === 'stripe') {
+            ctx.fillStyle = kit.shirt2;
+            for (let sx = -torso.halfTop + 1; sx < torso.halfTop; sx += 4) {
+                ctx.fillRect(sx, torso.top, 2, torso.bottom - torso.top);
+            }
+        } else if (kit.pattern === 'sleeve') {
+            ctx.fillStyle = kit.shirt2;
+            ctx.beginPath();
+            ctx.moveTo(-torso.halfTop, torso.top); ctx.lineTo(-torso.halfTop + 6, torso.top);
+            ctx.lineTo(-torso.halfTop + 3, torso.top + 5); ctx.lineTo(-torso.halfTop, torso.top + 4);
+            ctx.closePath(); ctx.fill();
+            ctx.beginPath();
+            ctx.moveTo(torso.halfTop, torso.top); ctx.lineTo(torso.halfTop - 6, torso.top);
+            ctx.lineTo(torso.halfTop - 3, torso.top + 5); ctx.lineTo(torso.halfTop, torso.top + 4);
+            ctx.closePath(); ctx.fill();
+        } else if (kit.pattern === 'tiger') {
+            ctx.save();
+            ctx.beginPath();
+            ctx.moveTo(-torso.halfTop, torso.top); ctx.lineTo(torso.halfTop, torso.top);
+            ctx.lineTo(torso.halfBottom, torso.bottom); ctx.lineTo(-torso.halfBottom, torso.bottom);
+            ctx.closePath(); ctx.clip();
+            ctx.fillStyle = kit.shirt2; ctx.globalAlpha = 0.75;
+            ctx.save(); ctx.translate(-torso.halfTop, torso.top + 3); ctx.rotate(-0.3); ctx.fillRect(0, 0, 8, 1.6); ctx.restore();
+            ctx.save(); ctx.translate(-4, torso.top + 9); ctx.rotate(0.25); ctx.fillRect(0, 0, 10, 1.6); ctx.restore();
+            ctx.save(); ctx.translate(-6, torso.top + 15); ctx.rotate(-0.2); ctx.fillRect(0, 0, 9, 1.6); ctx.restore();
+            ctx.globalAlpha = 1;
+            ctx.restore();
+        }
+    }
+
     function drawMiniPlayer(ctx, x, y, kit, waveFlag) {
         ctx.save(); ctx.translate(x, y);
         ctx.fillStyle = 'rgba(0,0,0,0.3)'; ctx.beginPath(); ctx.ellipse(0, 12, 10, 3, 0, 0, Math.PI * 2); ctx.fill();
         ctx.fillStyle = kit.shorts; ctx.fillRect(-6, -4, 12, 10);
+        if (kit.shortsAccent) { ctx.fillStyle = kit.shortsAccent; ctx.fillRect(-6, -4, 12, 2); }
         ctx.fillStyle = kit.sock; ctx.fillRect(-6, 6, 5, 8); ctx.fillRect(1, 6, 5, 8);
         ctx.fillStyle = kit.shirt;
         ctx.beginPath(); ctx.moveTo(-9, -24); ctx.lineTo(9, -24); ctx.lineTo(7, -4); ctx.lineTo(-7, -4); ctx.fill();
+        applyMiniPattern(ctx, kit, { top: -24, bottom: -4, halfTop: 9, halfBottom: 7 });
         ctx.fillStyle = '#ffccaa'; ctx.beginPath(); ctx.arc(0, -29, 5, 0, Math.PI * 2); ctx.fill();
-        ctx.strokeStyle = kit.shirt; ctx.lineWidth = 4; ctx.lineCap = 'round';
+        ctx.strokeStyle = (kit.pattern === 'sleeve' && kit.shirt2) ? kit.shirt2 : kit.shirt;
+        ctx.lineWidth = 4; ctx.lineCap = 'round';
         ctx.beginPath(); ctx.moveTo(-8, -22); ctx.lineTo(-14, -34); ctx.stroke();
         ctx.beginPath(); ctx.moveTo(8, -22); ctx.lineTo(14, -34); ctx.stroke();
         if (waveFlag) {
@@ -908,12 +1006,14 @@
         ctx.fillStyle = 'rgba(0,0,0,0.3)'; ctx.beginPath(); ctx.ellipse(0, 10, 9, 3, 0, 0, Math.PI * 2); ctx.fill();
 
         ctx.fillStyle = kit.shorts; ctx.fillRect(-6, -6, 12, 8);
+        if (kit.shortsAccent) { ctx.fillStyle = kit.shortsAccent; ctx.fillRect(-6, -6, 12, 2); }
         ctx.fillStyle = kit.sock; ctx.fillRect(-7, 2, 6, 7); ctx.fillRect(1, 2, 6, 7);
 
         ctx.save();
         ctx.rotate(role === 'comfort' ? 0.05 : 0.2);
         ctx.fillStyle = kit.shirt;
         ctx.beginPath(); ctx.moveTo(-8, -22); ctx.lineTo(8, -22); ctx.lineTo(6, -4); ctx.lineTo(-6, -4); ctx.fill();
+        applyMiniPattern(ctx, kit, { top: -22, bottom: -4, halfTop: 8, halfBottom: 6 });
         ctx.restore();
 
         ctx.fillStyle = '#ffccaa';
@@ -928,7 +1028,8 @@
                 ctx.beginPath(); ctx.arc(role === 'sad' ? 8 : -1, -10, 1.6, 0, Math.PI * 2); ctx.fill();
             }
         } else {
-            ctx.strokeStyle = kit.shirt; ctx.lineWidth = 4; ctx.lineCap = 'round';
+            ctx.strokeStyle = (kit.pattern === 'sleeve' && kit.shirt2) ? kit.shirt2 : kit.shirt;
+            ctx.lineWidth = 4; ctx.lineCap = 'round';
             ctx.beginPath(); ctx.moveTo(6, -18); ctx.lineTo(18, -16); ctx.stroke();
             ctx.beginPath(); ctx.moveTo(-6, -18); ctx.lineTo(-18, -14); ctx.stroke();
         }
@@ -1011,6 +1112,8 @@
             gameState = 'OPP_PREP';
             opponentPrepTimer = 55;
             opponentKickTriggered = false;
+            tellActive = false;
+            decideOpponentShot();
             actionBtn.style.display = 'none';
         } else {
             gameState = 'AIM_Y';
@@ -1023,6 +1126,7 @@
         kicksTaken1 = 0; kicksTaken2 = 0; currentKicker = 1; confetti = [];
         fireworks = []; celebrationPlayers = []; loserPlayers = []; celebrationActive = false;
         maxAttempts = 5; matchDecided = false; winner = null;
+        pendingShot = null; tellActive = false; tellDir = 0;
         restartBtn.style.display = 'none';
         menuBtn.style.display = 'none';
         actionBtn.style.display = 'block';
@@ -1038,6 +1142,7 @@
         kicksTaken1 = 0; kicksTaken2 = 0; currentKicker = 1; confetti = [];
         fireworks = []; celebrationPlayers = []; loserPlayers = []; celebrationActive = false;
         maxAttempts = 5; matchDecided = false; winner = null;
+        pendingShot = null; tellActive = false; tellDir = 0;
         restartBtn.style.display = 'none';
         menuBtn.style.display = 'none';
         actionBtn.style.display = 'none';
@@ -1078,15 +1183,22 @@
 
         // 잔디 경계선
         ctx.fillStyle = '#27ae60'; ctx.fillRect(0, pitchY, WIDTH, 8);
-        ctx.fillStyle = '#fff'; ctx.fillRect(0, pitchY + 8, WIDTH, 3);
-        ctx.fillStyle = '#2ecc71'; ctx.fillRect(0, pitchY + 11, WIDTH, HEIGHT - (pitchY + 11));
+        ctx.fillStyle = 'rgba(255,255,255,0.35)'; ctx.fillRect(0, pitchY + 8, WIDTH, 2);
+        ctx.fillStyle = '#2ecc71'; ctx.fillRect(0, pitchY + 10, WIDTH, HEIGHT - (pitchY + 10));
 
-        const vanishY = pitchY + 11;
+        const vanishY = pitchY + 10;
         ctx.fillStyle = '#27ae60';
         for (let i = -6; i <= 6; i += 2) {
             ctx.beginPath(); ctx.moveTo(WIDTH/2 + i*30, vanishY); ctx.lineTo(WIDTH/2 + (i+1)*30, vanishY);
             ctx.lineTo(WIDTH/2 + (i+1)*180, HEIGHT); ctx.lineTo(WIDTH/2 + i*180, HEIGHT); ctx.fill();
         }
+
+        // 골라인 (골대 바로 아래 가로선)
+        const goalLineY = goal.y + goal.height;
+        ctx.fillStyle = 'rgba(255,255,255,0.9)';
+        ctx.fillRect(goal.x - 18, goalLineY - 2, goal.width + 36, 4);
+
+        // 페널티 박스 (키커와 골키퍼 사이 가로선)
         ctx.fillStyle = 'rgba(255,255,255,0.85)';
         ctx.fillRect(0, 480, WIDTH, 5);
         ctx.beginPath(); ctx.moveTo(50, vanishY); ctx.lineTo(10, 480);
@@ -1095,9 +1207,48 @@
     }
 
     function drawGoal(ctx) {
+        const inset = 7;
+
+        // 그물 지붕(윗면) - 크로스바보다 살짝 뒤로 들어간 느낌
+        ctx.fillStyle = 'rgba(255,255,255,0.16)';
+        ctx.beginPath();
+        ctx.moveTo(goal.x - 8, goal.y - 8);
+        ctx.lineTo(goal.x + goal.width + 8, goal.y - 8);
+        ctx.lineTo(goal.x + goal.width - inset, goal.y - 8 - 16);
+        ctx.lineTo(goal.x + inset, goal.y - 8 - 16);
+        ctx.closePath(); ctx.fill();
+        ctx.strokeStyle = 'rgba(255,255,255,0.3)'; ctx.lineWidth = 1;
+        for (let i = 0; i <= 8; i++) {
+            const t = i / 8;
+            ctx.beginPath();
+            ctx.moveTo(goal.x - 8 + t * (goal.width + 16), goal.y - 8);
+            ctx.lineTo(goal.x + inset + t * (goal.width + 16 - inset * 2), goal.y - 24);
+            ctx.stroke();
+        }
+
+        // 그물 측면(좌/우) - 포스트보다 살짝 뒤로 들어간 느낌
+        ctx.fillStyle = 'rgba(255,255,255,0.13)';
+        ctx.beginPath();
+        ctx.moveTo(goal.x - 8, goal.y - 8);
+        ctx.lineTo(goal.x - 8, goal.y + goal.height + 7);
+        ctx.lineTo(goal.x + inset, goal.y + goal.height - 6);
+        ctx.lineTo(goal.x + inset, goal.y - 24);
+        ctx.closePath(); ctx.fill();
+        ctx.beginPath();
+        ctx.moveTo(goal.x + goal.width + 8, goal.y - 8);
+        ctx.lineTo(goal.x + goal.width + 8, goal.y + goal.height + 7);
+        ctx.lineTo(goal.x + goal.width - inset, goal.y + goal.height - 6);
+        ctx.lineTo(goal.x + goal.width - inset, goal.y - 24);
+        ctx.closePath(); ctx.fill();
+
+        // 그물(정면, 안쪽으로 살짝 인셋)
         ctx.fillStyle = 'rgba(255,255,255,0.2)';
-        for (let x = goal.x; x <= goal.x + goal.width; x += 12) ctx.fillRect(x, goal.y, 2, goal.height);
-        for (let y = goal.y; y <= goal.y + goal.height; y += 12) ctx.fillRect(goal.x, y, goal.width, 2);
+        for (let x = goal.x + inset; x <= goal.x + goal.width - inset; x += 12) {
+            ctx.fillRect(x, goal.y - 2, 2, goal.height + 2);
+        }
+        for (let y = goal.y - 2; y <= goal.y + goal.height; y += 12) {
+            ctx.fillRect(goal.x + inset, y, goal.width - inset * 2, 2);
+        }
 
         ctx.fillStyle = '#ecf0f1';
         ctx.fillRect(goal.x - 8, goal.y - 8, goal.width + 16, 8);
@@ -1136,14 +1287,41 @@
                 ctx.fillStyle = '#f6b40e';
                 ctx.beginPath(); ctx.arc(x + w / 2, y + h / 2, h * 0.16, 0, Math.PI * 2); ctx.fill();
                 break;
-            case '한국':
+            case '한국': {
                 ctx.fillStyle = '#fff'; ctx.fillRect(x, y, w, h);
-                ctx.fillStyle = '#cd2e3a';
-                ctx.beginPath(); ctx.arc(x + w / 2, y + h / 2, h * 0.3, 0, Math.PI * 2); ctx.fill();
+                const ksx = w / 24, ksy = h / 16;
+                ctx.save();
+                ctx.translate(x, y);
+                ctx.scale(ksx, ksy);
+
+                ctx.save();
+                ctx.translate(12, 8); ctx.rotate(30 * Math.PI / 180); ctx.scale(-1, 1); ctx.translate(-12, -8);
                 ctx.fillStyle = '#003478';
-                ctx.beginPath(); ctx.arc(x + w / 2, y + h * 0.35, h * 0.15, 0, Math.PI * 2); ctx.fill();
-                ctx.beginPath(); ctx.arc(x + w / 2, y + h * 0.65, h * 0.15, 0, Math.PI * 2); ctx.fill();
+                ctx.beginPath(); ctx.arc(12, 8, 4.4, 0, Math.PI * 2); ctx.fill();
+                ctx.fillStyle = '#cd2e3a';
+                ctx.fill(new Path2D('M7.6,8 A4.4,4.4 0 0 1 16.4,8 A2.2,2.2 0 0 1 12,8 A2.2,2.2 0 0 0 7.6,8 Z'));
+                ctx.restore();
+
+                ctx.fillStyle = '#111';
+                const drawTrigramBar = (solid) => {
+                    if (solid) { ctx.fillRect(-1.8, -0.325, 3.6, 0.65); }
+                    else { ctx.fillRect(-1.8, -0.325, 1.45, 0.65); ctx.fillRect(0.35, -0.325, 1.45, 0.65); }
+                };
+                const drawTrigram = (cx, cy, angle, pattern) => {
+                    ctx.save();
+                    ctx.translate(cx, cy); ctx.rotate(angle * Math.PI / 180);
+                    ctx.save(); ctx.translate(0, -1.15); drawTrigramBar(pattern[0]); ctx.restore();
+                    ctx.save(); drawTrigramBar(pattern[1]); ctx.restore();
+                    ctx.save(); ctx.translate(0, 1.15); drawTrigramBar(pattern[2]); ctx.restore();
+                    ctx.restore();
+                };
+                drawTrigram(4.6, 3.8, 135, [true, true, true]);      // 건(乾)
+                drawTrigram(19.4, 3.8, 45, [false, true, false]);    // 감(坎)
+                drawTrigram(4.6, 12.2, 225, [true, false, true]);    // 리(離)
+                drawTrigram(19.4, 12.2, 315, [false, false, false]); // 곤(坤)
+                ctx.restore();
                 break;
+            }
             case '일본':
                 ctx.fillStyle = '#fff'; ctx.fillRect(x, y, w, h);
                 ctx.fillStyle = '#bc002d';
@@ -1165,6 +1343,19 @@
                 ctx.fillStyle = '#ffcc00';
                 ctx.beginPath(); ctx.arc(x + w * 0.4, y + h / 2, h * 0.17, 0, Math.PI * 2); ctx.fill();
                 break;
+            case '모로코': {
+                ctx.fillStyle = '#c1272d'; ctx.fillRect(x, y, w, h);
+                const msx = w / 24, msy = h / 16;
+                ctx.save();
+                ctx.translate(x, y); ctx.scale(msx, msy);
+                ctx.fillStyle = '#006233';
+                ctx.beginPath();
+                ctx.moveTo(12, 4.6); ctx.lineTo(14, 10.75); ctx.lineTo(8.77, 6.95);
+                ctx.lineTo(15.23, 6.95); ctx.lineTo(10, 10.75); ctx.closePath();
+                ctx.fill();
+                ctx.restore();
+                break;
+            }
             default:
                 ctx.fillStyle = '#999'; ctx.fillRect(x, y, w, h);
         }
@@ -1175,6 +1366,12 @@
     function drawKeeper(ctx) {
         const isDiving = keeper.state === 'DIVING';
         const isReady = keeper.state === 'READY';
+
+        // 현재 라운드의 수비 측(공격자의 반대편)에 따라 골키퍼 색을 구분
+        // side 1 (나 / P1) = 노란색, side 2 (상대 / AI / P2) = 분홍색
+        const defenderSide = currentKicker === 1 ? 2 : 1;
+        const kColor = defenderSide === 1 ? '#f1c40f' : '#e84393';
+        const kColorDark = defenderSide === 1 ? '#c9960a' : '#c93074';
 
         if (isDiving) {
             keeper.diveElapsed = (keeper.diveElapsed || 0) + 1;
@@ -1200,7 +1397,7 @@
                 ctx.rotate(lean);
 
                 // 접힌 다리 (허벅지+종아리+무릎)
-                ctx.fillStyle = '#c93074';
+                ctx.fillStyle = kColorDark;
                 ctx.fillRect(-6 - dir * 8, 2, 7, 9);
                 ctx.fillRect(-8 - dir * 15, 9, 7, 9);
                 drawJoint(ctx, -3 - dir * 8, 11);
@@ -1213,12 +1410,12 @@
                 ctx.beginPath(); ctx.ellipse(7 - dir * 11, 19, 5, 3, 0, 0, Math.PI * 2); ctx.fill();
 
                 // 몸통 (뻗은 자세)
-                ctx.fillStyle = '#e84393';
+                ctx.fillStyle = kColor;
                 ctx.beginPath();
                 ctx.moveTo(-11, -18); ctx.lineTo(11, -18); ctx.lineTo(9, 4); ctx.lineTo(-9, 4); ctx.fill();
 
                 // 뻗은 팔 (상완 + 팔꿈치 + 하완), 반대팔은 접어서 몸에 붙임
-                ctx.fillStyle = '#e84393';
+                ctx.fillStyle = kColor;
                 ctx.save();
                 ctx.translate(dir * 9, -16); ctx.rotate(dir * 0.3);
                 ctx.fillRect(0, -3, dir * 13, 7);
@@ -1240,9 +1437,9 @@
             } else {
                 // 착지 후 잔디 위에 대(大)자로 뻗은 모습
                 ctx.rotate(dir * 1.4);
-                ctx.fillStyle = '#e84393';
+                ctx.fillStyle = kColor;
                 ctx.beginPath(); ctx.ellipse(0, -6, 13, 7, 0, 0, Math.PI * 2); ctx.fill();
-                ctx.fillStyle = '#c93074';
+                ctx.fillStyle = kColorDark;
                 ctx.fillRect(-20, -9, 14, 6); ctx.fillRect(6, -9, 14, 6);
                 ctx.fillRect(-9, -2, 7, 14); ctx.fillRect(2, -2, 7, 14);
                 drawJoint(ctx, -7, -6); drawJoint(ctx, 7, -6);
@@ -1265,7 +1462,7 @@
             ctx.translate(shift * 0.35, crouch);
 
             // 다리 (허벅지 + 무릎 관절 + 종아리)
-            ctx.fillStyle = '#c93074';
+            ctx.fillStyle = kColorDark;
             ctx.fillRect(-9 + shift * 0.4, -6, 7, 9 - crouch * 0.4);
             ctx.fillRect(-9 + shift * 0.4, 3 - crouch * 0.4, 7, 8 - crouch * 0.4);
             ctx.fillRect(2 + shift * 0.4, -6, 7, 9 - crouch * 0.4);
@@ -1280,12 +1477,12 @@
             ctx.fillStyle = '#222'; ctx.fillRect(-8, -10, 16, 8 + crouch * 0.6);
 
             // 몸통
-            ctx.fillStyle = '#e84393';
+            ctx.fillStyle = kColor;
             ctx.beginPath();
             ctx.moveTo(-10, -30); ctx.lineTo(10, -30); ctx.lineTo(8, -10); ctx.lineTo(-8, -10); ctx.fill();
 
             // 팔 (상완 + 팔꿈치 관절 + 하완, 좌우로 흔들기)
-            ctx.fillStyle = '#e84393';
+            ctx.fillStyle = kColor;
             ctx.save(); ctx.translate(-13, -27); ctx.rotate((-14 + armWave) * Math.PI / 180); ctx.fillRect(-3, 0, 6, 9); ctx.restore();
             ctx.save(); ctx.translate(-13, -27 + 8); ctx.rotate((-8 + armWave * 1.4) * Math.PI / 180); ctx.fillRect(-3, 0, 6, 9); ctx.restore();
             ctx.save(); ctx.translate(13, -27); ctx.rotate((14 - armWave) * Math.PI / 180); ctx.fillRect(-3, 0, 6, 9); ctx.restore();
@@ -1314,12 +1511,14 @@
         const isGkKicker = roundShirtNumber === 1;
         const kit = isGkKicker ? gkVariant(baseKit) : baseKit;
         ctx.save(); ctx.translate(player.x, player.y);
+        if (tellActive) { ctx.rotate(tellDir * tellAngle); }
 
         let bob = player.state === 'RUNNING' ? Math.sin(gameFrame * 0.6) * 4 : 0;
 
         ctx.fillStyle = 'rgba(0,0,0,0.3)'; ctx.beginPath(); ctx.ellipse(0, 15, 16, 4, 0, 0, Math.PI*2); ctx.fill();
 
         ctx.fillStyle = kit.shorts; ctx.fillRect(-9, -10 + bob, 18, 12);
+        if (kit.shortsAccent) { ctx.fillStyle = kit.shortsAccent; ctx.fillRect(-9, -10 + bob, 18, 2); }
 
         ctx.fillStyle = kit.sock;
         if (player.state === 'IDLE' || Math.floor(gameFrame / 5) % 2 === 0) {
@@ -1327,6 +1526,10 @@
             drawJoint(ctx, -5, 9 + bob); drawJoint(ctx, 5, 9 + bob);
             ctx.fillRect(-8, 9 + bob, 6, 5); ctx.fillRect(2, 9 + bob, 6, 5);
             drawJoint(ctx, -5, 8 + bob); drawJoint(ctx, 5, 8 + bob);
+            if (kit.sockStripe) {
+                ctx.fillStyle = kit.sockStripe;
+                ctx.fillRect(-8, 2 + bob, 6, 2); ctx.fillRect(2, 2 + bob, 6, 2);
+            }
             ctx.fillStyle = '#111';
             ctx.beginPath(); ctx.ellipse(-5, 15 + bob, 5, 3, 0, 0, Math.PI*2); ctx.fill();
             ctx.beginPath(); ctx.ellipse(5, 15 + bob, 5, 3, 0, 0, Math.PI*2); ctx.fill();
@@ -1335,6 +1538,10 @@
             drawJoint(ctx, -5, 6 + bob); drawJoint(ctx, 5, 11 + bob);
             ctx.fillRect(-8, 6 + bob, 6, 8); ctx.fillRect(2, 11 + bob, 6, 3);
             drawJoint(ctx, -5, 5 + bob); drawJoint(ctx, 5, 10 + bob);
+            if (kit.sockStripe) {
+                ctx.fillStyle = kit.sockStripe;
+                ctx.fillRect(-8, -2 + bob, 6, 2); ctx.fillRect(2, 6 + bob, 6, 2);
+            }
             ctx.fillStyle = '#111';
             ctx.beginPath(); ctx.ellipse(-5, 12 + bob, 5, 3, 0, 0, Math.PI*2); ctx.fill();
             ctx.beginPath(); ctx.ellipse(5, 16 + bob, 5, 3, 0, 0, Math.PI*2); ctx.fill();
@@ -1343,13 +1550,46 @@
         ctx.fillStyle = kit.shirt;
         ctx.beginPath();
         ctx.moveTo(-13, -38 + bob); ctx.lineTo(13, -38 + bob);
-        ctx.lineTo(10, -10 + bob); ctx.lineTo(-10, -10 + bob); ctx.fill();
+        ctx.lineTo(10, -10 + bob); ctx.lineTo(-10, -10 + bob); ctx.closePath(); ctx.fill();
 
-        if (kit.stripe) {
-            ctx.fillStyle = 'rgba(255,255,255,0.55)';
+        if (kit.pattern === 'diagonal' && kit.shirt2) {
+            // 대각선 배색 (포르투갈 스타일)
+            ctx.fillStyle = kit.shirt2;
+            ctx.beginPath();
+            ctx.moveTo(13, -38 + bob); ctx.lineTo(10, -10 + bob); ctx.lineTo(-10, -10 + bob); ctx.closePath(); ctx.fill();
+        } else if (kit.pattern === 'stripe' && kit.shirt2) {
+            ctx.fillStyle = kit.shirt2;
             for (let sx = -12; sx < 12; sx += 6) {
                 ctx.fillRect(sx, -38 + bob, 3, 28);
             }
+        } else if (kit.pattern === 'sleeve' && kit.shirt2) {
+            // 래글런 소매 배색 (스페인/잉글랜드/브라질/모로코 스타일)
+            ctx.fillStyle = kit.shirt2;
+            ctx.beginPath();
+            ctx.moveTo(-13, -38 + bob); ctx.lineTo(-3, -38 + bob); ctx.lineTo(-6, -30 + bob); ctx.lineTo(-13, -32 + bob); ctx.closePath(); ctx.fill();
+            ctx.beginPath();
+            ctx.moveTo(13, -38 + bob); ctx.lineTo(3, -38 + bob); ctx.lineTo(6, -30 + bob); ctx.lineTo(13, -32 + bob); ctx.closePath(); ctx.fill();
+        } else if (kit.pattern === 'tiger' && kit.shirt2) {
+            // 호랑이 줄무늬 (한국 스타일) - 비정형 대각선 스트라이프
+            ctx.save();
+            ctx.beginPath();
+            ctx.moveTo(-13, -38 + bob); ctx.lineTo(13, -38 + bob);
+            ctx.lineTo(10, -10 + bob); ctx.lineTo(-10, -10 + bob); ctx.closePath(); ctx.clip();
+            ctx.fillStyle = kit.shirt2; ctx.globalAlpha = 0.75;
+            const streaks = [
+                { x: -15, y: -36 + bob, w: 12, h: 3, rot: -0.32 },
+                { x: -7, y: -30 + bob, w: 16, h: 2.6, rot: 0.28 },
+                { x: 1, y: -24 + bob, w: 14, h: 3, rot: -0.22 },
+                { x: -12, y: -18 + bob, w: 18, h: 2.8, rot: 0.32 },
+                { x: -3, y: -13 + bob, w: 12, h: 2.6, rot: -0.26 }
+            ];
+            streaks.forEach(s => {
+                ctx.save(); ctx.translate(s.x, s.y); ctx.rotate(s.rot);
+                ctx.fillRect(0, 0, s.w, s.h);
+                ctx.restore();
+            });
+            ctx.globalAlpha = 1;
+            ctx.restore();
         }
 
         ctx.fillStyle = '#fff';
@@ -1360,7 +1600,8 @@
         ctx.fillStyle = '#3e2723'; ctx.beginPath(); ctx.arc(0, -50 + bob, 6, 0, Math.PI * 2); ctx.fill();
 
         // 팔 (상완 + 팔꿈치 관절 + 하완)
-        ctx.fillStyle = kit.shirt;
+        const armColor = (kit.pattern === 'sleeve' && kit.shirt2) ? kit.shirt2 : kit.shirt;
+        ctx.fillStyle = armColor;
         ctx.fillRect(-17, -38 + bob, 5, 9); ctx.fillRect(12, -38 + bob, 5, 9);
         drawJoint(ctx, -14.5, -29 + bob); drawJoint(ctx, 14.5, -29 + bob);
         ctx.fillRect(-17, -29 + bob, 5, 8); ctx.fillRect(12, -29 + bob, 5, 8);
@@ -1587,9 +1828,14 @@
                 player.x += (ballStart.x - player.x - 12) * 0.045;
                 player.y += (ballStart.y - player.y + 5) * 0.045;
                 opponentPrepTimer--;
+
+                if (tellDir !== 0) {
+                    tellActive = (opponentPrepTimer <= tellWindowStart && opponentPrepTimer > tellWindowStart - tellDuration);
+                }
+
                 if (!opponentKickTriggered && (opponentPrepTimer <= 0 || Math.hypot(player.x - (ballStart.x - 12), player.y - (ballStart.y + 5)) < 5)) {
                     opponentKickTriggered = true;
-                    aiTakeShot();
+                    executeOpponentShot();
                 }
             }
 
@@ -1597,10 +1843,9 @@
                 if (gameMode === '1P' && currentKicker === 1) {
                     defendTimer--;
                     if (defendTimer <= 0) resolveDefend(aiPickZone(kickZone));
-                } else if (gameMode === '1P' && currentKicker === 2) {
-                    defendTimer--;
-                    if (defendTimer <= 0) resolveDefend(Math.floor(Math.random() * 6));
                 }
+                // 1P && currentKicker === 2 (플레이어가 직접 막는 상황)와 2P 모드는
+                // 자동 타이머로 넘기지 않고 플레이어가 직접 6개 중 하나를 탭할 때까지 대기한다.
             }
 
             if (gameState === 'KICKED' || gameState === 'RESULT') {
@@ -1656,6 +1901,13 @@
                 const msg = `${opponentKit.name} 선수가 슈팅 준비 중...`;
                 offCtx.strokeText(msg, WIDTH / 2, 470);
                 offCtx.fillText(msg, WIDTH / 2, 470);
+                if (tellActive) {
+                    offCtx.font = 'bold 13px "Courier New"'; offCtx.fillStyle = '#ffea00';
+                    offCtx.strokeStyle = '#111'; offCtx.lineWidth = 3;
+                    const hint = '자세를 잘 보세요!';
+                    offCtx.strokeText(hint, WIDTH / 2, 490);
+                    offCtx.fillText(hint, WIDTH / 2, 490);
+                }
                 offCtx.restore();
             }
 
@@ -1759,8 +2011,8 @@
     function fitGameContainer() {
         const el = document.getElementById('gameContainer');
         const isMobile = window.innerWidth <= 768;
-        const topSafe = isMobile ? 58 : 20;
-        const bottomSafe = isMobile ? 14 : 20;
+        const topSafe = isMobile ? 46 : 20;
+        const bottomSafe = isMobile ? 10 : 20;
         const vv = window.visualViewport;
         const viewportW = vv ? vv.width : window.innerWidth;
         const viewportH = vv ? vv.height : window.innerHeight;

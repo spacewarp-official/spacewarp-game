@@ -23,7 +23,6 @@
             justify-content: center;
             align-items: center;
             height: 100vh;
-            height: 100dvh;
             font-family: 'Courier New', Courier, monospace;
             overflow: hidden;
         }
@@ -89,16 +88,7 @@
         .btn:active { transform: translateX(-50%) translate(2px, 2px); box-shadow: 2px 2px 0px #000; }
 
         #startBtn { position: static; transform: none; display: block; margin: 10px 0 4px; }
-        #restartBtn { top: 428px; display: none; padding: 12px 30px; font-size: 18px; }
-        #menuBtn {
-            top: 478px;
-            display: none;
-            padding: 9px 26px;
-            font-size: 13px;
-            background: #eeeeee;
-            color: #111;
-        }
-        #menuBtn:active { transform: translateX(-50%) translate(2px, 2px); box-shadow: 2px 2px 0px #000; background: #ccc; }
+        #restartBtn { top: 45%; display: none; }
 
         #actionBtn {
             position: absolute;
@@ -114,35 +104,18 @@
 
         #turnIndicator {
             position: absolute;
-            top: 116px;
+            top: 130px;
             left: 50%;
             transform: translateX(-50%);
-            z-index: 20;
-            display: none;
-            align-items: center;
-            gap: 7px;
-            background: #0a0a0a;
-            border: 2px solid #ffea00;
-            box-shadow: 2px 2px 0 #000;
-            padding: 5px 14px 5px 6px;
-            border-radius: 20px;
-        }
-        .turnFlag {
-            width: 22px;
-            height: 15px;
-            display: inline-block;
-            border: 1px solid #000;
-            border-radius: 2px;
-            overflow: hidden;
-            flex-shrink: 0;
-        }
-        .turnFlag svg { width: 100%; height: 100%; display: block; }
-        .turnLabel {
             color: #fff;
             font-weight: 900;
-            font-size: 13px;
+            font-size: 14px;
             text-shadow: 1px 1px 0 #000;
-            white-space: nowrap;
+            z-index: 20;
+            display: none;
+            background: rgba(0,0,0,0.5);
+            padding: 4px 12px;
+            border-radius: 10px;
         }
 
         #setupScreen {
@@ -302,6 +275,8 @@
     </style>
 </head>
 <body>
+<script>document.addEventListener("contextmenu", function(e){ e.preventDefault(); });</script>
+
 
 <div id="kakao-browser-notice">
     ⚠️ 카카오톡 안에서는 버튼이 가려질 수 있어요. 우측 하단 <b>'•••'</b> 또는 공유 아이콘에서 <b>'다른 브라우저로 열기'</b>를 눌러주세요.
@@ -425,7 +400,6 @@
         <div id="defendGrid"></div>
     </div>
     <button id="restartBtn" class="btn" onclick="resetGame()">PLAY AGAIN</button>
-    <button id="menuBtn" class="btn" onclick="backToMenu()">⟵ MAIN MENU</button>
     <button id="actionBtn" class="btn" onclick="handleAction(event)">SHOOT (SPACE)</button>
 </div>
 
@@ -434,7 +408,6 @@
     const ctx = canvas.getContext('2d');
     const startBtn = document.getElementById('startBtn');
     const restartBtn = document.getElementById('restartBtn');
-    const menuBtn = document.getElementById('menuBtn');
     const actionBtn = document.getElementById('actionBtn');
     const setupScreen = document.getElementById('setupScreen');
     const turnIndicator = document.getElementById('turnIndicator');
@@ -457,21 +430,21 @@
 
     // ===== 유니폼 프리셋 (국기 배색 조합만 사용, 공식 엠블럼/스폰서 로고 없음) =====
     const JERSEYS = [
-        { name: '스페인', code: 'ESP',     shirt: '#c0392b', shorts: '#1e3799', sock: '#c0392b',
+        { name: '스페인',     shirt: '#c0392b', shorts: '#1e3799', sock: '#c0392b',
           flagSvg: '<svg viewBox="0 0 24 16" preserveAspectRatio="xMidYMid slice"><rect width="24" height="16" fill="#c60b1e"/><rect y="4" width="24" height="8" fill="#ffc400"/></svg>' },
-        { name: '프랑스', code: 'FRA',     shirt: '#1e3799', shorts: '#ffffff', sock: '#c0392b',
+        { name: '프랑스',     shirt: '#1e3799', shorts: '#ffffff', sock: '#c0392b',
           flagSvg: '<svg viewBox="0 0 24 16" preserveAspectRatio="xMidYMid slice"><rect width="8" height="16" fill="#0055a4"/><rect x="8" width="8" height="16" fill="#fff"/><rect x="16" width="8" height="16" fill="#ef4135"/></svg>' },
-        { name: '잉글랜드', code: 'ENG',   shirt: '#ffffff', shorts: '#1e3799', sock: '#ffffff',
+        { name: '잉글랜드',   shirt: '#ffffff', shorts: '#1e3799', sock: '#ffffff',
           flagSvg: '<svg viewBox="0 0 24 16" preserveAspectRatio="xMidYMid slice"><rect width="24" height="16" fill="#fff"/><rect y="6" width="24" height="4" fill="#ce1124"/><rect x="10" width="4" height="16" fill="#ce1124"/></svg>' },
-        { name: '아르헨티나', code: 'ARG', shirt: '#87ceeb', shorts: '#111111', sock: '#ffffff', stripe: true,
+        { name: '아르헨티나', shirt: '#87ceeb', shorts: '#111111', sock: '#ffffff', stripe: true,
           flagSvg: '<svg viewBox="0 0 24 16" preserveAspectRatio="xMidYMid slice"><rect width="24" height="16" fill="#75aadb"/><rect y="5.33" width="24" height="5.33" fill="#fff"/><circle cx="12" cy="8" r="2.1" fill="#f6b40e" stroke="#85340a" stroke-width="0.3"/></svg>' },
-        { name: '한국', code: 'KOR',       shirt: '#c0392b', shorts: '#1e3799', sock: '#c0392b',
+        { name: '한국',       shirt: '#c0392b', shorts: '#1e3799', sock: '#c0392b',
           flagSvg: '<svg viewBox="0 0 24 16" preserveAspectRatio="xMidYMid slice"><rect width="24" height="16" fill="#fff"/><circle cx="12" cy="8" r="4" fill="#cd2e3a"/><path d="M12,4 a2,2 0 0,1 0,4 a2,2 0 0,0 0,4 a4,4 0 0,1 0,-8 z" fill="#003478"/></svg>' },
-        { name: '일본', code: 'JPN',       shirt: '#1e3799', shorts: '#ffffff', sock: '#1e3799',
+        { name: '일본',       shirt: '#1e3799', shorts: '#ffffff', sock: '#1e3799',
           flagSvg: '<svg viewBox="0 0 24 16" preserveAspectRatio="xMidYMid slice"><rect width="24" height="16" fill="#fff"/><circle cx="12" cy="8" r="4.4" fill="#bc002d"/></svg>' },
-        { name: '브라질', code: 'BRA',     shirt: '#f1c40f', shorts: '#1e3799', sock: '#ffffff',
+        { name: '브라질',     shirt: '#f1c40f', shorts: '#1e3799', sock: '#ffffff',
           flagSvg: '<svg viewBox="0 0 24 16" preserveAspectRatio="xMidYMid slice"><rect width="24" height="16" fill="#009c3b"/><polygon points="12,2 21,8 12,14 3,8" fill="#ffdf00"/><circle cx="12" cy="8" r="3.3" fill="#002776"/></svg>' },
-        { name: '포르투갈', code: 'POR',   shirt: '#8b0000', shorts: '#046a38', sock: '#8b0000',
+        { name: '포르투갈',   shirt: '#8b0000', shorts: '#046a38', sock: '#8b0000',
           flagSvg: '<svg viewBox="0 0 24 16" preserveAspectRatio="xMidYMid slice"><rect width="9.6" height="16" fill="#046a38"/><rect x="9.6" width="14.4" height="16" fill="#da020e"/><circle cx="9.6" cy="8" r="2.8" fill="#ffcc00" stroke="#c8102e" stroke-width="0.4"/></svg>' }
     ];
 
@@ -558,21 +531,19 @@
     let fireworks = [];
     let fireworkSpawnTimer = 0;
     let celebrationPlayers = [];
-    let loserPlayers = [];
     let celebrationActive = false;
     let gameFrame = 0;
 
-    const goal = { x: 50, y: 138, width: 300, height: 120 };
+    const goal = { x: 50, y: 220, width: 300, height: 130 };
     const ballStart = { x: WIDTH / 2, y: 530 };
     const playerStart = { x: 130, y: 550 };
 
     let ball = { x: ballStart.x, y: ballStart.y, radius: 10, targetX: 0, targetY: 0, rotation: 0 };
     let targetCursor = { x: WIDTH / 2, y: goal.y + goal.height / 2, dirX: 1, dirY: 1, speed: 6, radius: 15 };
     let powerBar = { value: 0, dir: 1, speed: 3.5, locked: false, power: '', timeLimit: 300, startFrame: 0 };
-    let keeper = { x: WIDTH / 2, y: 247, targetX: WIDTH / 2, targetY: 247, state: 'IDLE' };
+    let keeper = { x: WIDTH / 2, y: 310, targetX: WIDTH / 2, targetY: 310, state: 'IDLE' };
     let player = { x: playerStart.x, y: playerStart.y, state: 'IDLE' };
     let opponentPrepTimer = 0;
-    let roundShirtNumber = 7;
     let opponentKickTriggered = false;
 
     const ZONE_LABELS = ['왼쪽 위', '가운데 위', '오른쪽 위', '왼쪽 아래', '가운데 아래', '오른쪽 아래'];
@@ -598,18 +569,6 @@
     function currentKit() {
         if (gameMode === '1P') return currentKicker === 1 ? p1Kit : opponentKit;
         return currentKicker === 1 ? p1Kit : p2Kit;
-    }
-
-    // 등번호: 1~3번째 키커는 7·10·11 중 랜덤, 4~10번째는 1번을 제외한 랜덤,
-    // 11번째부터는 골키퍼(1번)가 직접 키커로 나선다는 설정
-    function pickShirtNumber(idx) {
-        if (idx < 3) { const opts = [7, 10, 11]; return opts[Math.floor(Math.random() * opts.length)]; }
-        if (idx < 10) { const opts = [2, 3, 4, 5, 6, 7, 8, 9, 10, 11]; return opts[Math.floor(Math.random() * opts.length)]; }
-        return 1;
-    }
-
-    function gkVariant(kit) {
-        return { name: kit.name, flagSvg: kit.flagSvg, shirt: '#f1c40f', shorts: '#111111', sock: '#f1c40f', stripe: false };
     }
 
     const defendPicker = document.getElementById('defendPicker');
@@ -638,16 +597,15 @@
     }
 
     function updateTurnIndicator() {
-        turnIndicator.style.display = 'flex';
-        let kit, label;
+        turnIndicator.style.display = 'block';
         if (gameMode === '1P') {
-            kit = currentKicker === 1 ? p1Kit : opponentKit;
-            label = currentKicker === 1 ? '내 턴 (공격)' : 'AI 턴 (수비 준비!)';
+            const oppName = opponentKit ? opponentKit.name : '상대팀';
+            turnIndicator.textContent = currentKicker === 1
+                ? `내 차례 (${p1Kit.name})   ${p1Kit.name} ${score1} : ${score2} ${oppName}`
+                : `${oppName} 차례   ${p1Kit.name} ${score1} : ${score2} ${oppName}`;
         } else {
-            kit = currentKicker === 1 ? p1Kit : p2Kit;
-            label = currentKicker === 1 ? 'P1 턴' : 'P2 턴';
+            turnIndicator.textContent = `P${currentKicker} 차례 (${currentKicker === 1 ? p1Kit.name : p2Kit.name})  P1 ${score1} : ${score2} P2`;
         }
-        turnIndicator.innerHTML = `<span class="turnFlag">${kit ? kit.flagSvg : ''}</span><span class="turnLabel">${label}</span>`;
     }
 
     function startGame() {
@@ -669,7 +627,7 @@
     function handleAction(e) {
         if (gameState === 'AIM_Y') {
             gameState = 'AIM_X';
-            actionBtn.innerText = "SHOOT! (SPACE)";
+            actionBtn.innerText = "LOCK X (SPACE)";
         } else if (gameState === 'AIM_X') {
             ball.targetX = targetCursor.x;
             ball.targetY = targetCursor.y;
@@ -678,7 +636,7 @@
             powerBar.locked = false;
             powerBar.value = 0;
             powerBar.startFrame = gameFrame;
-            actionBtn.innerText = "SHOOT! (SPACE)";
+            actionBtn.innerText = "POWER! (SPACE)";
         } else if (gameState === 'POWER_RUN' && !powerBar.locked) {
             powerBar.locked = true;
             if (powerBar.value < 40) powerBar.power = 'WEAK';
@@ -808,8 +766,6 @@
     function resolveDefend(zone) {
         closeDefendPicker();
         const c = zoneCenter(zone);
-        keeper.diveDir = c.x >= keeper.x ? 1 : (c.x < keeper.x ? -1 : (Math.random() < 0.5 ? -1 : 1));
-        keeper.diveElapsed = 0;
         keeper.state = 'DIVING';
         keeper.targetX = c.x;
         keeper.targetY = c.y - 10;
@@ -856,7 +812,7 @@
     }
 
     function spawnCelebrationPlayers(winningSide) {
-        const kit = gameMode === '1P' ? (winningSide === 1 ? p1Kit : opponentKit) : (winningSide === 1 ? p1Kit : p2Kit);
+        const kit = gameMode === '1P' ? p1Kit : (winningSide === 1 ? p1Kit : p2Kit);
         celebrationPlayers = [];
         const count = 7;
         for (let i = 0; i < count; i++) {
@@ -864,27 +820,17 @@
             celebrationPlayers.push({
                 x: fromLeft ? -30 - Math.random() * 60 : WIDTH + 30 + Math.random() * 60,
                 y: 150 + Math.random() * 20,
-                targetX: 50 + Math.random() * 300,
-                targetY: 148 + Math.random() * 45,
+                targetX: 60 + Math.random() * 280,
+                targetY: 390 + Math.random() * 110,
                 kit: kit,
                 phase: 'RUN',
-                waveFlag: i % 2 === 0,
                 bobOffset: Math.random() * Math.PI * 2,
                 speed: 2.2 + Math.random() * 1.6
             });
         }
     }
 
-    function spawnLoserPlayers(losingSide) {
-        const kit = gameMode === '1P' ? (losingSide === 1 ? p1Kit : opponentKit) : (losingSide === 1 ? p1Kit : p2Kit);
-        loserPlayers = [
-            { x: 135, y: 555, kit: kit, role: 'sad', settle: 0 },
-            { x: 175, y: 565, kit: kit, role: 'comfort', settle: 0 },
-            { x: 235, y: 552, kit: kit, role: 'sad2', settle: 0 }
-        ];
-    }
-
-    function drawMiniPlayer(ctx, x, y, kit, waveFlag) {
+    function drawMiniPlayer(ctx, x, y, kit) {
         ctx.save(); ctx.translate(x, y);
         ctx.fillStyle = 'rgba(0,0,0,0.3)'; ctx.beginPath(); ctx.ellipse(0, 12, 10, 3, 0, 0, Math.PI * 2); ctx.fill();
         ctx.fillStyle = kit.shorts; ctx.fillRect(-6, -4, 12, 10);
@@ -895,43 +841,6 @@
         ctx.strokeStyle = kit.shirt; ctx.lineWidth = 4; ctx.lineCap = 'round';
         ctx.beginPath(); ctx.moveTo(-8, -22); ctx.lineTo(-14, -34); ctx.stroke();
         ctx.beginPath(); ctx.moveTo(8, -22); ctx.lineTo(14, -34); ctx.stroke();
-        if (waveFlag) {
-            ctx.strokeStyle = '#7a5230'; ctx.lineWidth = 1.4;
-            ctx.beginPath(); ctx.moveTo(14, -34); ctx.lineTo(21, -45); ctx.stroke();
-            drawFlagIcon(ctx, kit, 20, -49, 11, 8);
-        }
-        ctx.restore();
-    }
-
-    function drawSadPlayer(ctx, x, y, kit, role, settle) {
-        ctx.save(); ctx.translate(x, y); ctx.globalAlpha = settle;
-        ctx.fillStyle = 'rgba(0,0,0,0.3)'; ctx.beginPath(); ctx.ellipse(0, 10, 9, 3, 0, 0, Math.PI * 2); ctx.fill();
-
-        ctx.fillStyle = kit.shorts; ctx.fillRect(-6, -6, 12, 8);
-        ctx.fillStyle = kit.sock; ctx.fillRect(-7, 2, 6, 7); ctx.fillRect(1, 2, 6, 7);
-
-        ctx.save();
-        ctx.rotate(role === 'comfort' ? 0.05 : 0.2);
-        ctx.fillStyle = kit.shirt;
-        ctx.beginPath(); ctx.moveTo(-8, -22); ctx.lineTo(8, -22); ctx.lineTo(6, -4); ctx.lineTo(-6, -4); ctx.fill();
-        ctx.restore();
-
-        ctx.fillStyle = '#ffccaa';
-        ctx.beginPath(); ctx.arc(role !== 'comfort' ? 3 : 0, role !== 'comfort' ? -16 : -22, 5, 0, Math.PI * 2); ctx.fill();
-
-        if (role !== 'comfort') {
-            ctx.fillStyle = kit.shirt;
-            ctx.beginPath(); ctx.arc(0, -14, 3, 0, Math.PI * 2); ctx.fill();
-            ctx.beginPath(); ctx.arc(6, -14, 3, 0, Math.PI * 2); ctx.fill();
-            if (Math.sin(gameFrame * 0.1 + x) > 0.3) {
-                ctx.fillStyle = '#7ec8ff';
-                ctx.beginPath(); ctx.arc(role === 'sad' ? 8 : -1, -10, 1.6, 0, Math.PI * 2); ctx.fill();
-            }
-        } else {
-            ctx.strokeStyle = kit.shirt; ctx.lineWidth = 4; ctx.lineCap = 'round';
-            ctx.beginPath(); ctx.moveTo(6, -18); ctx.lineTo(18, -16); ctx.stroke();
-            ctx.beginPath(); ctx.moveTo(-6, -18); ctx.lineTo(-18, -14); ctx.stroke();
-        }
         ctx.restore();
     }
 
@@ -944,38 +853,29 @@
                 else { p.x += (dx / dist) * p.speed; p.y += (dy / dist) * p.speed; }
             }
             const bob = p.phase === 'CHEER' ? Math.abs(Math.sin(gameFrame * 0.25 + p.bobOffset)) * 10 : Math.sin(gameFrame * 0.5 + p.bobOffset) * 3;
-            drawMiniPlayer(ctx, p.x, p.y - bob, p.kit, p.waveFlag);
-        }
-    }
-
-    function updateAndDrawLosers(ctx) {
-        for (const p of loserPlayers) {
-            p.settle = Math.min(1, p.settle + 0.035);
-            drawSadPlayer(ctx, p.x, p.y - (1 - p.settle) * 20, p.kit, p.role, p.settle);
+            drawMiniPlayer(ctx, p.x, p.y - bob, p.kit);
         }
     }
 
     function enterGameOver() {
         gameState = 'GAMEOVER';
         restartBtn.style.display = 'block';
-        menuBtn.style.display = 'block';
         actionBtn.style.display = 'none';
         turnIndicator.style.display = 'none';
         celebrationPlayers = [];
-        loserPlayers = [];
         fireworks = [];
-        celebrationActive = true;
-        const loser = winner === 1 ? 2 : 1;
-        createConfetti();
-        spawnCelebrationPlayers(winner);
-        spawnLoserPlayers(loser);
-        fireworkSpawnTimer = 20;
+        celebrationActive = (gameMode === '1P') ? (winner === 1) : true;
+        if (celebrationActive) {
+            createConfetti();
+            spawnCelebrationPlayers(winner);
+            fireworkSpawnTimer = 20;
+        }
     }
 
     function resetRound() {
         ball.x = ballStart.x; ball.y = ballStart.y; ball.rotation = 0; ball.radius = 10;
         player.state = 'IDLE'; player.x = playerStart.x; player.y = playerStart.y;
-        keeper.x = WIDTH / 2; keeper.y = 247; keeper.targetX = WIDTH / 2; keeper.targetY = 247; keeper.state = 'IDLE';
+        keeper.x = WIDTH / 2; keeper.y = 310; keeper.targetX = WIDTH / 2; keeper.targetY = 310; keeper.state = 'IDLE';
 
         if (matchDecided) {
             enterGameOver();
@@ -983,13 +883,8 @@
         }
 
         let roundCount = Math.max(kicksTaken1, kicksTaken2);
-        const rampRound = Math.min(roundCount, 4); // 5번째 키커(index 4) 속도에서 상승 멈춤, 이후 동일 유지
-        const cursorBase = { EASY: 4.2, NORMAL: 6, HARD: 8 };
-        const cursorStep = { EASY: 0.5, NORMAL: 0.8, HARD: 1.0 };
-        const powerBase = { EASY: 2.2, NORMAL: 3.5, HARD: 4.6 };
-        const powerStep = { EASY: 0.3, NORMAL: 0.5, HARD: 0.6 };
-        targetCursor.speed = cursorBase[difficulty] + rampRound * cursorStep[difficulty];
-        powerBar.speed = powerBase[difficulty] + rampRound * powerStep[difficulty];
+        targetCursor.speed = 6 + (roundCount * 0.8);
+        powerBar.speed = 3.5 + (roundCount * 0.5);
         targetCursor.x = WIDTH / 2;
         targetCursor.y = goal.y + goal.height / 2;
         // 매 라운드 방향을 무작위로 재설정 -> 조준 패턴 고정으로 인한 슈팅 방향 쏠림(및 그 결과 키퍼 쏠림) 방지
@@ -997,13 +892,11 @@
         targetCursor.dirY = Math.random() < 0.5 ? 1 : -1;
         powerBar.power = ''; powerBar.locked = false; powerBar.value = 0;
 
-        actionBtn.innerText = "SHOOT! (SPACE)";
+        actionBtn.innerText = "LOCK Y (SPACE)";
 
         // 번갈아 차기: 두 팀 모두 이번 라운드 몫을 안 찼으면 교대
         if (kicksTaken1 <= kicksTaken2 && kicksTaken1 < maxAttempts) currentKicker = 1;
         else if (kicksTaken2 < maxAttempts) currentKicker = 2;
-
-        roundShirtNumber = pickShirtNumber(currentKicker === 1 ? kicksTaken1 : kicksTaken2);
 
         updateTurnIndicator();
 
@@ -1021,10 +914,9 @@
     function resetGame() {
         score1 = 0; score2 = 0; shotResults1 = []; shotResults2 = [];
         kicksTaken1 = 0; kicksTaken2 = 0; currentKicker = 1; confetti = [];
-        fireworks = []; celebrationPlayers = []; loserPlayers = []; celebrationActive = false;
+        fireworks = []; celebrationPlayers = []; celebrationActive = false;
         maxAttempts = 5; matchDecided = false; winner = null;
         restartBtn.style.display = 'none';
-        menuBtn.style.display = 'none';
         actionBtn.style.display = 'block';
         if (gameMode === '1P') {
             const pool = JERSEYS.filter(j => j !== p1Kit);
@@ -1033,64 +925,29 @@
         resetRound();
     }
 
-    function backToMenu() {
-        score1 = 0; score2 = 0; shotResults1 = []; shotResults2 = [];
-        kicksTaken1 = 0; kicksTaken2 = 0; currentKicker = 1; confetti = [];
-        fireworks = []; celebrationPlayers = []; loserPlayers = []; celebrationActive = false;
-        maxAttempts = 5; matchDecided = false; winner = null;
-        restartBtn.style.display = 'none';
-        menuBtn.style.display = 'none';
-        actionBtn.style.display = 'none';
-        turnIndicator.style.display = 'none';
-        gameState = 'START_SCREEN';
-        setupScreen.style.display = 'flex';
-    }
-
     // ===== 렌더링 =====
     function drawStadium(ctx) {
-        const crowdH = 200;
-        const adH = 18;
-        const pitchY = crowdH + adH;
-
-        // 관중석
-        ctx.fillStyle = '#1e3016'; ctx.fillRect(0, 0, WIDTH, crowdH);
-        for (let i = 0; i < 650; i++) {
-            let px = Math.random() * WIDTH; let py = Math.random() * crowdH;
-            let colors = ['#7a1f1f', '#932020', '#c0392b', '#4d1414', '#5a1a1a', '#3a1010'];
+        ctx.fillStyle = '#1e3016'; ctx.fillRect(0, 0, WIDTH, 175);
+        for (let i = 0; i < 500; i++) {
+            let px = Math.random() * WIDTH; let py = Math.random() * 165;
+            let colors = ['#2c4c1e', '#13210d', '#ffffff', '#4d4d4d'];
             ctx.fillStyle = colors[Math.floor(Math.random() * colors.length)];
             ctx.fillRect(px, py, 2, 2);
         }
-        const shade = ctx.createLinearGradient(0, crowdH - 45, 0, crowdH);
-        shade.addColorStop(0, 'rgba(0,0,0,0)'); shade.addColorStop(1, 'rgba(0,0,0,0.5)');
-        ctx.fillStyle = shade; ctx.fillRect(0, crowdH - 45, WIDTH, 45);
+        ctx.fillStyle = '#27ae60'; ctx.fillRect(0, 165, WIDTH, 10);
+        ctx.fillStyle = '#fff'; ctx.fillRect(0, 175, WIDTH, 3);
+        ctx.fillStyle = '#2ecc71'; ctx.fillRect(0, 178, WIDTH, HEIGHT - 178);
 
-        // 광고판 펜스
-        const adColors = ['#e74c3c', '#2980b9', '#f1c40f', '#27ae60', '#8e44ad', '#e67e22'];
-        const segW = WIDTH / adColors.length;
-        for (let i = 0; i < adColors.length; i++) {
-            ctx.fillStyle = adColors[i];
-            ctx.fillRect(i * segW, crowdH, segW, adH);
-            ctx.fillStyle = 'rgba(255,255,255,0.85)';
-            ctx.fillRect(i * segW + segW * 0.28, crowdH + adH * 0.32, segW * 0.44, adH * 0.36);
-        }
-        ctx.fillStyle = 'rgba(0,0,0,0.3)'; ctx.fillRect(0, crowdH, WIDTH, 2);
-        ctx.fillStyle = 'rgba(0,0,0,0.3)'; ctx.fillRect(0, crowdH + adH - 2, WIDTH, 2);
-
-        // 잔디 경계선
-        ctx.fillStyle = '#27ae60'; ctx.fillRect(0, pitchY, WIDTH, 8);
-        ctx.fillStyle = '#fff'; ctx.fillRect(0, pitchY + 8, WIDTH, 3);
-        ctx.fillStyle = '#2ecc71'; ctx.fillRect(0, pitchY + 11, WIDTH, HEIGHT - (pitchY + 11));
-
-        const vanishY = pitchY + 11;
         ctx.fillStyle = '#27ae60';
+        let vanishY = 178;
         for (let i = -6; i <= 6; i += 2) {
             ctx.beginPath(); ctx.moveTo(WIDTH/2 + i*30, vanishY); ctx.lineTo(WIDTH/2 + (i+1)*30, vanishY);
             ctx.lineTo(WIDTH/2 + (i+1)*180, HEIGHT); ctx.lineTo(WIDTH/2 + i*180, HEIGHT); ctx.fill();
         }
         ctx.fillStyle = 'rgba(255,255,255,0.85)';
         ctx.fillRect(0, 480, WIDTH, 5);
-        ctx.beginPath(); ctx.moveTo(50, vanishY); ctx.lineTo(10, 480);
-        ctx.moveTo(350, vanishY); ctx.lineTo(390, 480);
+        ctx.beginPath(); ctx.moveTo(50, 178); ctx.lineTo(10, 480);
+        ctx.moveTo(350, 178); ctx.lineTo(390, 480);
         ctx.lineWidth = 4; ctx.strokeStyle = 'rgba(255,255,255,0.85)'; ctx.stroke();
     }
 
@@ -1110,209 +967,42 @@
         ctx.beginPath(); ctx.arc(x, y, 2, 0, Math.PI * 2); ctx.fill();
     }
 
-    function drawFlagIcon(ctx, kit, x, y, w, h) {
-        if (!kit) return;
-        ctx.save();
-        ctx.beginPath(); ctx.rect(x, y, w, h); ctx.clip();
-        switch (kit.name) {
-            case '스페인':
-                ctx.fillStyle = '#c60b1e'; ctx.fillRect(x, y, w, h);
-                ctx.fillStyle = '#ffc400'; ctx.fillRect(x, y + h * 0.25, w, h * 0.5);
-                break;
-            case '프랑스':
-                ctx.fillStyle = '#0055a4'; ctx.fillRect(x, y, w / 3, h);
-                ctx.fillStyle = '#fff'; ctx.fillRect(x + w / 3, y, w / 3, h);
-                ctx.fillStyle = '#ef4135'; ctx.fillRect(x + w * 2 / 3, y, w / 3, h);
-                break;
-            case '잉글랜드':
-                ctx.fillStyle = '#fff'; ctx.fillRect(x, y, w, h);
-                ctx.fillStyle = '#ce1124';
-                ctx.fillRect(x, y + h * 0.375, w, h * 0.25);
-                ctx.fillRect(x + w * 0.42, y, w * 0.16, h);
-                break;
-            case '아르헨티나':
-                ctx.fillStyle = '#75aadb'; ctx.fillRect(x, y, w, h);
-                ctx.fillStyle = '#fff'; ctx.fillRect(x, y + h / 3, w, h / 3);
-                ctx.fillStyle = '#f6b40e';
-                ctx.beginPath(); ctx.arc(x + w / 2, y + h / 2, h * 0.16, 0, Math.PI * 2); ctx.fill();
-                break;
-            case '한국':
-                ctx.fillStyle = '#fff'; ctx.fillRect(x, y, w, h);
-                ctx.fillStyle = '#cd2e3a';
-                ctx.beginPath(); ctx.arc(x + w / 2, y + h / 2, h * 0.3, 0, Math.PI * 2); ctx.fill();
-                ctx.fillStyle = '#003478';
-                ctx.beginPath(); ctx.arc(x + w / 2, y + h * 0.35, h * 0.15, 0, Math.PI * 2); ctx.fill();
-                ctx.beginPath(); ctx.arc(x + w / 2, y + h * 0.65, h * 0.15, 0, Math.PI * 2); ctx.fill();
-                break;
-            case '일본':
-                ctx.fillStyle = '#fff'; ctx.fillRect(x, y, w, h);
-                ctx.fillStyle = '#bc002d';
-                ctx.beginPath(); ctx.arc(x + w / 2, y + h / 2, h * 0.32, 0, Math.PI * 2); ctx.fill();
-                break;
-            case '브라질':
-                ctx.fillStyle = '#009c3b'; ctx.fillRect(x, y, w, h);
-                ctx.fillStyle = '#ffdf00';
-                ctx.beginPath();
-                ctx.moveTo(x + w / 2, y + h * 0.12); ctx.lineTo(x + w * 0.88, y + h / 2);
-                ctx.lineTo(x + w / 2, y + h * 0.88); ctx.lineTo(x + w * 0.12, y + h / 2);
-                ctx.closePath(); ctx.fill();
-                ctx.fillStyle = '#002776';
-                ctx.beginPath(); ctx.arc(x + w / 2, y + h / 2, h * 0.2, 0, Math.PI * 2); ctx.fill();
-                break;
-            case '포르투갈':
-                ctx.fillStyle = '#046a38'; ctx.fillRect(x, y, w * 0.4, h);
-                ctx.fillStyle = '#da020e'; ctx.fillRect(x + w * 0.4, y, w * 0.6, h);
-                ctx.fillStyle = '#ffcc00';
-                ctx.beginPath(); ctx.arc(x + w * 0.4, y + h / 2, h * 0.17, 0, Math.PI * 2); ctx.fill();
-                break;
-            default:
-                ctx.fillStyle = '#999'; ctx.fillRect(x, y, w, h);
-        }
-        ctx.restore();
-        ctx.strokeStyle = 'rgba(0,0,0,0.55)'; ctx.lineWidth = 1; ctx.strokeRect(x, y, w, h);
-    }
-
     function drawKeeper(ctx) {
-        const isDiving = keeper.state === 'DIVING';
-        const isReady = keeper.state === 'READY';
-
-        if (isDiving) {
-            keeper.diveElapsed = (keeper.diveElapsed || 0) + 1;
-        } else {
-            keeper.diveElapsed = 0;
-        }
-
         ctx.save(); ctx.translate(keeper.x, keeper.y);
 
-        if (isDiving) {
-            const dir = keeper.diveDir || 1;
-            const flightFrames = 24;
-            const inFlight = keeper.diveElapsed <= flightFrames;
+        ctx.fillStyle = 'rgba(0,0,0,0.3)'; ctx.beginPath(); ctx.ellipse(0, 5, 15, 5, 0, 0, Math.PI*2); ctx.fill();
 
-            ctx.fillStyle = 'rgba(0,0,0,0.28)';
-            ctx.beginPath(); ctx.ellipse(0, 6, 16, 4.5, 0, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = '#e84393';
+        ctx.beginPath();
+        ctx.moveTo(-10, -30); ctx.lineTo(10, -30);
+        ctx.lineTo(8, -5); ctx.lineTo(-8, -5); ctx.fill();
 
-            if (inFlight) {
-                const t = keeper.diveElapsed / flightFrames;
-                const elevation = -Math.sin(t * Math.PI) * 34;
-                const lean = dir * Math.min(1, t * 1.5) * 1.05;
-                ctx.translate(0, elevation);
-                ctx.rotate(lean);
+        ctx.fillStyle = '#ffccaa';
+        ctx.beginPath(); ctx.arc(0, -38, 7, 0, Math.PI * 2); ctx.fill();
 
-                // 접힌 다리 (허벅지+종아리+무릎)
-                ctx.fillStyle = '#c93074';
-                ctx.fillRect(-6 - dir * 8, 2, 7, 9);
-                ctx.fillRect(-8 - dir * 15, 9, 7, 9);
-                drawJoint(ctx, -3 - dir * 8, 11);
-                // 뻗은 다리 (허벅지+종아리+무릎)
-                ctx.fillRect(1 - dir * 2, 3, 7, 8);
-                ctx.fillRect(4 - dir * 11, 9, 7, 10);
-                drawJoint(ctx, 4 - dir * 2, 11);
-                ctx.fillStyle = '#fff';
-                ctx.beginPath(); ctx.ellipse(-5 - dir * 15, 18, 5, 3, 0, 0, Math.PI * 2); ctx.fill();
-                ctx.beginPath(); ctx.ellipse(7 - dir * 11, 19, 5, 3, 0, 0, Math.PI * 2); ctx.fill();
-
-                // 몸통 (뻗은 자세)
-                ctx.fillStyle = '#e84393';
-                ctx.beginPath();
-                ctx.moveTo(-11, -18); ctx.lineTo(11, -18); ctx.lineTo(9, 4); ctx.lineTo(-9, 4); ctx.fill();
-
-                // 뻗은 팔 (상완 + 팔꿈치 + 하완), 반대팔은 접어서 몸에 붙임
-                ctx.fillStyle = '#e84393';
-                ctx.save();
-                ctx.translate(dir * 9, -16); ctx.rotate(dir * 0.3);
-                ctx.fillRect(0, -3, dir * 13, 7);
-                ctx.save(); ctx.translate(dir * 13, 0); ctx.rotate(dir * 0.15);
-                ctx.fillRect(0, -3, dir * 13, 7);
-                ctx.restore();
-                ctx.restore();
-                drawJoint(ctx, dir * 22, -16);
-                ctx.fillRect(-dir * 9 - 6, -16, 12, 8);
-                drawJoint(ctx, -dir * 9, -12);
-
-                ctx.fillStyle = '#fff';
-                ctx.beginPath(); ctx.arc(dir * 33, -16 - dir * 3, 6, 0, Math.PI * 2); ctx.fill();
-                ctx.beginPath(); ctx.arc(-dir * 12, -12, 5, 0, Math.PI * 2); ctx.fill();
-
-                // 머리
-                ctx.fillStyle = '#ffccaa';
-                ctx.beginPath(); ctx.arc(dir * 3, -24, 7, 0, Math.PI * 2); ctx.fill();
-            } else {
-                // 착지 후 잔디 위에 대(大)자로 뻗은 모습
-                ctx.rotate(dir * 1.4);
-                ctx.fillStyle = '#e84393';
-                ctx.beginPath(); ctx.ellipse(0, -6, 13, 7, 0, 0, Math.PI * 2); ctx.fill();
-                ctx.fillStyle = '#c93074';
-                ctx.fillRect(-20, -9, 14, 6); ctx.fillRect(6, -9, 14, 6);
-                ctx.fillRect(-9, -2, 7, 14); ctx.fillRect(2, -2, 7, 14);
-                drawJoint(ctx, -7, -6); drawJoint(ctx, 7, -6);
-                ctx.fillStyle = '#fff';
-                ctx.beginPath(); ctx.arc(-20, -6, 4, 0, Math.PI * 2); ctx.fill();
-                ctx.beginPath(); ctx.arc(20, -6, 4, 0, Math.PI * 2); ctx.fill();
-                ctx.beginPath(); ctx.ellipse(-5.5, 13, 5, 3, 0, 0, Math.PI * 2); ctx.fill();
-                ctx.beginPath(); ctx.ellipse(8.5, 13, 5, 3, 0, 0, Math.PI * 2); ctx.fill();
-                ctx.fillStyle = '#ffccaa';
-                ctx.beginPath(); ctx.arc(-dir * 13, -9, 6.5, 0, Math.PI * 2); ctx.fill();
-            }
-        } else {
-            const shift = Math.sin(gameFrame * 0.09) * (isReady ? 5.5 : 3);
-            const armWave = Math.sin(gameFrame * 0.17) * 8;
-            const crouch = isReady ? 3 : 0;
-
-            ctx.fillStyle = 'rgba(0,0,0,0.3)';
-            ctx.beginPath(); ctx.ellipse(shift * 0.3, 5, 15, 5, 0, 0, Math.PI * 2); ctx.fill();
-
-            ctx.translate(shift * 0.35, crouch);
-
-            // 다리 (허벅지 + 무릎 관절 + 종아리)
-            ctx.fillStyle = '#c93074';
-            ctx.fillRect(-9 + shift * 0.4, -6, 7, 9 - crouch * 0.4);
-            ctx.fillRect(-9 + shift * 0.4, 3 - crouch * 0.4, 7, 8 - crouch * 0.4);
-            ctx.fillRect(2 + shift * 0.4, -6, 7, 9 - crouch * 0.4);
-            ctx.fillRect(2 + shift * 0.4, 3 - crouch * 0.4, 7, 8 - crouch * 0.4);
-            drawJoint(ctx, -5.5 + shift * 0.4, 3 - crouch * 0.4);
-            drawJoint(ctx, 5.5 + shift * 0.4, 3 - crouch * 0.4);
-            ctx.fillStyle = '#fff';
-            ctx.beginPath(); ctx.ellipse(-5.5 + shift * 0.4, 11 - crouch, 5, 3, 0, 0, Math.PI * 2); ctx.fill();
-            ctx.beginPath(); ctx.ellipse(8.5 + shift * 0.4, 11 - crouch, 5, 3, 0, 0, Math.PI * 2); ctx.fill();
-
-            // 반바지
-            ctx.fillStyle = '#222'; ctx.fillRect(-8, -10, 16, 8 + crouch * 0.6);
-
-            // 몸통
-            ctx.fillStyle = '#e84393';
-            ctx.beginPath();
-            ctx.moveTo(-10, -30); ctx.lineTo(10, -30); ctx.lineTo(8, -10); ctx.lineTo(-8, -10); ctx.fill();
-
-            // 팔 (상완 + 팔꿈치 관절 + 하완, 좌우로 흔들기)
-            ctx.fillStyle = '#e84393';
-            ctx.save(); ctx.translate(-13, -27); ctx.rotate((-14 + armWave) * Math.PI / 180); ctx.fillRect(-3, 0, 6, 9); ctx.restore();
-            ctx.save(); ctx.translate(-13, -27 + 8); ctx.rotate((-8 + armWave * 1.4) * Math.PI / 180); ctx.fillRect(-3, 0, 6, 9); ctx.restore();
-            ctx.save(); ctx.translate(13, -27); ctx.rotate((14 - armWave) * Math.PI / 180); ctx.fillRect(-3, 0, 6, 9); ctx.restore();
-            ctx.save(); ctx.translate(13, -27 + 8); ctx.rotate((8 - armWave * 1.4) * Math.PI / 180); ctx.fillRect(-3, 0, 6, 9); ctx.restore();
+        ctx.fillStyle = '#e84393';
+        if (keeper.state === 'IDLE') {
+            ctx.fillRect(-16, -30, 6, 18); ctx.fillRect(10, -30, 6, 18);
             drawJoint(ctx, -13, -19); drawJoint(ctx, 13, -19);
-
-            const handOff = Math.sin(armWave * Math.PI / 180) * 5;
             ctx.fillStyle = '#fff';
-            ctx.beginPath(); ctx.arc(-14 - handOff, -9, 5, 0, Math.PI * 2); ctx.fill();
-            ctx.beginPath(); ctx.arc(14 + handOff, -9, 5, 0, Math.PI * 2); ctx.fill();
-
-            // 머리
-            ctx.fillStyle = '#ffccaa';
-            ctx.beginPath(); ctx.arc(0, -38, 7, 0, Math.PI * 2); ctx.fill();
-
-            drawJoint(ctx, -5 + shift * 0.4, 1 - crouch);
-            drawJoint(ctx, 5 + shift * 0.4, 1 - crouch);
+            ctx.beginPath(); ctx.arc(-13, -8, 5, 0, Math.PI*2); ctx.fill();
+            ctx.beginPath(); ctx.arc(13, -8, 5, 0, Math.PI*2); ctx.fill();
+        } else {
+            ctx.fillRect(-22, -45, 8, 20); ctx.fillRect(14, -45, 8, 20);
+            drawJoint(ctx, -18, -33); drawJoint(ctx, 18, -33);
+            ctx.fillStyle = '#fff';
+            ctx.beginPath(); ctx.arc(-18, -48, 5, 0, Math.PI*2); ctx.fill();
+            ctx.beginPath(); ctx.arc(18, -48, 5, 0, Math.PI*2); ctx.fill();
         }
+
+        ctx.fillStyle = '#222'; ctx.fillRect(-8, -5, 16, 12);
+        drawJoint(ctx, -5, 1); drawJoint(ctx, 5, 1);
 
         ctx.restore();
     }
 
-
     function drawPlayer(ctx) {
-        const baseKit = currentKit();
-        const isGkKicker = roundShirtNumber === 1;
-        const kit = isGkKicker ? gkVariant(baseKit) : baseKit;
+        const kit = currentKit();
         ctx.save(); ctx.translate(player.x, player.y);
 
         let bob = player.state === 'RUNNING' ? Math.sin(gameFrame * 0.6) * 4 : 0;
@@ -1323,17 +1013,13 @@
 
         ctx.fillStyle = kit.sock;
         if (player.state === 'IDLE' || Math.floor(gameFrame / 5) % 2 === 0) {
-            ctx.fillRect(-8, 2 + bob, 6, 7); ctx.fillRect(2, 2 + bob, 6, 7);
-            drawJoint(ctx, -5, 9 + bob); drawJoint(ctx, 5, 9 + bob);
-            ctx.fillRect(-8, 9 + bob, 6, 5); ctx.fillRect(2, 9 + bob, 6, 5);
+            ctx.fillRect(-8, 2 + bob, 6, 12); ctx.fillRect(2, 2 + bob, 6, 12);
             drawJoint(ctx, -5, 8 + bob); drawJoint(ctx, 5, 8 + bob);
             ctx.fillStyle = '#111';
             ctx.beginPath(); ctx.ellipse(-5, 15 + bob, 5, 3, 0, 0, Math.PI*2); ctx.fill();
             ctx.beginPath(); ctx.ellipse(5, 15 + bob, 5, 3, 0, 0, Math.PI*2); ctx.fill();
         } else {
-            ctx.fillRect(-8, -2 + bob, 6, 8); ctx.fillRect(2, 6 + bob, 6, 5);
-            drawJoint(ctx, -5, 6 + bob); drawJoint(ctx, 5, 11 + bob);
-            ctx.fillRect(-8, 6 + bob, 6, 8); ctx.fillRect(2, 11 + bob, 6, 3);
+            ctx.fillRect(-8, -2 + bob, 6, 14); ctx.fillRect(2, 6 + bob, 6, 8);
             drawJoint(ctx, -5, 5 + bob); drawJoint(ctx, 5, 10 + bob);
             ctx.fillStyle = '#111';
             ctx.beginPath(); ctx.ellipse(-5, 12 + bob, 5, 3, 0, 0, Math.PI*2); ctx.fill();
@@ -1352,18 +1038,13 @@
             }
         }
 
-        ctx.fillStyle = '#fff';
-        ctx.font = roundShirtNumber >= 10 ? 'bold 12px "Courier New"' : 'bold 16px "Courier New"';
-        ctx.textAlign = 'center'; ctx.fillText(String(roundShirtNumber), 0, -28 + bob);
+        ctx.fillStyle = '#fff'; ctx.font = 'bold 16px "Courier New"'; ctx.textAlign = 'center'; ctx.fillText('7', 0, -28 + bob);
 
         ctx.fillStyle = '#ffccaa'; ctx.beginPath(); ctx.arc(0, -46 + bob, 7, 0, Math.PI * 2); ctx.fill();
         ctx.fillStyle = '#3e2723'; ctx.beginPath(); ctx.arc(0, -50 + bob, 6, 0, Math.PI * 2); ctx.fill();
 
-        // 팔 (상완 + 팔꿈치 관절 + 하완)
         ctx.fillStyle = kit.shirt;
-        ctx.fillRect(-17, -38 + bob, 5, 9); ctx.fillRect(12, -38 + bob, 5, 9);
-        drawJoint(ctx, -14.5, -29 + bob); drawJoint(ctx, 14.5, -29 + bob);
-        ctx.fillRect(-17, -29 + bob, 5, 8); ctx.fillRect(12, -29 + bob, 5, 8);
+        ctx.fillRect(-17, -38 + bob, 5, 16); ctx.fillRect(12, -38 + bob, 5, 16);
         drawJoint(ctx, -14.5, -28 + bob); drawJoint(ctx, 14.5, -28 + bob);
         ctx.fillStyle = '#ffccaa';
         ctx.beginPath(); ctx.arc(-14.5, -20 + bob, 3, 0, Math.PI*2); ctx.fill();
@@ -1444,21 +1125,6 @@
             ctx.strokeStyle = '#111'; ctx.lineWidth = 4;
             ctx.strokeText(String(remainSec), barX - 22, barY + barH / 2 + 9);
             ctx.fillText(String(remainSec), barX - 22, barY + barH / 2 + 9);
-
-            // 심장박동(BPM) 연출 - 게이지 속도가 빠를수록 박동이 빨라짐
-            const bpm = Math.round(60 + powerBar.speed * 18);
-            const beatPulse = 1 + Math.abs(Math.sin(gameFrame * (0.1 + powerBar.speed * 0.012))) * 0.35;
-            ctx.save();
-            ctx.translate(barX - 22, barY + barH / 2 + 30);
-            ctx.scale(beatPulse, beatPulse);
-            ctx.font = 'bold 13px "Courier New"'; ctx.textAlign = 'center';
-            ctx.fillStyle = '#ff4d6d'; ctx.strokeStyle = '#111'; ctx.lineWidth = 3;
-            ctx.strokeText('♥', 0, 0);
-            ctx.fillText('♥', 0, 0);
-            ctx.restore();
-            ctx.font = 'bold 8px "Courier New"'; ctx.textAlign = 'center';
-            ctx.fillStyle = '#ffd1d1';
-            ctx.fillText(`${bpm}`, barX - 22, barY + barH / 2 + 44);
         } else if (powerBar.locked && powerBar.power) {
             ctx.font = 'bold 24px "Courier New"'; ctx.textAlign = 'center';
             let color = powerBar.power === 'PERFECT' ? '#2ecc71' : (powerBar.power === 'WEAK' ? '#f1c40f' : '#e74c3c');
@@ -1470,78 +1136,41 @@
 
     function drawScoreboardUI(ctx) {
         const n = maxAttempts;
-        const dotSpacing = Math.min(19, 112 / n);
-        const boardW = Math.max(215, 92 + n * dotSpacing);
-        const boardH = 92; const boardX = WIDTH / 2 - boardW / 2; const boardY = 14;
+        const dotSpacing = Math.min(20, 130 / n);
+        const boardW = Math.max(190, 60 + n * dotSpacing);
+        const boardH = 90; const boardX = WIDTH / 2 - boardW / 2; const boardY = 15;
 
-        // 바깥 베젤 (금속 프레임 느낌)
-        const bezelGrad = ctx.createLinearGradient(boardX - 5, boardY - 5, boardX - 5, boardY + boardH + 5);
-        bezelGrad.addColorStop(0, '#3a3a3a'); bezelGrad.addColorStop(1, '#111');
-        ctx.fillStyle = bezelGrad;
-        ctx.beginPath(); ctx.roundRect(boardX - 5, boardY - 5, boardW + 10, boardH + 10, 9); ctx.fill();
-        ctx.strokeStyle = '#000'; ctx.lineWidth = 2;
-        ctx.beginPath(); ctx.roundRect(boardX - 5, boardY - 5, boardW + 10, boardH + 10, 9); ctx.stroke();
+        ctx.fillStyle = '#0a0a0a';
+        ctx.beginPath(); ctx.roundRect(boardX, boardY, boardW, boardH, 6); ctx.fill();
+        ctx.strokeStyle = '#1e7a3d'; ctx.lineWidth = 6;
+        ctx.beginPath(); ctx.roundRect(boardX, boardY, boardW, boardH, 6); ctx.stroke();
 
-        // 모서리 볼트
-        ctx.fillStyle = '#666';
-        [[boardX - 1, boardY - 1], [boardX + boardW + 1, boardY - 1], [boardX - 1, boardY + boardH + 1], [boardX + boardW + 1, boardY + boardH + 1]].forEach(([bx, by]) => {
-            ctx.beginPath(); ctx.arc(bx, by, 2.4, 0, Math.PI * 2); ctx.fill();
-        });
+        const nameA = p1Kit ? p1Kit.name : 'P1';
+        const nameB = gameMode === '1P' ? (opponentKit ? opponentKit.name : 'AI') : p2Kit.name;
 
-        // 내부 스크린 (LED 패널)
-        const screenGrad = ctx.createLinearGradient(boardX, boardY, boardX, boardY + boardH);
-        screenGrad.addColorStop(0, '#062012'); screenGrad.addColorStop(1, '#01100a');
-        ctx.fillStyle = screenGrad;
-        ctx.beginPath(); ctx.roundRect(boardX, boardY, boardW, boardH, 4); ctx.fill();
-        ctx.strokeStyle = '#0f5c33'; ctx.lineWidth = 2;
-        ctx.beginPath(); ctx.roundRect(boardX, boardY, boardW, boardH, 4); ctx.stroke();
+        ctx.textAlign = 'center';
+        ctx.fillStyle = '#fff'; ctx.font = 'bold 10px "Courier New"';
+        ctx.fillText(nameA.slice(0, 3), boardX + 20, boardY + 20);
+        ctx.fillText(nameB.slice(0, 3), boardX + 20, boardY + 55);
 
-        // 중앙 구분선
-        ctx.strokeStyle = 'rgba(46,204,113,0.25)'; ctx.lineWidth = 1;
-        ctx.beginPath(); ctx.moveTo(boardX + 6, boardY + boardH / 2); ctx.lineTo(boardX + boardW - 6, boardY + boardH / 2); ctx.stroke();
-
-        const kitA = p1Kit;
-        const kitB = gameMode === '1P' ? opponentKit : p2Kit;
-        const rowH = boardH / 2;
-        const row1Y = boardY + rowH / 2;
-        const row2Y = boardY + rowH + rowH / 2;
-
-        // 국기 + 코드
-        drawFlagIcon(ctx, kitA, boardX + 8, row1Y - 7, 20, 14);
-        drawFlagIcon(ctx, kitB, boardX + 8, row2Y - 7, 20, 14);
-
-        ctx.textAlign = 'left'; ctx.font = 'bold 9px "Courier New"';
-        ctx.fillStyle = '#8fffb0'; ctx.shadowColor = '#2ecc71'; ctx.shadowBlur = 3;
-        ctx.fillText(kitA ? kitA.code : 'P1', boardX + 32, row1Y + 3);
-        ctx.fillText(kitB ? kitB.code : 'P2', boardX + 32, row2Y + 3);
-        ctx.shadowBlur = 0;
-
-        // 슈팅 LED 표시등
         for (let i = 0; i < n; i++) {
-            let cx = boardX + 62 + i * dotSpacing;
-            drawLed(ctx, cx, row1Y, shotResults1[i]);
-            drawLed(ctx, cx, row2Y, shotResults2[i]);
+            let cx = boardX + 42 + (i * dotSpacing);
+            let cy1 = boardY + 20; let cy2 = boardY + 55;
+            if (shotResults1[i] === 'GOAL') ctx.fillStyle = '#2ecc71';
+            else if (shotResults1[i] === 'SAVED' || shotResults1[i] === 'MISS') ctx.fillStyle = '#e74c3c';
+            else ctx.fillStyle = '#333';
+            ctx.beginPath(); ctx.arc(cx, cy1, 5, 0, Math.PI * 2); ctx.fill();
+            ctx.strokeStyle = '#fff'; ctx.lineWidth = 1; ctx.stroke();
+
+            if (shotResults2[i] === 'GOAL') ctx.fillStyle = '#2ecc71';
+            else if (shotResults2[i] === 'SAVED' || shotResults2[i] === 'MISS') ctx.fillStyle = '#e74c3c';
+            else ctx.fillStyle = '#333';
+            ctx.beginPath(); ctx.arc(cx, cy2, 5, 0, Math.PI * 2); ctx.fill();
+            ctx.strokeStyle = '#fff'; ctx.lineWidth = 1; ctx.stroke();
         }
-
-        // 디지털 스코어
-        ctx.textAlign = 'right'; ctx.font = 'bold 22px "Courier New"';
-        ctx.fillStyle = '#ffcc00'; ctx.shadowColor = '#ffaa00'; ctx.shadowBlur = 7;
-        ctx.fillText(`${score1}-${score2}`, boardX + boardW - 8, boardY + boardH / 2 + 8);
-        ctx.shadowBlur = 0;
+        ctx.fillStyle = '#fff'; ctx.font = 'bold 12px "Courier New"';
+        ctx.fillText(`${score1} : ${score2}`, boardX + boardW - 22, boardY + 40);
     }
-
-    function drawLed(ctx, cx, cy, result) {
-        let color = '#173d26';
-        let glow = 0;
-        if (result === 'GOAL') { color = '#2ecc71'; glow = 6; }
-        else if (result === 'SAVED' || result === 'MISS') { color = '#e74c3c'; glow = 6; }
-        ctx.save();
-        ctx.shadowColor = color; ctx.shadowBlur = glow;
-        ctx.fillStyle = color;
-        ctx.beginPath(); ctx.arc(cx, cy, 3.4, 0, Math.PI * 2); ctx.fill();
-        ctx.restore();
-    }
-
 
     // ===== 메인 루프 =====
     function gameLoop() {
@@ -1675,71 +1304,48 @@
                 offCtx.fillStyle = '#1b3a26'; offCtx.fillRect(0, 0, WIDTH, HEIGHT);
                 if (celebrationActive) {
                     drawFireworks(offCtx);
-                    updateAndDrawLosers(offCtx);
                     updateAndDrawCelebration(offCtx);
                 }
 
                 offCtx.fillStyle = 'rgba(0, 0, 0, 0.45)'; offCtx.fillRect(0, 0, WIDTH, HEIGHT);
-                offCtx.fillStyle = '#1e3016'; offCtx.beginPath(); offCtx.roundRect(30, HEIGHT/2 - 148, 340, 312, 15); offCtx.fill();
+                offCtx.fillStyle = '#1e3016'; offCtx.beginPath(); offCtx.roundRect(30, HEIGHT/2 - 145, 340, 260, 15); offCtx.fill();
                 offCtx.strokeStyle = '#f1c40f'; offCtx.lineWidth = 4; offCtx.stroke();
                 offCtx.textAlign = 'center';
 
                 if (gameMode === '1P') {
                     const isWin = winner === 1;
-                    const winFlagKit = isWin ? p1Kit : opponentKit;
-
-                    drawFlagIcon(offCtx, winFlagKit, WIDTH/2 - 21, HEIGHT/2 - 140, 42, 28);
-                    offCtx.strokeStyle = '#ffea00'; offCtx.lineWidth = 2;
-                    offCtx.strokeRect(WIDTH/2 - 21, HEIGHT/2 - 140, 42, 28);
-
-                    offCtx.font = 'bold 40px "Courier New"';
+                    offCtx.font = 'bold 46px "Courier New"';
                     offCtx.fillStyle = isWin ? '#3498db' : '#e74c3c';
                     offCtx.strokeStyle = '#111'; offCtx.lineWidth = 5;
                     const label = isWin ? 'WIN!' : 'LOSE...';
-                    offCtx.strokeText(label, WIDTH / 2, HEIGHT / 2 - 92);
-                    offCtx.fillText(label, WIDTH / 2, HEIGHT / 2 - 92);
+                    offCtx.strokeText(label, WIDTH / 2, HEIGHT / 2 - 80);
+                    offCtx.fillText(label, WIDTH / 2, HEIGHT / 2 - 80);
 
-                    drawFlagIcon(offCtx, p1Kit, WIDTH/2 - 66, HEIGHT/2 - 62, 20, 14);
-                    drawFlagIcon(offCtx, opponentKit, WIDTH/2 + 46, HEIGHT/2 - 62, 20, 14);
-                    offCtx.font = 'bold 12px "Courier New"'; offCtx.fillStyle = '#fff';
-                    offCtx.fillText('VS', WIDTH / 2, HEIGHT / 2 - 51);
+                    offCtx.font = 'bold 14px "Courier New"'; offCtx.fillStyle = '#fff';
+                    offCtx.fillText(`${p1Kit.name} vs ${opponentKit.name}`, WIDTH / 2, HEIGHT / 2 - 45);
 
                     offCtx.font = 'bold 50px "Courier New"'; offCtx.fillStyle = '#f1c40f';
-                    offCtx.fillText(`${score1} : ${score2}`, WIDTH / 2, HEIGHT / 2 + 12);
+                    offCtx.fillText(`${score1} : ${score2}`, WIDTH / 2, HEIGHT / 2 + 15);
 
-                    if (maxAttempts > 5) {
-                        offCtx.font = 'bold 12px "Courier New"'; offCtx.fillStyle = '#ccc';
-                        offCtx.fillText('(승부차기 연장 끝에 결정)', WIDTH / 2, HEIGHT / 2 + 45);
-                    }
-                } else {
-                    const winKit = winner === 1 ? p1Kit : p2Kit;
-
-                    drawFlagIcon(offCtx, winKit, WIDTH/2 - 21, HEIGHT/2 - 143, 42, 28);
-                    offCtx.strokeStyle = '#ffea00'; offCtx.lineWidth = 2;
-                    offCtx.strokeRect(WIDTH/2 - 21, HEIGHT/2 - 143, 42, 28);
-
-                    offCtx.font = 'bold 16px "Courier New"'; offCtx.fillStyle = '#fff';
-                    offCtx.fillText('RESULT', WIDTH / 2, HEIGHT / 2 - 100);
-
-                    drawFlagIcon(offCtx, p1Kit, WIDTH/2 - 66, HEIGHT/2 - 78, 20, 14);
-                    drawFlagIcon(offCtx, p2Kit, WIDTH/2 + 46, HEIGHT/2 - 78, 20, 14);
-                    offCtx.font = 'bold 11px "Courier New"'; offCtx.fillStyle = '#ccc';
-                    offCtx.fillText('P1', WIDTH/2 - 56, HEIGHT/2 - 60);
-                    offCtx.fillText('P2', WIDTH/2 + 56, HEIGHT/2 - 60);
-                    offCtx.fillStyle = '#fff';
-                    offCtx.fillText('VS', WIDTH / 2, HEIGHT / 2 - 66);
-
-                    offCtx.font = 'bold 44px "Courier New"'; offCtx.fillStyle = '#f1c40f';
-                    offCtx.fillText(`${score1} : ${score2}`, WIDTH / 2, HEIGHT / 2 - 15);
-                    offCtx.font = 'bold 24px "Courier New"';
-                    offCtx.fillStyle = '#3498db';
-                    offCtx.strokeStyle = '#111'; offCtx.lineWidth = 4;
-                    const winnerText = `${winKit.name} (P${winner}) WIN!`;
-                    offCtx.strokeText(winnerText, WIDTH / 2, HEIGHT / 2 + 22);
-                    offCtx.fillText(winnerText, WIDTH / 2, HEIGHT / 2 + 22);
                     if (maxAttempts > 5) {
                         offCtx.font = 'bold 12px "Courier New"'; offCtx.fillStyle = '#ccc';
                         offCtx.fillText('(승부차기 연장 끝에 결정)', WIDTH / 2, HEIGHT / 2 + 50);
+                    }
+                } else {
+                    offCtx.font = 'bold 18px "Courier New"'; offCtx.fillStyle = '#fff';
+                    offCtx.fillText('RESULT', WIDTH / 2, HEIGHT / 2 - 95);
+                    offCtx.font = 'bold 44px "Courier New"'; offCtx.fillStyle = '#f1c40f';
+                    offCtx.fillText(`${score1} : ${score2}`, WIDTH / 2, HEIGHT / 2 - 40);
+                    offCtx.font = 'bold 26px "Courier New"';
+                    offCtx.fillStyle = '#3498db';
+                    offCtx.strokeStyle = '#111'; offCtx.lineWidth = 4;
+                    const winnerName = winner === 1 ? p1Kit.name : p2Kit.name;
+                    const winnerText = `${winnerName} (P${winner}) WIN!`;
+                    offCtx.strokeText(winnerText, WIDTH / 2, HEIGHT / 2 + 5);
+                    offCtx.fillText(winnerText, WIDTH / 2, HEIGHT / 2 + 5);
+                    if (maxAttempts > 5) {
+                        offCtx.font = 'bold 12px "Courier New"'; offCtx.fillStyle = '#ccc';
+                        offCtx.fillText('(승부차기 연장 끝에 결정)', WIDTH / 2, HEIGHT / 2 + 35);
                     }
                 }
             }
@@ -1759,25 +1365,16 @@
     function fitGameContainer() {
         const el = document.getElementById('gameContainer');
         const isMobile = window.innerWidth <= 768;
-        const topSafe = isMobile ? 58 : 20;
-        const bottomSafe = isMobile ? 14 : 20;
-        const vv = window.visualViewport;
-        const viewportW = vv ? vv.width : window.innerWidth;
-        const viewportH = vv ? vv.height : window.innerHeight;
-        const availW = viewportW - 16;
-        const availH = viewportH - topSafe - bottomSafe;
+        const topSafe = isMobile ? 65 : 20;
+        const bottomSafe = isMobile ? 30 : 20;
+        const availW = window.innerWidth - 16;
+        const availH = window.innerHeight - topSafe - bottomSafe;
         const scale = Math.min(1, availW / 400, availH / 700);
         el.style.transform = 'scale(' + scale + ')';
     }
     window.addEventListener('resize', fitGameContainer);
     window.addEventListener('orientationchange', fitGameContainer);
-    if (window.visualViewport) {
-        window.visualViewport.addEventListener('resize', fitGameContainer);
-        window.visualViewport.addEventListener('scroll', fitGameContainer);
-    }
     fitGameContainer();
-    setTimeout(fitGameContainer, 300);
-    setTimeout(fitGameContainer, 1000);
 </script>
 
 <!-- Google Analytics(GA4) -->

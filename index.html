@@ -81,14 +81,15 @@
         .search-icon { position: absolute; right: 20px; top: 50%; transform: translateY(-50%); font-size: 20px; pointer-events: none; opacity: 0.7; }
 
         /* 배너 캐러셀 (신작/공지/광고용) */
-        .banner-container { width: 100%; max-width: 1000px; margin-bottom: 30px; position: relative; }
+        .banner-container { width: 100%; max-width: 1000px; margin-bottom: 30px; position: relative; overflow: hidden; border-radius: 20px; }
+        .banner-track { display: flex; transition: transform 0.45s cubic-bezier(.4,0,.2,1); touch-action: pan-y; }
         .banner-slide {
-            display: none; background: linear-gradient(135deg, rgba(0,240,255,0.12), rgba(120,80,255,0.12));
+            display: flex; flex: 0 0 100%; width: 100%; box-sizing: border-box;
+            background: linear-gradient(135deg, rgba(0,240,255,0.12), rgba(120,80,255,0.12));
             border: 1px solid rgba(0,240,255,0.25); border-radius: 20px; padding: 22px 28px;
             align-items: center; justify-content: space-between; gap: 16px; backdrop-filter: blur(8px);
             text-decoration: none; color: inherit; cursor: pointer;
         }
-        .banner-slide.active { display: flex; }
         .banner-text-wrap { flex: 1; }
         .banner-tag { font-size: 11px; font-weight: 800; color: #00f0ff; letter-spacing: 1px; margin-bottom: 6px; display: block; }
         .banner-title { font-size: 18px; font-weight: 800; color: #fff; margin-bottom: 4px; }
@@ -97,6 +98,20 @@
         .banner-dots { display: flex; justify-content: center; gap: 6px; margin-top: 10px; }
         .banner-dot { width: 7px; height: 7px; border-radius: 50%; background: rgba(255,255,255,0.2); cursor: pointer; transition: background 0.3s; }
         .banner-dot.active { background: #00f0ff; }
+
+        /* PC: 마우스를 올렸을 때만 좌우 화살표 노출 */
+        .banner-nav-btn {
+            position: absolute; top: 50%; transform: translateY(-50%); z-index: 5;
+            width: 34px; height: 34px; border-radius: 50%; border: 1px solid rgba(0,240,255,0.5);
+            background: rgba(10,10,20,0.6); color: #00f0ff; font-size: 16px; font-weight: bold;
+            display: flex; align-items: center; justify-content: center; cursor: pointer;
+            opacity: 0; transition: opacity 0.2s ease, background 0.2s ease; backdrop-filter: blur(4px);
+        }
+        .banner-nav-btn:hover { background: rgba(0,240,255,0.2); }
+        .banner-nav-btn.prev { left: 10px; }
+        .banner-nav-btn.next { right: 10px; }
+        .banner-container:hover .banner-nav-btn { opacity: 1; }
+        @media (hover: none) { .banner-nav-btn { display: none; } } /* 터치 기기는 스와이프로 대체, 화살표 숨김 */
 
         /* 해시태그 */
         .tag-row { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
@@ -188,6 +203,8 @@
     </style>
 </head>
 <body>
+<script>document.addEventListener("contextmenu", function(e){ e.preventDefault(); });</script>
+
 
 <div id="kakao-browser-notice" style="display:none; position:fixed; top:0; left:0; width:100%; z-index:5000; background:#3c1e1e; color:#fff; font-size:12px; padding:10px 40px 10px 14px; text-align:center; box-sizing:border-box; line-height:1.5;">
     ⚠️ 카카오톡 안에서는 일부 화면이 다르게 보일 수 있어요. 우측 하단 <b>'•••'</b> 또는 공유 아이콘에서 <b>'다른 브라우저로 열기'</b>를 눌러주세요.
@@ -266,6 +283,18 @@
             </div>
         </a>
 
+        <a href="penalty_shootout.html" class="game-card" onclick="setLastPlayed('penalty_shootout.html','승부차기 PK 대결','⚽')">
+            <div class="planet-container"><div class="planet-ring"></div><div class="planet planet-pk">⚽</div></div>
+            <div class="card-content">
+                <span class="badge badge-active lang-text" data-ko="WARP READY" data-en="WARP READY">WARP READY</span>
+                <div class="card-title lang-text" data-ko="승부차기 PK 대결" data-en="Planet: Penalty Shootout">승부차기 PK 대결</div>
+                <div class="card-desc lang-text" data-ko="1인 도전 또는 2인 대결! 픽셀 감성 승부차기를 즐겨보세요." data-en="Solo challenge or 1v1! A pixel-style penalty shootout game.">1인 도전 또는 2인 대결! 픽셀 감성 승부차기를 즐겨보세요.</div>
+                <div class="tag-row">
+                    <span class="tag-pill">#스포츠</span><span class="tag-pill">#대전</span><span class="tag-pill">#반사신경</span><span class="tag-pill">#픽셀</span>
+                </div>
+            </div>
+        </a>
+
         <a href="tetris.html" class="game-card" onclick="setLastPlayed('tetris.html','한글 테트리스','🧩')">
             <div class="planet-container"><div class="planet-ring"></div><div class="planet planet-tetris">🧩</div></div>
             <div class="card-content">
@@ -298,18 +327,6 @@
                 <div class="card-desc lang-text" data-ko="지렁이를 순서대로 보내 땅을 비우자. 누가누가 가장빨리 보낼까." data-en="Send the worms out in the right order to clear the board. A logic puzzle.">지렁이를 순서대로 보내 땅을 비우자. 누가누가 가장빨리 보낼까</div>
                 <div class="tag-row">
                     <span class="tag-pill">#퍼즐</span><span class="tag-pill">#논리</span><span class="tag-pill">#귀여움</span><span class="tag-pill">#타임어택</span>
-                </div>
-            </div>
-        </a>
-
-        <a href="penalty_shootout.html" class="game-card" onclick="setLastPlayed('penalty_shootout.html','승부차기 PK 대결','⚽')">
-            <div class="planet-container"><div class="planet-ring"></div><div class="planet planet-pk">⚽</div></div>
-            <div class="card-content">
-                <span class="badge badge-active lang-text" data-ko="WARP READY" data-en="WARP READY">WARP READY</span>
-                <div class="card-title lang-text" data-ko="승부차기 PK 대결" data-en="Planet: Penalty Shootout">승부차기 PK 대결</div>
-                <div class="card-desc lang-text" data-ko="1인 도전 또는 2인 대결! 픽셀 감성 승부차기를 즐겨보세요." data-en="Solo challenge or 1v1! A pixel-style penalty shootout game.">1인 도전 또는 2인 대결! 픽셀 감성 승부차기를 즐겨보세요.</div>
-                <div class="tag-row">
-                    <span class="tag-pill">#스포츠</span><span class="tag-pill">#대전</span><span class="tag-pill">#반사신경</span><span class="tag-pill">#픽셀</span>
                 </div>
             </div>
         </a>
@@ -399,8 +416,10 @@
         let bannerIndex = 0;
         function renderBanner() {
             const container = document.getElementById('bannerContainer');
-            container.innerHTML = BANNER_SLIDES.map((s, i) => `
-                <a href="${s.link}" class="banner-slide ${i === bannerIndex ? 'active' : ''}" data-idx="${i}">
+            container.innerHTML =
+                `<div class="banner-track" id="bannerTrack">` +
+                BANNER_SLIDES.map((s) => `
+                <a href="${s.link}" class="banner-slide">
                     <div class="banner-text-wrap">
                         <span class="banner-tag">${s.tag}</span>
                         <div class="banner-title">${s.title}</div>
@@ -408,11 +427,57 @@
                     </div>
                     <div class="banner-arrow">→</div>
                 </a>`).join('') +
+                `</div>` +
+                `<button class="banner-nav-btn prev" onclick="event.preventDefault(); event.stopPropagation(); prevBanner();" aria-label="이전">‹</button>` +
+                `<button class="banner-nav-btn next" onclick="event.preventDefault(); event.stopPropagation(); nextBanner();" aria-label="다음">›</button>` +
                 `<div class="banner-dots">${BANNER_SLIDES.map((_, i) => `<span class="banner-dot ${i === bannerIndex ? 'active' : ''}" onclick="event.stopPropagation(); goToBanner(${i})"></span>`).join('')}</div>`;
+            updateBannerPosition(false);
+            setupBannerSwipe();
         }
-        function goToBanner(i) { bannerIndex = i; renderBanner(); }
-        function nextBanner() { bannerIndex = (bannerIndex + 1) % BANNER_SLIDES.length; renderBanner(); }
+        function updateBannerPosition(animate) {
+            const track = document.getElementById('bannerTrack');
+            if (!track) return;
+            track.style.transition = animate === false ? 'none' : '';
+            track.style.transform = `translateX(-${bannerIndex * 100}%)`;
+            document.querySelectorAll('.banner-dot').forEach((d, i) => d.classList.toggle('active', i === bannerIndex));
+        }
+        function goToBanner(i) { bannerIndex = i; updateBannerPosition(); restartBannerAutoplay(); }
+        function nextBanner() { bannerIndex = (bannerIndex + 1) % BANNER_SLIDES.length; updateBannerPosition(); }
+        function prevBanner() { bannerIndex = (bannerIndex - 1 + BANNER_SLIDES.length) % BANNER_SLIDES.length; updateBannerPosition(); restartBannerAutoplay(); }
+
+        // ★ 모바일 스와이프 지원
+        function setupBannerSwipe() {
+            const track = document.getElementById('bannerTrack');
+            if (!track) return;
+            let startX = 0, startY = 0, dragging = false, moved = false;
+            track.addEventListener('touchstart', (e) => {
+                startX = e.touches[0].clientX; startY = e.touches[0].clientY;
+                dragging = true; moved = false;
+            }, { passive: true });
+            track.addEventListener('touchmove', (e) => {
+                if (!dragging) return;
+                const dx = e.touches[0].clientX - startX;
+                const dy = e.touches[0].clientY - startY;
+                if (Math.abs(dx) > Math.abs(dy)) moved = true;
+            }, { passive: true });
+            track.addEventListener('touchend', (e) => {
+                if (!dragging) return;
+                dragging = false;
+                const endX = e.changedTouches[0].clientX;
+                const dx = endX - startX;
+                if (moved && Math.abs(dx) > 40) {
+                    if (dx < 0) nextBanner(); else prevBanner();
+                    restartBannerAutoplay();
+                }
+            });
+        }
         renderBanner();
+
+        let bannerAutoplayId = setInterval(nextBanner, 5000);
+        function restartBannerAutoplay() {
+            clearInterval(bannerAutoplayId);
+            bannerAutoplayId = setInterval(nextBanner, 5000);
+        }
 
         // ★ 이어하기(최근 플레이 1개) 기능
         function setLastPlayed(url, title, emoji) {
@@ -473,7 +538,6 @@
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.register('sw.js').catch(() => {});
         }
-        setInterval(nextBanner, 5000);
 
         // 1. 다국어 로컬라이제이션 엔진
         let currentLang = 'ko';

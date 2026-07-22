@@ -70,7 +70,8 @@
         }
 
         @media (max-width: 768px) {
-            body { padding-top: 42px; padding-bottom: 10px; height: auto; min-height: 100vh; align-items: flex-start; }
+            body { padding-top: 42px; padding-bottom: 10px; height: auto; min-height: 100vh; justify-content: flex-start; align-items: center; background-color: #2ecc71; }
+            html { background: #2ecc71; }
             .menu-wrap { top: 42px; }
         }
         canvas { display: block; image-rendering: pixelated; image-rendering: crisp-edges; }
@@ -94,13 +95,13 @@
         .btn:active { transform: translateX(-50%) translate(2px, 2px); box-shadow: 2px 2px 0px #000; }
 
         #startBtn { position: static; transform: none; display: block; margin: 10px 0 4px; }
-        #restartBtn { top: 450px; left: 28%; width: 148px; display: none; padding: 12px 8px; font-size: 14px; }
+        #restartBtn { top: 460px; left: 117.5px; width: 145px; display: none; padding: 12px 6px; font-size: 14px; }
         #menuBtn {
-            top: 450px;
-            left: 74%;
-            width: 148px;
+            top: 460px;
+            left: 282.5px;
+            width: 145px;
             display: none;
-            padding: 12px 8px;
+            padding: 12px 6px;
             font-size: 14px;
             background: #eeeeee;
             color: #111;
@@ -477,7 +478,7 @@
         { name: '아르헨티나', code: 'ARG', shirt: '#ffffff', shirt2: '#78c2f0', pattern: 'stripe',
           shorts: '#0b1f4b', sock: '#ffffff', sockStripe: '#d21034',
           flagSvg: '<svg viewBox="0 0 24 16" preserveAspectRatio="xMidYMid slice"><rect width="24" height="16" fill="#75aadb"/><rect y="5.33" width="24" height="5.33" fill="#fff"/><circle cx="12" cy="8" r="2.1" fill="#f6b40e" stroke="#85340a" stroke-width="0.3"/></svg>' },
-        { name: '한국', code: 'KOR',       shirt: '#d6222e', shirt2: '#96181c', pattern: 'tiger',
+        { name: '한국', code: 'KOR',       shirt: '#d6222e', shirt2: '#96181c', pattern: 'tiger', collar: '#111111',
           shorts: '#111111', sock: '#d6222e', sockStripe: '#ffffff',
           flagSvg: '<svg viewBox="0 0 24 16" preserveAspectRatio="xMidYMid slice"><rect width="24" height="16" fill="#fff"/><g transform="translate(12,8) rotate(30) scale(-1,1) translate(-12,-8)"><circle cx="12" cy="8" r="4.4" fill="#003478"/><path d="M7.6,8 A4.4,4.4 0 0 1 16.4,8 A2.2,2.2 0 0 1 12,8 A2.2,2.2 0 0 0 7.6,8 Z" fill="#cd2e3a"/></g><g fill="#111"><g transform="translate(4.6,3.8) rotate(135)"><rect x="-1.8" y="-1.475" width="3.6" height="0.65"/><rect x="-1.8" y="-0.325" width="3.6" height="0.65"/><rect x="-1.8" y="0.825" width="3.6" height="0.65"/></g><g transform="translate(19.4,3.8) rotate(45)"><rect x="-1.8" y="-1.475" width="1.45" height="0.65"/><rect x="0.35" y="-1.475" width="1.45" height="0.65"/><rect x="-1.8" y="-0.325" width="3.6" height="0.65"/><rect x="-1.8" y="0.825" width="1.45" height="0.65"/><rect x="0.35" y="0.825" width="1.45" height="0.65"/></g><g transform="translate(4.6,12.2) rotate(225)"><rect x="-1.8" y="-1.475" width="3.6" height="0.65"/><rect x="-1.8" y="-0.325" width="1.45" height="0.65"/><rect x="0.35" y="-0.325" width="1.45" height="0.65"/><rect x="-1.8" y="0.825" width="3.6" height="0.65"/></g><g transform="translate(19.4,12.2) rotate(315)"><rect x="-1.8" y="-1.475" width="1.45" height="0.65"/><rect x="0.35" y="-1.475" width="1.45" height="0.65"/><rect x="-1.8" y="-0.325" width="1.45" height="0.65"/><rect x="0.35" y="-0.325" width="1.45" height="0.65"/><rect x="-1.8" y="0.825" width="1.45" height="0.65"/><rect x="0.35" y="0.825" width="1.45" height="0.65"/></g></g></svg>' },
         { name: '일본', code: 'JPN',       shirt: '#0f2a6b', shirt2: '#2e5bb8', pattern: 'stripe',
@@ -581,14 +582,14 @@
     let celebrationActive = false;
     let gameFrame = 0;
 
-    const goal = { x: 50, y: 138, width: 300, height: 120 };
+    const goal = { x: 40, y: 130, width: 320, height: 135 };
     const ballStart = { x: WIDTH / 2, y: 530 };
     const playerStart = { x: 130, y: 550 };
 
     let ball = { x: ballStart.x, y: ballStart.y, radius: 10, targetX: 0, targetY: 0, rotation: 0 };
     let targetCursor = { x: WIDTH / 2, y: goal.y + goal.height / 2, dirX: 1, dirY: 1, speed: 6, radius: 15 };
     let powerBar = { value: 0, dir: 1, speed: 3.5, locked: false, power: '', timeLimit: 300, startFrame: 0 };
-    let keeper = { x: WIDTH / 2, y: 247, targetX: WIDTH / 2, targetY: 247, state: 'IDLE' };
+    let keeper = { x: WIDTH / 2, y: 254, targetX: WIDTH / 2, targetY: 254, state: 'IDLE' };
     let player = { x: playerStart.x, y: playerStart.y, state: 'IDLE' };
     let opponentPrepTimer = 0;
     let roundShirtNumber = 7;
@@ -988,6 +989,12 @@
         ctx.fillStyle = kit.shirt;
         ctx.beginPath(); ctx.moveTo(-9, -24); ctx.lineTo(9, -24); ctx.lineTo(7, -4); ctx.lineTo(-7, -4); ctx.fill();
         applyMiniPattern(ctx, kit, { top: -24, bottom: -4, halfTop: 9, halfBottom: 7 });
+        if (kit.collar) {
+            ctx.fillStyle = kit.collar;
+            ctx.beginPath();
+            ctx.moveTo(-3.5, -24); ctx.lineTo(3.5, -24); ctx.lineTo(2, -21); ctx.lineTo(0, -19); ctx.lineTo(-2, -21);
+            ctx.closePath(); ctx.fill();
+        }
         ctx.fillStyle = '#ffccaa'; ctx.beginPath(); ctx.arc(0, -29, 5, 0, Math.PI * 2); ctx.fill();
         ctx.strokeStyle = (kit.pattern === 'sleeve' && kit.shirt2) ? kit.shirt2 : kit.shirt;
         ctx.lineWidth = 4; ctx.lineCap = 'round';
@@ -1076,7 +1083,7 @@
     function resetRound() {
         ball.x = ballStart.x; ball.y = ballStart.y; ball.rotation = 0; ball.radius = 10;
         player.state = 'IDLE'; player.x = playerStart.x; player.y = playerStart.y;
-        keeper.x = WIDTH / 2; keeper.y = 247; keeper.targetX = WIDTH / 2; keeper.targetY = 247; keeper.state = 'IDLE';
+        keeper.x = WIDTH / 2; keeper.y = 254; keeper.targetX = WIDTH / 2; keeper.targetY = 254; keeper.state = 'IDLE';
 
         if (matchDecided) {
             enterGameOver();
@@ -1117,6 +1124,7 @@
             actionBtn.style.display = 'none';
         } else {
             gameState = 'AIM_Y';
+            tellActive = false; tellDir = 0; pendingShot = null;
             actionBtn.style.display = 'block';
         }
     }
@@ -1193,17 +1201,19 @@
             ctx.lineTo(WIDTH/2 + (i+1)*180, HEIGHT); ctx.lineTo(WIDTH/2 + i*180, HEIGHT); ctx.fill();
         }
 
-        // 골라인 (골대 바로 아래 가로선)
-        const goalLineY = goal.y + goal.height;
+        // 골라인 (실제 축구장처럼 터치라인까지 화면 전체 너비로 연장)
+        const goalLineY = goal.y + goal.height + 15;
         ctx.fillStyle = 'rgba(255,255,255,0.9)';
-        ctx.fillRect(goal.x - 18, goalLineY - 2, goal.width + 36, 4);
+        ctx.fillRect(0, goalLineY - 2, WIDTH, 4);
 
         // 페널티 박스 (키커와 골키퍼 사이 가로선)
         ctx.fillStyle = 'rgba(255,255,255,0.85)';
         ctx.fillRect(0, 480, WIDTH, 5);
-        ctx.beginPath(); ctx.moveTo(50, vanishY); ctx.lineTo(10, 480);
-        ctx.moveTo(350, vanishY); ctx.lineTo(390, 480);
-        ctx.lineWidth = 4; ctx.strokeStyle = 'rgba(255,255,255,0.85)'; ctx.stroke();
+
+        // PK 스팟 (승부차기 지점 표시) - 공(반지름 10)보다 살짝 크게 그려서 공 밑에서도 테두리가 보이게 한다
+        ctx.fillStyle = 'rgba(255,255,255,0.95)';
+        ctx.beginPath(); ctx.arc(ballStart.x, ballStart.y, 13, 0, Math.PI * 2); ctx.fill();
+        ctx.strokeStyle = 'rgba(0,0,0,0.2)'; ctx.lineWidth = 1; ctx.stroke();
     }
 
     function drawGoal(ctx) {
@@ -1259,6 +1269,20 @@
     function drawJoint(ctx, x, y) {
         ctx.fillStyle = 'rgba(0,0,0,0.35)';
         ctx.beginPath(); ctx.arc(x, y, 2, 0, Math.PI * 2); ctx.fill();
+    }
+
+    // 옅고 부드럽게 퍼지는 그림자 (경계가 뚜렷한 단색 타원 대신 가장자리가 자연스럽게 사라짐)
+    function drawGroundShadow(ctx, cx, cy, rx, ry, maxAlpha) {
+        ctx.save();
+        ctx.translate(cx, cy);
+        ctx.scale(rx, ry);
+        const grad = ctx.createRadialGradient(0, 0, 0, 0, 0, 1);
+        grad.addColorStop(0, `rgba(0,0,0,${maxAlpha})`);
+        grad.addColorStop(0.7, `rgba(0,0,0,${maxAlpha * 0.55})`);
+        grad.addColorStop(1, 'rgba(0,0,0,0)');
+        ctx.fillStyle = grad;
+        ctx.beginPath(); ctx.arc(0, 0, 1, 0, Math.PI * 2); ctx.fill();
+        ctx.restore();
     }
 
     function drawFlagIcon(ctx, kit, x, y, w, h) {
@@ -1381,13 +1405,19 @@
 
         ctx.save(); ctx.translate(keeper.x, keeper.y);
 
+        // 원근감 보정: 골대 안쪽의 골키퍼는 키커보다 카메라에서 멀어 보이지만,
+        // 기존 크기가 너무 작았으므로 발(그림자) 위치를 고정한 채 확대한다.
+        const KSCALE = 1.75;
+        const KFOOT_Y = 5;
+        ctx.scale(KSCALE, KSCALE);
+        ctx.translate(0, KFOOT_Y * (1 / KSCALE - 1));
+
         if (isDiving) {
             const dir = keeper.diveDir || 1;
             const flightFrames = 24;
             const inFlight = keeper.diveElapsed <= flightFrames;
 
-            ctx.fillStyle = 'rgba(0,0,0,0.28)';
-            ctx.beginPath(); ctx.ellipse(0, 6, 16, 4.5, 0, 0, Math.PI * 2); ctx.fill();
+            drawGroundShadow(ctx, 0, 6, 16, 4.5, 0.3);
 
             if (inFlight) {
                 const t = keeper.diveElapsed / flightFrames;
@@ -1456,8 +1486,7 @@
             const armWave = Math.sin(gameFrame * 0.17) * 8;
             const crouch = isReady ? 3 : 0;
 
-            ctx.fillStyle = 'rgba(0,0,0,0.3)';
-            ctx.beginPath(); ctx.ellipse(shift * 0.3, 5, 15, 5, 0, 0, Math.PI * 2); ctx.fill();
+            drawGroundShadow(ctx, shift * 0.3, 5, 15, 5, 0.32);
 
             ctx.translate(shift * 0.35, crouch);
 
@@ -1513,9 +1542,16 @@
         ctx.save(); ctx.translate(player.x, player.y);
         if (tellActive) { ctx.rotate(tellDir * tellAngle); }
 
+        // 원근감 보정: 카메라와 가장 가까운 키커는 골키퍼보다 훨씬 크게 보여야 자연스럽다.
+        // 발(그림자) 위치는 고정한 채로 몸 전체만 확대한다.
+        const PSCALE = 2.2;
+        const PFOOT_Y = 15;
+        ctx.scale(PSCALE, PSCALE);
+        ctx.translate(0, PFOOT_Y * (1 / PSCALE - 1));
+
         let bob = player.state === 'RUNNING' ? Math.sin(gameFrame * 0.6) * 4 : 0;
 
-        ctx.fillStyle = 'rgba(0,0,0,0.3)'; ctx.beginPath(); ctx.ellipse(0, 15, 16, 4, 0, 0, Math.PI*2); ctx.fill();
+        drawGroundShadow(ctx, 0, 15, 16, 4, 0.32);
 
         ctx.fillStyle = kit.shorts; ctx.fillRect(-9, -10 + bob, 18, 12);
         if (kit.shortsAccent) { ctx.fillStyle = kit.shortsAccent; ctx.fillRect(-9, -10 + bob, 18, 2); }
@@ -1590,6 +1626,27 @@
             });
             ctx.globalAlpha = 1;
             ctx.restore();
+
+            // 어깨 부분 호랑이 무늬 (좌우 소매 상단에도 확실히 보이도록 추가)
+            ctx.save();
+            ctx.fillStyle = kit.shirt2; ctx.globalAlpha = 0.8;
+            [-1, 1].forEach(dir => {
+                ctx.save();
+                ctx.translate(dir * 10, -36 + bob); ctx.rotate(dir * 0.5);
+                ctx.fillRect(-3, 0, 6, 3);
+                ctx.fillRect(-3, 5, 6, 2.4);
+                ctx.restore();
+            });
+            ctx.globalAlpha = 1;
+            ctx.restore();
+        }
+
+        if (kit.collar) {
+            ctx.fillStyle = kit.collar;
+            ctx.beginPath();
+            ctx.moveTo(-5, -38 + bob); ctx.lineTo(5, -38 + bob);
+            ctx.lineTo(3, -34 + bob); ctx.lineTo(0, -31 + bob); ctx.lineTo(-3, -34 + bob);
+            ctx.closePath(); ctx.fill();
         }
 
         ctx.fillStyle = '#fff';
@@ -1901,7 +1958,7 @@
                 const msg = `${opponentKit.name} 선수가 슈팅 준비 중...`;
                 offCtx.strokeText(msg, WIDTH / 2, 470);
                 offCtx.fillText(msg, WIDTH / 2, 470);
-                if (tellActive) {
+                if (tellActive && gameMode === '1P' && difficulty === 'EASY') {
                     offCtx.font = 'bold 13px "Courier New"'; offCtx.fillStyle = '#ffea00';
                     offCtx.strokeStyle = '#111'; offCtx.lineWidth = 3;
                     const hint = '자세를 잘 보세요!';
@@ -1932,7 +1989,9 @@
                 }
 
                 offCtx.fillStyle = 'rgba(0, 0, 0, 0.45)'; offCtx.fillRect(0, 0, WIDTH, HEIGHT);
-                offCtx.fillStyle = '#1e3016'; offCtx.beginPath(); offCtx.roundRect(30, HEIGHT/2 - 148, 340, 312, 15); offCtx.fill();
+
+                const PY = HEIGHT / 2 - 160;
+                offCtx.fillStyle = '#1e3016'; offCtx.beginPath(); offCtx.roundRect(25, PY, 350, 340, 15); offCtx.fill();
                 offCtx.strokeStyle = '#f1c40f'; offCtx.lineWidth = 4; offCtx.stroke();
                 offCtx.textAlign = 'center';
 
@@ -1940,61 +1999,62 @@
                     const isWin = winner === 1;
                     const winFlagKit = isWin ? p1Kit : opponentKit;
 
-                    drawFlagIcon(offCtx, winFlagKit, WIDTH/2 - 21, HEIGHT/2 - 140, 42, 28);
+                    drawFlagIcon(offCtx, winFlagKit, WIDTH/2 - 23, PY + 20, 46, 30);
                     offCtx.strokeStyle = '#ffea00'; offCtx.lineWidth = 2;
-                    offCtx.strokeRect(WIDTH/2 - 21, HEIGHT/2 - 140, 42, 28);
+                    offCtx.strokeRect(WIDTH/2 - 23, PY + 20, 46, 30);
 
-                    offCtx.font = 'bold 40px "Courier New"';
+                    offCtx.font = 'bold 38px "Courier New"';
                     offCtx.fillStyle = isWin ? '#3498db' : '#e74c3c';
                     offCtx.strokeStyle = '#111'; offCtx.lineWidth = 5;
                     const label = isWin ? 'WIN!' : 'LOSE...';
-                    offCtx.strokeText(label, WIDTH / 2, HEIGHT / 2 - 92);
-                    offCtx.fillText(label, WIDTH / 2, HEIGHT / 2 - 92);
+                    offCtx.strokeText(label, WIDTH / 2, PY + 90);
+                    offCtx.fillText(label, WIDTH / 2, PY + 90);
 
-                    drawFlagIcon(offCtx, p1Kit, WIDTH/2 - 66, HEIGHT/2 - 62, 20, 14);
-                    drawFlagIcon(offCtx, opponentKit, WIDTH/2 + 46, HEIGHT/2 - 62, 20, 14);
+                    drawFlagIcon(offCtx, p1Kit, WIDTH/2 - 66, PY + 112, 20, 14);
+                    drawFlagIcon(offCtx, opponentKit, WIDTH/2 + 46, PY + 112, 20, 14);
                     offCtx.font = 'bold 12px "Courier New"'; offCtx.fillStyle = '#fff';
-                    offCtx.fillText('VS', WIDTH / 2, HEIGHT / 2 - 51);
+                    offCtx.fillText('VS', WIDTH / 2, PY + 123);
 
-                    offCtx.font = 'bold 50px "Courier New"'; offCtx.fillStyle = '#f1c40f';
-                    offCtx.fillText(`${score1} : ${score2}`, WIDTH / 2, HEIGHT / 2 + 12);
+                    offCtx.font = 'bold 48px "Courier New"'; offCtx.fillStyle = '#f1c40f';
+                    offCtx.fillText(`${score1} : ${score2}`, WIDTH / 2, PY + 185);
 
                     if (maxAttempts > 5) {
                         offCtx.font = 'bold 12px "Courier New"'; offCtx.fillStyle = '#ccc';
-                        offCtx.fillText('(승부차기 연장 끝에 결정)', WIDTH / 2, HEIGHT / 2 + 45);
+                        offCtx.fillText('(승부차기 연장 끝에 결정)', WIDTH / 2, PY + 218);
                     }
                 } else {
                     const winKit = winner === 1 ? p1Kit : p2Kit;
 
-                    drawFlagIcon(offCtx, winKit, WIDTH/2 - 21, HEIGHT/2 - 143, 42, 28);
+                    offCtx.font = 'bold 15px "Courier New"'; offCtx.fillStyle = '#fff';
+                    offCtx.fillText('RESULT', WIDTH / 2, PY + 20);
+
+                    drawFlagIcon(offCtx, winKit, WIDTH/2 - 21, PY + 30, 42, 28);
                     offCtx.strokeStyle = '#ffea00'; offCtx.lineWidth = 2;
-                    offCtx.strokeRect(WIDTH/2 - 21, HEIGHT/2 - 143, 42, 28);
+                    offCtx.strokeRect(WIDTH/2 - 21, PY + 30, 42, 28);
 
-                    offCtx.font = 'bold 16px "Courier New"'; offCtx.fillStyle = '#fff';
-                    offCtx.fillText('RESULT', WIDTH / 2, HEIGHT / 2 - 100);
-
-                    drawFlagIcon(offCtx, p1Kit, WIDTH/2 - 66, HEIGHT/2 - 78, 20, 14);
-                    drawFlagIcon(offCtx, p2Kit, WIDTH/2 + 46, HEIGHT/2 - 78, 20, 14);
+                    drawFlagIcon(offCtx, p1Kit, WIDTH/2 - 66, PY + 74, 20, 14);
+                    drawFlagIcon(offCtx, p2Kit, WIDTH/2 + 46, PY + 74, 20, 14);
                     offCtx.font = 'bold 11px "Courier New"'; offCtx.fillStyle = '#ccc';
-                    offCtx.fillText('P1', WIDTH/2 - 56, HEIGHT/2 - 60);
-                    offCtx.fillText('P2', WIDTH/2 + 56, HEIGHT/2 - 60);
-                    offCtx.fillStyle = '#fff';
-                    offCtx.fillText('VS', WIDTH / 2, HEIGHT / 2 - 66);
+                    offCtx.fillText('P1', WIDTH/2 - 56, PY + 96);
+                    offCtx.fillText('P2', WIDTH/2 + 56, PY + 96);
+                    offCtx.fillStyle = '#fff'; offCtx.font = 'bold 12px "Courier New"';
+                    offCtx.fillText('VS', WIDTH / 2, PY + 85);
 
-                    offCtx.font = 'bold 44px "Courier New"'; offCtx.fillStyle = '#f1c40f';
-                    offCtx.fillText(`${score1} : ${score2}`, WIDTH / 2, HEIGHT / 2 - 15);
-                    offCtx.font = 'bold 24px "Courier New"';
+                    offCtx.font = 'bold 42px "Courier New"'; offCtx.fillStyle = '#f1c40f';
+                    offCtx.fillText(`${score1} : ${score2}`, WIDTH / 2, PY + 155);
+                    offCtx.font = 'bold 22px "Courier New"';
                     offCtx.fillStyle = '#3498db';
                     offCtx.strokeStyle = '#111'; offCtx.lineWidth = 4;
                     const winnerText = `${winKit.name} (P${winner}) WIN!`;
-                    offCtx.strokeText(winnerText, WIDTH / 2, HEIGHT / 2 + 22);
-                    offCtx.fillText(winnerText, WIDTH / 2, HEIGHT / 2 + 22);
+                    offCtx.strokeText(winnerText, WIDTH / 2, PY + 195);
+                    offCtx.fillText(winnerText, WIDTH / 2, PY + 195);
                     if (maxAttempts > 5) {
                         offCtx.font = 'bold 12px "Courier New"'; offCtx.fillStyle = '#ccc';
-                        offCtx.fillText('(승부차기 연장 끝에 결정)', WIDTH / 2, HEIGHT / 2 + 50);
+                        offCtx.fillText('(승부차기 연장 끝에 결정)', WIDTH / 2, PY + 225);
                     }
                 }
             }
+
 
             offCtx.restore();
 

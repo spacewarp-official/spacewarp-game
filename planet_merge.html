@@ -17,6 +17,24 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <link href="https://fonts.googleapis.com/css2?family=Jua&display=swap" rel="stylesheet">
 <style>
+  #user-name { text-align: center !important; }
+  #user-name::placeholder { text-align: center !important; }
+  #user-name::-webkit-input-placeholder { text-align: center !important; }
+  #user-name:-ms-input-placeholder { text-align: center !important; }
+  #user-name::-moz-placeholder { text-align: center !important; }
+
+  #streak-mission-bar {
+    display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; margin: 6px 0 8px;
+  }
+  #streak-badge, #daily-mission-badge {
+    font-size: 11px; padding: 4px 10px; border-radius: 12px; background: rgba(123,94,230,0.18);
+    color: #d8cdfb; border: 1px solid rgba(123,94,230,0.4);
+  }
+  #daily-mission-badge.mission-done { background: rgba(80,220,140,0.18); color: #b6f5d0; border-color: rgba(80,220,140,0.4); }
+
+  /* 도감 잠금 항목 */
+  .evo-item.locked .evo-planet-holder { filter: brightness(0) opacity(0.35); }
+  .evo-item.locked .evo-text, .evo-item.locked .evo-personality { color: #b8b0cc; }
   * { box-sizing: border-box; }
   html { background:#05030f; height:100%; overscroll-behavior:none; }
   body {
@@ -136,23 +154,44 @@
     transition: left 0.05s linear, opacity 0.15s;
     display: flex; align-items: center; justify-content: center;
   }
-  #aim-holder .star-bg {
-    position: absolute; inset: 0;
-    background: radial-gradient(circle at 35% 28%, #fffde7, #ffe082 75%);
-    clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
-    box-shadow: 0 4px 6px rgba(0,0,0,0.18);
+  #aim-holder .rocket-bg { display: none; } /* 구버전 로켓 이미지는 더 이상 사용하지 않음 */
+
+  /* [신규] 워프 링(Warp Ring) - SPACEWARP 컨셉: 시공간 고리가 회전하며 그 중심에서 행성이 뿅 등장 */
+  #aim-holder .warp-ring-bg { position: absolute; inset: -18%; z-index: 1; }
+  #aim-holder .warp-ring {
+    position: absolute; inset: 0; border-radius: 50%;
+    border: 3px solid transparent;
+    background: conic-gradient(from 0deg, #00f0ff, #a855f7, #00f0ff 60%, transparent 75%, #00f0ff) border-box;
+    -webkit-mask: linear-gradient(#fff 0 0) padding-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor; mask-composite: exclude;
+    filter: drop-shadow(0 0 6px rgba(0,240,255,0.85));
+    animation: warpSpin 1.4s linear infinite;
   }
+  #aim-holder .warp-ring.ring2 {
+    inset: 14%;
+    background: conic-gradient(from 180deg, #ff00ff, #00f0ff, #ff00ff 60%, transparent 75%, #ff00ff) border-box;
+    animation: warpSpin 1s linear infinite reverse;
+    opacity: 0.85;
+  }
+  @keyframes warpSpin { to { transform: rotate(360deg); } }
+  #aim-holder .warp-core {
+    position: absolute; inset: 30%; border-radius: 50%;
+    background: radial-gradient(circle, rgba(255,255,255,0.9), rgba(0,240,255,0.25) 60%, transparent 75%);
+    animation: warpPulse 1.2s ease-in-out infinite;
+  }
+  @keyframes warpPulse { 0%,100% { opacity: 0.55; transform: scale(0.9); } 50% { opacity: 1; transform: scale(1.05); } }
   /* 크기는 CSS 고정값이 아니라 JS(syncAimUI)에서 실제 반지름 기준으로 매 순간 지정 */
   #aim-holder .aim-emoji { position: relative; z-index: 2; display: flex; align-items: center; justify-content: center; }
 
   .modal-overlay { display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); justify-content: center; align-items: center; z-index: 200; }
-  .modal-content { background: #fff; width: 80%; max-height: 80%; border-radius: 15px; padding: 20px; overflow-y: auto; text-align: center; color: #4a3f6b; box-shadow: 0 10px 30px rgba(0,0,0,0.3); }
-  .modal-close { margin-top: 15px; padding: 10px 20px; border: none; border-radius: 10px; background: #6a5acd; color: white; font-family: 'Jua'; font-size: 18px; cursor: pointer; width: 100%; }
-  .evo-tree { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; margin-top: 15px; }
-  .evo-item { display: flex; flex-direction: column; align-items: center; width: 27%; }
-  .evo-planet-holder { width: 40px; height: 40px; margin-bottom: 4px; }
-  .evo-text { font-size: 12px; font-weight: bold; }
-  .evo-personality { font-size: 10px; color: #8a7fae; }
+  .modal-content { background: #fff; width: 84%; max-height: 88%; border-radius: 15px; padding: 18px 18px 14px; text-align: center; color: #4a3f6b; box-shadow: 0 10px 30px rgba(0,0,0,0.3); display: flex; flex-direction: column; }
+  .modal-scroll-area { overflow-y: auto; flex: 1; min-height: 0; }
+  .modal-close { margin-top: 12px; padding: 10px 20px; border: none; border-radius: 10px; background: #6a5acd; color: white; font-family: 'Jua'; font-size: 18px; cursor: pointer; width: 100%; flex-shrink: 0; }
+  .evo-tree { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px 4px; margin-top: 10px; }
+  .evo-item { display: flex; flex-direction: column; align-items: center; width: 100%; }
+  .evo-planet-holder { width: 34px; height: 34px; margin-bottom: 3px; }
+  .evo-text { font-size: 10.5px; font-weight: bold; }
+  .evo-personality { font-size: 8.5px; color: #8a7fae; line-height: 1.2; }
   .rank-list { text-align: left; margin-top: 15px; font-size: 15px; line-height: 1.9; }
   .rank-list div { display: flex; justify-content: space-between; gap: 8px; }
   .rank-time { font-size: 11px; color: #999; font-weight: normal; }
@@ -216,19 +255,30 @@
     <button class="action-btn" id="info-btn" type="button">i</button>
   </div>
 
+  <div id="streak-mission-bar">
+    <span id="streak-badge"></span>
+    <span id="daily-mission-badge"></span>
+  </div>
+
   <div id="canvas-container">
     <div id="deadline-line"></div>
     <div id="aim-holder">
-      <div class="star-bg"></div>
+      <div class="warp-ring-bg">
+        <div class="warp-core"></div>
+        <div class="warp-ring"></div>
+        <div class="warp-ring ring2"></div>
+      </div>
       <div class="aim-emoji" id="aim-emoji"></div>
     </div>
   </div>
 
   <div class="modal-overlay" id="info-modal">
     <div class="modal-content">
-      <h2>게임 설명 &amp; 천체의 진화</h2>
-      <p style="font-size: 14px;">같은 천체를 합쳐 더 크고 무거운 천체를 만드세요!<br>선 위로 천체가 3초간 쌓이면 게임 오버!</p>
-      <div class="evo-tree" id="evo-tree-container"></div>
+      <h2 style="flex-shrink:0; margin:0 0 8px;">게임 설명 &amp; 천체의 진화</h2>
+      <div class="modal-scroll-area">
+        <p style="font-size: 13px; margin: 0 0 4px;">같은 천체를 합쳐 더 크고 무거운 천체를 만드세요!<br>선 위로 천체가 3초간 쌓이면 게임 오버!</p>
+        <div class="evo-tree" id="evo-tree-container"></div>
+      </div>
       <button class="modal-close" id="close-info" type="button">닫기</button>
     </div>
   </div>
@@ -243,8 +293,10 @@
   <div class="modal-overlay" id="game-over-modal">
     <div class="modal-content">
       <div id="game-over-text">게임 오버!</div>
-      <input type="text" id="user-name" maxlength="10" placeholder="이름 입력 (최대 10자)" style="padding: 10px; font-family: 'Jua'; font-size: 16px; width: 80%; margin-bottom: 15px; text-align: center; border: 2px solid #6a5acd; border-radius: 8px;">
+      <div id="galaxy-achieve-banner" style="display:none; background:linear-gradient(135deg,#7b5ee6,#d16bd6); color:#fff; border-radius:10px; padding:8px 10px; margin-bottom:12px; font-size:13px;">🌌 은하 달성! 우주의 끝에 도달했어요</div>
+      <input type="text" id="user-name" maxlength="10" placeholder="이름 입력 (최대 10자)" style="padding: 10px; font-family: 'Jua'; font-size: 16px; width: 80%; margin-bottom: 15px; text-align: center !important; border: 2px solid #6a5acd; border-radius: 8px;">
       <button class="modal-close" id="save-restart-btn" type="button">점수 저장 및 재시작</button>
+      <button class="modal-close" id="share-achievement-btn" type="button" style="display:none; margin-top:8px; background:#FEE500; color:#3a2e2a;">💬 달성 기록 자랑하기</button>
     </div>
   </div>
 </div>
@@ -279,6 +331,10 @@
 
   const { Engine, Runner, Bodies, Composite, Events } = Matter;
   const engine = Engine.create();
+  // [수정] 위치/속도 보정 반복 횟수를 늘려 천체 사이 겹침 해소가 더 정밀해지고,
+  // 결과적으로 정지 상태에서 서로 더 밀착해서 쌓이도록 함(기본값 6/4 → 10/8).
+  engine.positionIterations = 10;
+  engine.velocityIterations = 8;
   const runner = Runner.create();
 
   const W = 400, H = 600;
@@ -290,18 +346,110 @@
   const levels = [
     { radius: 15, name: '우주먼지', personality: '수줍고 여린', bg: 'radial-gradient(circle at 35% 30%, #e4e7ee, #9aa1b3)', eyes: '‑ ‑', mouth: '', shape: 'blob',
       cloudImg: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj4KPGVsbGlwc2UgY3g9IjUwIiBjeT0iNjIiIHJ4PSIzNiIgcnk9IjIwIiBmaWxsPSIjYjdiMGEzIi8+CjxjaXJjbGUgY3g9IjI3IiBjeT0iNTAiIHI9IjE3IiBmaWxsPSIjYjdiMGEzIi8+CjxjaXJjbGUgY3g9IjUwIiBjeT0iNDIiIHI9IjIxIiBmaWxsPSIjYjdiMGEzIi8+CjxjaXJjbGUgY3g9IjczIiBjeT0iNTIiIHI9IjE1IiBmaWxsPSIjYjdiMGEzIi8+CjxjaXJjbGUgY3g9IjM2IiBjeT0iMzgiIHI9IjMuNCIgZmlsbD0iIzhiODM3NSIgb3BhY2l0eT0iMC41NSIvPgo8Y2lyY2xlIGN4PSI2NCIgY3k9IjQ0IiByPSIyLjYiIGZpbGw9IiM4YjgzNzUiIG9wYWNpdHk9IjAuNTUiLz4KPGNpcmNsZSBjeD0iNzUiIGN5PSI1OCIgcj0iMyIgZmlsbD0iIzhiODM3NSIgb3BhY2l0eT0iMC41Ii8+CjxjaXJjbGUgY3g9IjIyIiBjeT0iNTYiIHI9IjIuNCIgZmlsbD0iIzhiODM3NSIgb3BhY2l0eT0iMC41Ii8+CjxjaXJjbGUgY3g9IjQ4IiBjeT0iNTYiIHI9IjIiIGZpbGw9IiM4YjgzNzUiIG9wYWNpdHk9IjAuNDUiLz4KPGNpcmNsZSBjeD0iMzkiIGN5PSI2MCIgcj0iNC4yIiBmaWxsPSIjM2EzNTJlIi8+CjxjaXJjbGUgY3g9IjYxIiBjeT0iNjAiIHI9IjQuMiIgZmlsbD0iIzNhMzUyZSIvPgo8ZWxsaXBzZSBjeD0iMzIiIGN5PSI2OCIgcng9IjQiIHJ5PSIyLjQiIGZpbGw9IiNjOTliOGEiIG9wYWNpdHk9IjAuNCIvPgo8ZWxsaXBzZSBjeD0iNjgiIGN5PSI2OCIgcng9IjQiIHJ5PSIyLjQiIGZpbGw9IiNjOTliOGEiIG9wYWNpdHk9IjAuNCIvPgo8cGF0aCBkPSJNNDUgNjggUTUwIDcyLjUgNTUgNjgiIHN0cm9rZT0iIzNhMzUyZSIgc3Ryb2tlLXdpZHRoPSIyLjYiIGZpbGw9Im5vbmUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPgo8L3N2Zz4=' },
-    { radius: 25, name: '운석', personality: '저돌적이고 성급한', bg: 'radial-gradient(circle at 35% 30%, #ffb26b, #7a3b12)', eyes: 'ˋ ˊ', mouth: '︿' },
-    { radius: 35, name: '소행성', personality: '무뚝뚝하고 단단한', bg: 'radial-gradient(circle at 35% 30%, #b7ae9e, #55493c)', eyes: '─ ─', mouth: '―' },
-    { radius: 45, name: '위성', personality: '차분하고 다정한', bg: 'radial-gradient(circle at 35% 30%, #eef1f4, #aab2bd)', eyes: '⌒ ⌒', mouth: '‿' },
-    { radius: 55, name: '왜행성', personality: '작지만 자존심 강한', bg: 'radial-gradient(circle at 35% 30%, #f0d3ab, #a9714f)', eyes: '● ‑', mouth: '︿' },
-    { radius: 70, name: '행성', personality: '포근하고 다정한', bg: 'radial-gradient(circle at 35% 30%, #8fd3f4, #2b6cb0)', eyes: '◕ ◕', mouth: '‿' },
-    { radius: 85, name: '가스행성', personality: '느긋하고 호탕한', bg: 'repeating-linear-gradient(0deg, #f3c98b 0 10%, #d99a52 10% 20%)', eyes: '⌒ ⌒', mouth: '▽', hasRing: true },
-    { radius: 100, name: '항성', personality: '밝고 열정적인', bg: 'radial-gradient(circle, #fff8dc, #ffb300)', glow: '0 0 24px rgba(255,200,60,0.8)', eyes: '★ ★', mouth: '‿' },
-    { radius: 115, name: '초신성', personality: '격정적이고 극적인', bg: 'radial-gradient(circle, #fff0fb, #ff6bd6 45%, #6b2bd6 85%)', glow: '0 0 30px rgba(255,120,220,0.7)', eyes: '◉ ◉', mouth: '○' },
-    { radius: 130, name: '블랙홀', personality: '신비롭고 압도적인', bg: 'radial-gradient(circle, #050505 55%, #ff8a3d 62%, #050505 68%)', glow: '0 0 26px rgba(255,138,61,0.45)', eyes: '@ @', mouth: '' },
-    { radius: 150, name: '은하', personality: '지혜롭고 초월적인', bg: 'conic-gradient(from 180deg, #2b1055, #7b5ee6, #d16bd6, #2b1055)', glow: '0 0 30px rgba(180,140,255,0.55)', eyes: '⌣ ⌣', mouth: '‿', eyeColor: '#ffe9a8' }
+    { radius: 25, name: '운석', personality: '저돌적이고 성급한', bg: 'radial-gradient(circle at 35% 30%, #ffb26b, #7a3b12)', eyes: 'ˋ ˊ', mouth: '︿', cloudImg: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj4KICA8cGF0aCBkPSJNMzIgMjIgTDUyIDEyIEw3NCAyMCBMODUgNDIgTDgwIDY2IEw2MiA4NCBMNDAgODIgTDE2IDYyIEwxOCA0MCBaIiBmaWxsPSIjNGEyZTFjIi8+CiAgPHBhdGggZD0iTTMyIDIyIEw1MiAxMiBMNzQgMjAgTDg1IDQyIEw4MCA2NiBMNjIgODQgTDQwIDgyIEwxNiA2MiBMMTggNDAgWiIgZmlsbD0iIzVjM2EyNCIgb3BhY2l0eT0iMC41Ii8+CiAgPHBhdGggZD0iTTMwIDM0IEw0MiAzMCBMNDYgNDAgTDM0IDQ2IFoiIGZpbGw9IiMyZTFjMTAiIG9wYWNpdHk9IjAuNiIvPgogIDxwYXRoIGQ9Ik01NiAyNiBMNjggMzAgTDY0IDQwIEw1NCAzOCBaIiBmaWxsPSIjMmUxYzEwIiBvcGFjaXR5PSIwLjUiLz4KICA8cGF0aCBkPSJNNDAgNTggTDUyIDU2IEw1NCA2OCBMNDIgNzAgWiIgZmlsbD0iIzJlMWMxMCIgb3BhY2l0eT0iMC40NSIvPgoKICA8cGF0aCBkPSJNMjggMjQgUTM0IDMwIDMwIDQwIFEzNyAzNCAzNSA0NiBRNDIgNDAgNDAgMzAgUTQ2IDI2IDQwIDIwIFEzNCAxNiAyOCAyNCBaIiBmaWxsPSIjZmZjZjNmIi8+CiAgPHBhdGggZD0iTTQ1IDE0IFE1MCAyMiA0NCAzNCBRNTIgMjcgNDkgNDAgUTU3IDMzIDU0IDIyIFE2MCAxOCA1MiAxMCBRNDYgNiA0NSAxNCBaIiBmaWxsPSIjZmY4YzAwIi8+CiAgPHBhdGggZD0iTTYyIDE4IFE2OCAyNSA2MiAzNiBRNjkgMzAgNjcgNDIgUTc1IDM1IDcxIDI1IFE3NiAyMiA2OCAxNCBRNjIgMTIgNjIgMTggWiIgZmlsbD0iI2ZmNTcyMiIvPgogIDxjaXJjbGUgY3g9IjI2IiBjeT0iNDgiIHI9IjMiIGZpbGw9IiNmZmI3MDMiIG9wYWNpdHk9IjAuODUiLz4KICA8Y2lyY2xlIGN4PSI3MiIgY3k9IjUwIiByPSIyLjQiIGZpbGw9IiNmZjU3MjIiIG9wYWNpdHk9IjAuOCIvPgoKICA8cGF0aCBkPSJNMjggNTQgTDQyIDYwIiBzdHJva2U9IiMxYTBmMDgiIHN0cm9rZS13aWR0aD0iMy40IiBzdHJva2UtbGluZWNhcD0icm91bmQiLz4KICA8cGF0aCBkPSJNNzIgNTQgTDU4IDYwIiBzdHJva2U9IiMxYTBmMDgiIHN0cm9rZS13aWR0aD0iMy40IiBzdHJva2UtbGluZWNhcD0icm91bmQiLz4KICA8Y2lyY2xlIGN4PSIzOCIgY3k9IjY1IiByPSI0IiBmaWxsPSIjMWEwZjA4Ii8+CiAgPGNpcmNsZSBjeD0iNjIiIGN5PSI2NSIgcj0iNCIgZmlsbD0iIzFhMGYwOCIvPgogIDxwYXRoIGQ9Ik00MSA3NiBMNTkgNzYiIHN0cm9rZT0iIzFhMGYwOCIgc3Ryb2tlLXdpZHRoPSIzLjIiIGZpbGw9Im5vbmUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPgo8L3N2Zz4K' },
+    { radius: 35, name: '혜성', personality: '장난기 많고 자유분방한', bg: 'radial-gradient(circle at 35% 30%, #bdeaff, #4a90a8)', eyes: '⌒ ⌒', mouth: '‿', cloudImg: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj4KICA8cGF0aCBkPSJNNDYgNTAgUTIwIDQwIDQgNDYgUTIyIDUwIDM0IDU2IFExNCA1OCAyIDY4IFEyNCA2NCAzOCA2MiBRMjIgNzggMTYgOTAgUTMyIDc2IDQ0IDY0IiBmaWxsPSIjOGZlM2ZmIiBvcGFjaXR5PSIwLjU1Ii8+CiAgPHBhdGggZD0iTTQ2IDUwIFEyNiA0NCAxNCA0NyBRMjggNTEgMzYgNTYgUTIwIDU2IDEwIDYzIFEyOCA2MSAzOCA2MSBRMjYgNzIgMjIgODAgUTM0IDY4IDQyIDYwIiBmaWxsPSIjYzlmNWZmIiBvcGFjaXR5PSIwLjgiLz4KICA8Y2lyY2xlIGN4PSI2IiBjeT0iMzAiIHI9IjEuNiIgZmlsbD0iI2ZmZiIgb3BhY2l0eT0iMC45Ii8+CiAgPGNpcmNsZSBjeD0iMTYiIGN5PSI3MCIgcj0iMS4zIiBmaWxsPSIjZmZmIiBvcGFjaXR5PSIwLjgiLz4KICA8Y2lyY2xlIGN4PSIxMCIgY3k9IjUyIiByPSIxLjEiIGZpbGw9IiNmZmYiIG9wYWNpdHk9IjAuNyIvPgogIDxjaXJjbGUgY3g9IjU4IiBjeT0iNTIiIHI9IjI3IiBmaWxsPSIjYmRlYWZmIi8+CiAgPGNpcmNsZSBjeD0iNDYiIGN5PSI0MiIgcj0iMyIgZmlsbD0iIzhmZDBlYSIgb3BhY2l0eT0iMC42Ii8+CiAgPGNpcmNsZSBjeD0iNjgiIGN5PSI2MiIgcj0iMi40IiBmaWxsPSIjOGZkMGVhIiBvcGFjaXR5PSIwLjUiLz4KCiAgPCEtLSDsiqTtgqQg6rOg6riAIOyKpO2KuOueqSjrqLjrpqzrpbwg6rCQ7Iu464qUIOuwtOuTnCkgLS0+CiAgPHBhdGggZD0iTTMwIDQzIFE1OCAzMCA4NiA0MyIgc3Ryb2tlPSIjMmEzNTQwIiBzdHJva2Utd2lkdGg9IjQuNSIgZmlsbD0ibm9uZSIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIi8+CiAgPCEtLSDqs6DquIAg7ZWY64KY66GcIOydtOyWtOynhCDrhJPsnYAg66CM7KaIIC0tPgogIDxyZWN0IHg9IjM0IiB5PSI0MCIgd2lkdGg9IjQ2IiBoZWlnaHQ9IjIwIiByeD0iMTAiIGZpbGw9IiMyYTM1NDAiLz4KICA8cmVjdCB4PSIzNy41IiB5PSI0MyIgd2lkdGg9IjM5IiBoZWlnaHQ9IjE0IiByeD0iNyIgZmlsbD0iIzdmZDhmZiIvPgogIDxwYXRoIGQ9Ik00MCA0NiBRNTAgNDMgNjAgNDYiIHN0cm9rZT0iI2Q4ZjdmZiIgc3Ryb2tlLXdpZHRoPSIyLjQiIGZpbGw9Im5vbmUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgb3BhY2l0eT0iMC44NSIvPgogIDxjaXJjbGUgY3g9IjcwIiBjeT0iNDkiIHI9IjIuNiIgZmlsbD0iI2ZmZiIgb3BhY2l0eT0iMC43NSIvPgoKICA8ZWxsaXBzZSBjeD0iNTQiIGN5PSI3MCIgcng9IjciIHJ5PSI2IiBmaWxsPSIjMWM0YTVlIi8+CiAgPGVsbGlwc2UgY3g9IjU0IiBjeT0iNjgiIHJ4PSI0IiByeT0iMyIgZmlsbD0iI2ZmOGFhMCIvPgogIDxlbGxpcHNlIGN4PSIzOCIgY3k9IjYwIiByeD0iMy42IiByeT0iMi4yIiBmaWxsPSIjZmZjMmQxIiBvcGFjaXR5PSIwLjY1Ii8+CiAgPGVsbGlwc2UgY3g9Ijc0IiBjeT0iNjAiIHJ4PSIzLjYiIHJ5PSIyLjIiIGZpbGw9IiNmZmMyZDEiIG9wYWNpdHk9IjAuNjUiLz4KPC9zdmc+Cg==' },
+    { radius: 45, name: '위성', personality: '누군가를 짝사랑하는', bg: 'radial-gradient(circle at 35% 30%, #eef1f4, #aab2bd)', eyes: '⌒ ⌒', mouth: '‿', cloudImg: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj4KICA8Y2lyY2xlIGN4PSI1MCIgY3k9IjU1IiByPSIzMCIgZmlsbD0iI2VlZjFmNCIvPgogIDxjaXJjbGUgY3g9IjM0IiBjeT0iNDIiIHI9IjQiIGZpbGw9IiNjN2NkZDYiIG9wYWNpdHk9IjAuNyIvPgogIDxjaXJjbGUgY3g9IjY0IiBjeT0iNjgiIHI9IjMiIGZpbGw9IiNjN2NkZDYiIG9wYWNpdHk9IjAuNiIvPgogIDxjaXJjbGUgY3g9IjYwIiBjeT0iNDAiIHI9IjIuMiIgZmlsbD0iI2M3Y2RkNiIgb3BhY2l0eT0iMC42Ii8+CiAgPHJlY3QgeD0iNDYiIHk9IjgiIHdpZHRoPSI4IiBoZWlnaHQ9IjE0IiByeD0iMiIgZmlsbD0iIzlhYTRiMCIvPgogIDxjaXJjbGUgY3g9IjUwIiBjeT0iOCIgcj0iNC41IiBmaWxsPSIjYzdjZGQ2IiBzdHJva2U9IiM5YWE0YjAiIHN0cm9rZS13aWR0aD0iMiIvPgoKICA8cGF0aCBkPSJNNDAgNDggQzM2IDQ0IDMwIDQ0IDI5IDQ5IEMyOCA1NCAzNCA1OCA0MCA2MiBDNDYgNTggNTIgNTQgNTEgNDkgQzUwIDQ0IDQ0IDQ0IDQwIDQ4IFoiIGZpbGw9IiNmZjVjN2EiLz4KICA8cGF0aCBkPSJNNjIgNDggQzU4IDQ0IDUyIDQ0IDUxIDQ5IEM1MCA1NCA1NiA1OCA2MiA2MiBDNjggNTggNzQgNTQgNzMgNDkgQzcyIDQ0IDY2IDQ0IDYyIDQ4IFoiIGZpbGw9IiNmZjVjN2EiLz4KICA8cGF0aCBkPSJNMzAgMzAgQzMzIDI3IDM4IDMwIDM2IDM0IEMzNCAzNyAzMCAzNiAyOSAzMyBaIiBmaWxsPSIjZmY5ZmIzIiBvcGFjaXR5PSIwLjg1Ii8+CgogIDxlbGxpcHNlIGN4PSIzOCIgY3k9IjY2IiByeD0iNC4yIiByeT0iMi42IiBmaWxsPSIjZmZjMmQxIiBvcGFjaXR5PSIwLjc1Ii8+CiAgPGVsbGlwc2UgY3g9IjY2IiBjeT0iNjYiIHJ4PSI0LjIiIHJ5PSIyLjYiIGZpbGw9IiNmZmMyZDEiIG9wYWNpdHk9IjAuNzUiLz4KICA8cGF0aCBkPSJNNDIgNzAgUTUwIDc1IDU4IDcwIiBzdHJva2U9IiMzYTQ2NTMiIHN0cm9rZS13aWR0aD0iMi40IiBmaWxsPSJub25lIiBzdHJva2UtbGluZWNhcD0icm91bmQiLz4KPC9zdmc+Cg==' },
+    { radius: 55, name: '왜행성', personality: '산만하지만 반짝이는 천재성을 지닌', bg: 'radial-gradient(circle at 35% 30%, #f0d3ab, #a9714f)', eyes: '● ‑', mouth: '︿', cloudImg: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj4KICA8Y2lyY2xlIGN4PSI1MCIgY3k9IjU2IiByPSIyNiIgZmlsbD0iI2YwZDNhYiIvPgogIDxjaXJjbGUgY3g9IjM2IiBjeT0iNzAiIHI9IjMiIGZpbGw9IiNjOWEwNjYiIG9wYWNpdHk9IjAuNSIvPgoKICA8cGF0aCBkPSJNMTAgMjQgTDE4IDI0IEwxOCAzMiIgc3Ryb2tlPSIjZmZkMjNmIiBzdHJva2Utd2lkdGg9IjMiIGZpbGw9Im5vbmUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPgogIDxjaXJjbGUgY3g9IjgwIiBjeT0iMjQiIHI9IjQuNSIgZmlsbD0iI2ZmZDIzZiIvPgogIDxwYXRoIGQ9Ik04MCAxNyBMODAgMTIgTTg1IDIwIEw4OSAxNyBNNzUgMjAgTDcxIDE3IiBzdHJva2U9IiNmZmQyM2YiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIi8+CgogIDxjaXJjbGUgY3g9IjM4IiBjeT0iNDciIHI9IjEwIiBmaWxsPSIjZmRmY2Y4IiBzdHJva2U9IiM1YTQzMjYiIHN0cm9rZS13aWR0aD0iMi40Ii8+CiAgPGNpcmNsZSBjeD0iNjIiIGN5PSI0NyIgcj0iMTAiIGZpbGw9IiNmZGZjZjgiIHN0cm9rZT0iIzVhNDMyNiIgc3Ryb2tlLXdpZHRoPSIyLjQiLz4KICA8cGF0aCBkPSJNNDggNDcgTDUyIDQ3IiBzdHJva2U9IiM1YTQzMjYiIHN0cm9rZS13aWR0aD0iMi4yIi8+CiAgPHBhdGggZD0iTTI4IDQ2IEwyNCA0NCIgc3Ryb2tlPSIjNWE0MzI2IiBzdHJva2Utd2lkdGg9IjIuMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIi8+CiAgPHBhdGggZD0iTTcyIDQ2IEw3NiA0NCIgc3Ryb2tlPSIjNWE0MzI2IiBzdHJva2Utd2lkdGg9IjIuMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIi8+CiAgPHBhdGggZD0iTTM4IDQ3IG0tNS41IDAgYTUuNSA1LjUgMCAxIDEgMTEgMCBhMy4yIDMuMiAwIDEgMCAtNi40IDAgYTEuNCAxLjQgMCAxIDEgLTIuOCAwIiBzdHJva2U9IiM1YTQzMjYiIHN0cm9rZS13aWR0aD0iMS42IiBmaWxsPSJub25lIi8+CiAgPHBhdGggZD0iTTYyIDQ3IG0tNS41IDAgYTUuNSA1LjUgMCAxIDEgMTEgMCBhMy4yIDMuMiAwIDEgMCAtNi40IDAgYTEuNCAxLjQgMCAxIDEgLTIuOCAwIiBzdHJva2U9IiM1YTQzMjYiIHN0cm9rZS13aWR0aD0iMS42IiBmaWxsPSJub25lIi8+CgogIDxlbGxpcHNlIGN4PSIzNiIgY3k9IjY2IiByeD0iNCIgcnk9IjIuNCIgZmlsbD0iI2ZmOWZhZSIgb3BhY2l0eT0iMC41Ii8+CiAgPGVsbGlwc2UgY3g9IjY0IiBjeT0iNjYiIHJ4PSI0IiByeT0iMi40IiBmaWxsPSIjZmY5ZmFlIiBvcGFjaXR5PSIwLjUiLz4KICA8cGF0aCBkPSJNNDIgNjggUTUwIDY1IDU4IDY4IFE1MiA3MyA0NCA3MCBaIiBmaWxsPSIjNWE0MzI2Ii8+Cjwvc3ZnPgo=' },
+    { radius: 70, name: '행성', personality: '포근하고 다정한', bg: 'radial-gradient(circle at 35% 30%, #8fd3f4, #2b6cb0)', eyes: '◕ ◕', mouth: '‿', cloudImg: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj4KICA8Y2lyY2xlIGN4PSI1MCIgY3k9IjUyIiByPSIzNCIgZmlsbD0iIzVmYjhlMCIvPgogIDxwYXRoIGQ9Ik0yNSA0NSBRMzUgMzggNDUgNDQgUTQwIDUyIDI4IDUwIFoiIGZpbGw9IiM2ZmNmN2EiIG9wYWNpdHk9IjAuOSIvPgogIDxwYXRoIGQ9Ik01NSA2MCBRNjggNTUgNzQgNjQgUTY1IDcwIDU1IDY2IFoiIGZpbGw9IiM2ZmNmN2EiIG9wYWNpdHk9IjAuOSIvPgogIDxlbGxpcHNlIGN4PSI0NiIgY3k9IjE2IiByeD0iMTAiIHJ5PSI2IiBmaWxsPSIjZmRmYmZmIi8+CiAgPGVsbGlwc2UgY3g9IjU0IiBjeT0iMTQiIHJ4PSI3IiByeT0iNSIgZmlsbD0iI2ZkZmJmZiIvPgogIDxwYXRoIGQ9Ik0zOCA1MCBRNDIgNDYgNDYgNTAiIHN0cm9rZT0iIzFjM2E0YSIgc3Ryb2tlLXdpZHRoPSIyLjgiIGZpbGw9Im5vbmUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPgogIDxwYXRoIGQ9Ik01NCA1MCBRNTggNDYgNjIgNTAiIHN0cm9rZT0iIzFjM2E0YSIgc3Ryb2tlLXdpZHRoPSIyLjgiIGZpbGw9Im5vbmUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPgogIDxlbGxpcHNlIGN4PSIzNCIgY3k9IjU4IiByeD0iNC4yIiByeT0iMi42IiBmaWxsPSIjZmY5ZmFlIiBvcGFjaXR5PSIwLjYiLz4KICA8ZWxsaXBzZSBjeD0iNjYiIGN5PSI1OCIgcng9IjQuMiIgcnk9IjIuNiIgZmlsbD0iI2ZmOWZhZSIgb3BhY2l0eT0iMC42Ii8+CiAgPHBhdGggZD0iTTQyIDYwIFE1MCA2NiA1OCA2MCIgc3Ryb2tlPSIjMWMzYTRhIiBzdHJva2Utd2lkdGg9IjIuNiIgZmlsbD0ibm9uZSIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIi8+Cjwvc3ZnPgo=' },
+    { radius: 85, name: '가스행성', personality: '예리하고 능청스러운 명탐정', bg: 'repeating-linear-gradient(0deg, #f3c98b 0 10%, #d99a52 10% 20%)', eyes: '⌒ ⌒', mouth: '▽', hasRing: true, cloudImg: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj4KICA8Y2lyY2xlIGN4PSI1MCIgY3k9IjU4IiByPSIzMiIgZmlsbD0iI2YzYzk4YiIvPgogIDxwYXRoIGQ9Ik0xOCA1MCBRNTAgNDIgODIgNTAgTDgyIDU4IFE1MCA1MCAxOCA1OCBaIiBmaWxsPSIjZDk5YTUyIi8+CiAgPHBhdGggZD0iTTIwIDY2IFE1MCA2MCA4MCA2NiBMODAgNzIgUTUwIDY2IDIwIDcyIFoiIGZpbGw9IiNkOTlhNTIiIG9wYWNpdHk9IjAuODUiLz4KCiAgPHBhdGggZD0iTTIwIDMyIFE1MCAxNiA4MCAzMiBRNzggNDAgNjUgMzYgUTUwIDI4IDM1IDM2IFEyMiA0MCAyMCAzMiBaIiBmaWxsPSIjMmEyYTJhIi8+CiAgPGVsbGlwc2UgY3g9IjUwIiBjeT0iMzAiIHJ4PSIxMCIgcnk9IjQiIGZpbGw9IiMxYTFhMWEiLz4KCiAgPHBhdGggZD0iTTM2IDUwIFE0MCA0NiA0NCA1MCIgc3Ryb2tlPSIjNWEzYTE1IiBzdHJva2Utd2lkdGg9IjMiIGZpbGw9Im5vbmUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPgogIDxwYXRoIGQ9Ik01NiA1MCBRNjAgNDYgNjQgNTAiIHN0cm9rZT0iIzVhM2ExNSIgc3Ryb2tlLXdpZHRoPSIzIiBmaWxsPSJub25lIiBzdHJva2UtbGluZWNhcD0icm91bmQiLz4KICA8cGF0aCBkPSJNMzMgNTggUTQwIDU2IDM4IDYxIiBzdHJva2U9IiM1YTNhMTUiIHN0cm9rZS13aWR0aD0iMi40IiBmaWxsPSJub25lIiBzdHJva2UtbGluZWNhcD0icm91bmQiLz4KICA8Y2lyY2xlIGN4PSI3MiIgY3k9IjY2IiByPSI3IiBmaWxsPSJub25lIiBzdHJva2U9IiM1YTNhMTUiIHN0cm9rZS13aWR0aD0iMi42Ii8+CiAgPHBhdGggZD0iTTc3IDcxIEw4MiA3NiIgc3Ryb2tlPSIjNWEzYTE1IiBzdHJva2Utd2lkdGg9IjMiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPgogIDxwYXRoIGQ9Ik0zOCA3MiBRNTAgNzggNjIgNzIiIHN0cm9rZT0iIzVhM2ExNSIgc3Ryb2tlLXdpZHRoPSIyLjgiIGZpbGw9Im5vbmUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPgo8L3N2Zz4K' },
+    { radius: 100, name: '항성', personality: '밝고 열정적인', bg: 'radial-gradient(circle, #fff8dc, #ffb300)', glow: '0 0 24px rgba(255,200,60,0.8)', eyes: '★ ★', mouth: '‿', cloudImg: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj4KICA8ZyBmaWxsPSIjZmZkMjNmIj4KICAgIDxwYXRoIGQ9Ik01MCAxMiBMNTQgMzIgTDUwIDI3IEw0NiAzMiBaIi8+CiAgICA8cGF0aCBkPSJNNTAgODggTDU0IDY4IEw1MCA3MyBMNDYgNjggWiIvPgogICAgPHBhdGggZD0iTTEyIDUwIEwzMiA0NiBMMjcgNTAgTDMyIDU0IFoiLz4KICAgIDxwYXRoIGQ9Ik04OCA1MCBMNjggNDYgTDczIDUwIEw2OCA1NCBaIi8+CiAgICA8cGF0aCBkPSJNMjIgMjIgTDM4IDMzIEwzMSAzMyBMMzMgNDAgWiIvPgogICAgPHBhdGggZD0iTTc4IDc4IEw2MiA2NyBMNjkgNjcgTDY3IDYwIFoiLz4KICAgIDxwYXRoIGQ9Ik03OCAyMiBMNjIgMzMgTDY5IDMzIEw2NyA0MCBaIi8+CiAgICA8cGF0aCBkPSJNMjIgNzggTDM4IDY3IEwzMSA2NyBMMzMgNjAgWiIvPgogIDwvZz4KICA8Y2lyY2xlIGN4PSI1MCIgY3k9IjUwIiByPSIyNCIgZmlsbD0iI2ZmYjMwMCIvPgogIDxwYXRoIGQ9Ik00MCA0MiBMNDYgNDYgTDQwIDUwIiBzdHJva2U9IiM3YTNkMDAiIHN0cm9rZS13aWR0aD0iMy4yIiBmaWxsPSJub25lIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz4KICA8cGF0aCBkPSJNNjAgNDIgTDU0IDQ2IEw2MCA1MCIgc3Ryb2tlPSIjN2EzZDAwIiBzdHJva2Utd2lkdGg9IjMuMiIgZmlsbD0ibm9uZSIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+CiAgPHBhdGggZD0iTTQwIDU4IFE1MCA2NiA2MCA1OCIgc3Ryb2tlPSIjN2EzZDAwIiBzdHJva2Utd2lkdGg9IjMuNCIgZmlsbD0ibm9uZSIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIi8+Cjwvc3ZnPgo=' },
+    { radius: 115, name: '초신성', personality: '"나의 죽음을 적에게 알리지 마라"', bg: 'radial-gradient(circle, #fff0fb, #ff6bd6 45%, #6b2bd6 85%)', glow: '0 0 30px rgba(255,120,220,0.7)', eyes: '◉ ◉', mouth: '○', cloudImg: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj4KICA8ZyBmaWxsPSIjZmY4YTNkIiBvcGFjaXR5PSIwLjkiPgogICAgPHBhdGggZD0iTTUwIDQgTDU0IDI0IEw1MCAyMCBMNDYgMjQgWiIvPgogICAgPHBhdGggZD0iTTE0IDI2IEwzMiAzNCBMMjcgMzcgTDMxIDQzIFoiLz4KICAgIDxwYXRoIGQ9Ik04NiAyNiBMNjggMzQgTDczIDM3IEw2OSA0MyBaIi8+CiAgICA8cGF0aCBkPSJNMTIgNjIgTDMwIDU2IEwyNyA2MSBMMzIgNjUgWiIvPgogICAgPHBhdGggZD0iTTg4IDYyIEw3MCA1NiBMNzMgNjEgTDY4IDY1IFoiLz4KICA8L2c+CiAgPHBhdGggZD0iTTUwIDYgUTY2IDQgNzAgMjIgUTcyIDM0IDYyIDMwIFE2OCAyMCA1OCAxNCBRNTIgMjIgNTAgMzAgUTQ4IDIyIDQyIDE0IFEzMiAyMCAzOCAzMCBRMjggMzQgMzAgMjIgUTM0IDQgNTAgNiBaIiBmaWxsPSIjYzAzOTJiIi8+CiAgPHBhdGggZD0iTTUwIDggUTYyIDggNjUgMjIgUTU0IDE2IDUwIDI0IFE0NiAxNiAzNSAyMiBRMzggOCA1MCA4IFoiIGZpbGw9IiNlODU0M2YiLz4KCiAgPGNpcmNsZSBjeD0iNTAiIGN5PSI1NiIgcj0iMjUiIGZpbGw9IiNlOGI5OGEiLz4KICA8cGF0aCBkPSJNMjYgNDggUTUwIDM0IDc0IDQ4IEw3NCA0MiBRNTAgMzAgMjYgNDIgWiIgZmlsbD0iIzVhNWE1YSIvPgoKICA8cGF0aCBkPSJNMzYgNTQgTDQ2IDU3IiBzdHJva2U9IiMyYTFhMTAiIHN0cm9rZS13aWR0aD0iMy40IiBzdHJva2UtbGluZWNhcD0icm91bmQiLz4KICA8cGF0aCBkPSJNNjQgNTQgTDU0IDU3IiBzdHJva2U9IiMyYTFhMTAiIHN0cm9rZS13aWR0aD0iMy40IiBzdHJva2UtbGluZWNhcD0icm91bmQiLz4KICA8cGF0aCBkPSJNNDAgNzIgUTUwIDY4IDYwIDcyIiBzdHJva2U9IiMzYTI0MTIiIHN0cm9rZS13aWR0aD0iMyIgZmlsbD0ibm9uZSIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIi8+CiAgPHBhdGggZD0iTTM1IDc0IFE1MCA4MCA2NSA3NCIgc3Ryb2tlPSIjOWE5YTlhIiBzdHJva2Utd2lkdGg9IjIuMiIgZmlsbD0ibm9uZSIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBvcGFjaXR5PSIwLjgiLz4KPC9zdmc+Cg==' },
+    { radius: 122, name: '성운', personality: '화려하고 카리스마 넘치는', bg: 'radial-gradient(circle at 35% 30%, #f3c9e8, #9a7bf0)', glow: '0 0 26px rgba(255,120,220,0.5)', eyes: '◕ ◕', mouth: '‿', cloudImg: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj4KICA8cGF0aCBkPSJNMjggMjAgUTIwIDggMzQgNiBRMzAgMTYgNDAgMTQgUTM2IDQgNTAgNiBRNDYgMTYgNTYgMTIgUTU0IDIgNjggOCBRNjAgMTYgNzAgMTgiIGZpbGw9IiNmZjZiZDYiIG9wYWNpdHk9IjAuOSIvPgogIDxwYXRoIGQ9Ik0zMCAxOCBRMjYgMTAgMzYgMTAgUTMzIDE3IDQxIDE1IiBmaWxsPSIjZDE2YmQ2IiBvcGFjaXR5PSIwLjg1Ii8+CiAgPHBhdGggZD0iTTYwIDEwIFE2OCA2IDcyIDE0IFE2NCAxNSA2NiAyMiIgZmlsbD0iIzdiNWVlNiIgb3BhY2l0eT0iMC44NSIvPgoKICA8Y2lyY2xlIGN4PSI1MCIgY3k9IjU0IiByPSIzMCIgZmlsbD0iI2YzYzllOCIvPgogIDxwYXRoIGQ9Ik0yMiA0OCBRMzUgNDAgNDggNDggUTM1IDU2IDIyIDQ4IFoiIGZpbGw9IiNjNDhhZTAiIG9wYWNpdHk9IjAuNTUiLz4KICA8cGF0aCBkPSJNNTUgNjAgUTY4IDU0IDc4IDYyIFE2NiA2OCA1NSA2MCBaIiBmaWxsPSIjOWE3YmYwIiBvcGFjaXR5PSIwLjUiLz4KCiAgPGVsbGlwc2UgY3g9IjQxIiBjeT0iNDgiIHJ4PSIxMSIgcnk9IjcuNSIgZmlsbD0iIzFjMTczMCIvPgogIDxlbGxpcHNlIGN4PSI2NSIgY3k9IjQ4IiByeD0iMTEiIHJ5PSI3LjUiIGZpbGw9IiMxYzE3MzAiLz4KICA8cGF0aCBkPSJNNTIgNDggUTU3IDQ0IDYyIDQ4IiBzdHJva2U9IiMxYzE3MzAiIHN0cm9rZS13aWR0aD0iMyIgZmlsbD0ibm9uZSIvPgogIDxwYXRoIGQ9Ik0zMCA0NiBRMjYgNDggMzAgNTEiIHN0cm9rZT0iIzFjMTczMCIgc3Ryb2tlLXdpZHRoPSIyLjYiIGZpbGw9Im5vbmUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPgogIDxlbGxpcHNlIGN4PSI0MSIgY3k9IjQ3IiByeD0iMyIgcnk9IjIiIGZpbGw9IiM3ZmUwZmYiIG9wYWNpdHk9IjAuOCIvPgogIDxlbGxpcHNlIGN4PSI2NSIgY3k9IjQ3IiByeD0iMyIgcnk9IjIiIGZpbGw9IiNmZjlmZTAiIG9wYWNpdHk9IjAuOCIvPgoKICA8cGF0aCBkPSJNNDIgNjggUTUwIDY0IDU4IDY4IFE1NCA3NCA0NiA3NCBaIiBmaWxsPSIjN2EyZTVlIi8+CiAgPGVsbGlwc2UgY3g9IjMwIiBjeT0iNjIiIHJ4PSI0IiByeT0iMi42IiBmaWxsPSIjZmY5ZmUwIiBvcGFjaXR5PSIwLjYiLz4KICA8ZWxsaXBzZSBjeD0iNzYiIGN5PSI2MiIgcng9IjQiIHJ5PSIyLjYiIGZpbGw9IiNmZjlmZTAiIG9wYWNpdHk9IjAuNiIvPgoKICA8Y2lyY2xlIGN4PSIyMiIgY3k9IjcwIiByPSIyLjIiIGZpbGw9IiNmZmU5YTgiLz4KICA8Y2lyY2xlIGN4PSI4MCIgY3k9IjM2IiByPSIxLjgiIGZpbGw9IiM3ZmUwZmYiLz4KICA8Y2lyY2xlIGN4PSIxOCIgY3k9IjM0IiByPSIxLjYiIGZpbGw9IiNmZmU5YTgiLz4KPC9zdmc+Cg==' },
+    { radius: 130, name: '블랙홀', personality: '신비롭고 압도적인', bg: 'radial-gradient(circle, #050505 55%, #ff8a3d 62%, #050505 68%)', glow: '0 0 26px rgba(255,138,61,0.45)', eyes: '@ @', mouth: '', cloudImg: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj4KICA8ZWxsaXBzZSBjeD0iNTAiIGN5PSI1MCIgcng9IjQyIiByeT0iMTQiIGZpbGw9Im5vbmUiIHN0cm9rZT0iI2ZmOGEzZCIgc3Ryb2tlLXdpZHRoPSI1IiBvcGFjaXR5PSIwLjg1Ii8+CiAgPGVsbGlwc2UgY3g9IjUwIiBjeT0iNTAiIHJ4PSI0MiIgcnk9IjE0IiBmaWxsPSJub25lIiBzdHJva2U9IiNmZmQyM2YiIHN0cm9rZS13aWR0aD0iMS42IiBvcGFjaXR5PSIwLjciLz4KICA8Y2lyY2xlIGN4PSI1MCIgY3k9IjUwIiByPSIyNiIgZmlsbD0iIzA1MDUwNSIvPgogIDxjaXJjbGUgY3g9IjQyIiBjeT0iNDciIHI9IjIuMiIgZmlsbD0iI2JkZTNmZiIvPgogIDxjaXJjbGUgY3g9IjYwIiBjeT0iNDciIHI9IjIuMiIgZmlsbD0iI2JkZTNmZiIvPgogIDxwYXRoIGQ9Ik00NCA2MCBRNTAgNjMgNTYgNjAiIHN0cm9rZT0iI2JkZTNmZiIgc3Ryb2tlLXdpZHRoPSIxLjgiIGZpbGw9Im5vbmUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgb3BhY2l0eT0iMC44Ii8+Cjwvc3ZnPgo=' },
+    { radius: 150, name: '은하', personality: '우아하고 신비로운 우주의 여신', bg: 'conic-gradient(from 180deg, #2b1055, #7b5ee6, #d16bd6, #2b1055)', glow: '0 0 30px rgba(180,140,255,0.55)', eyes: '⌣ ⌣', mouth: '‿', eyeColor: '#ffe9a8', cloudImg: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj4KICA8Y2lyY2xlIGN4PSI1MCIgY3k9IjUwIiByPSIzNiIgZmlsbD0iIzJiMTA1NSIvPgogIDxwYXRoIGQ9Ik01MCA1MCBRNzQgMzQgODggNTAgUTc0IDYyIDUwIDUwIiBmaWxsPSIjZmZkOTdhIiBvcGFjaXR5PSIwLjU1Ii8+CiAgPHBhdGggZD0iTTUwIDUwIFEyOCA2OCAxNCA1MCBRMjggMzggNTAgNTAiIGZpbGw9IiNjOTliZmYiIG9wYWNpdHk9IjAuNTUiLz4KICA8cGF0aCBkPSJNNTAgNTAgUTY0IDI2IDUwIDEyIFE0MCAyOCA1MCA1MCIgZmlsbD0iI2ZmYjNkOSIgb3BhY2l0eT0iMC40NSIvPgoKICA8Y2lyY2xlIGN4PSI1MCIgY3k9IjUwIiByPSIxMSIgZmlsbD0iI2ZmZjZlYSIvPgogIDxwYXRoIGQ9Ik01MCA1IEw1MiAxMiBMNTkgMTIgTDUzIDE2IEw1NSAyMyBMNTAgMTguNSBMNDUgMjMgTDQ3IDE2IEw0MSAxMiBMNDggMTIgWiIgZmlsbD0iI2ZmZTlhOCIvPgoKICA8cGF0aCBkPSJNMzkgNDggUTQzIDQ0IDQ3IDQ4IiBzdHJva2U9IiMzYTJhNWEiIHN0cm9rZS13aWR0aD0iMi42IiBmaWxsPSJub25lIiBzdHJva2UtbGluZWNhcD0icm91bmQiLz4KICA8cGF0aCBkPSJNNTMgNDggUTU3IDQ0IDYxIDQ4IiBzdHJva2U9IiMzYTJhNWEiIHN0cm9rZS13aWR0aD0iMi42IiBmaWxsPSJub25lIiBzdHJva2UtbGluZWNhcD0icm91bmQiLz4KICA8cGF0aCBkPSJNNDQgNTggUTUwIDYyIDU2IDU4IiBzdHJva2U9IiMzYTJhNWEiIHN0cm9rZS13aWR0aD0iMi4yIiBmaWxsPSJub25lIiBzdHJva2UtbGluZWNhcD0icm91bmQiLz4KICA8ZWxsaXBzZSBjeD0iMzUiIGN5PSI1NSIgcng9IjMuMiIgcnk9IjIiIGZpbGw9IiNmZmMyZTgiIG9wYWNpdHk9IjAuNiIvPgogIDxlbGxpcHNlIGN4PSI2NSIgY3k9IjU1IiByeD0iMy4yIiByeT0iMiIgZmlsbD0iI2ZmYzJlOCIgb3BhY2l0eT0iMC42Ii8+Cjwvc3ZnPgo=' }
   ];
   const MAX_DROP_LEVEL = 4;
+
+  // ============ [신규] 천체 도감 - 발견 기록 저장/조회 ============
+  const DISCOVER_KEY = 'planetMerge_discovered';
+  function getDiscoveredSet() {
+    try { return new Set(JSON.parse(localStorage.getItem(DISCOVER_KEY) || '[]')); }
+    catch (e) { return new Set(); }
+  }
+  function markDiscovered(levelIdx) {
+    try {
+      const set = getDiscoveredSet();
+      if (set.has(levelIdx)) return;
+      set.add(levelIdx);
+      localStorage.setItem(DISCOVER_KEY, JSON.stringify(Array.from(set)));
+    } catch (e) {}
+  }
+
+  // ============ [신규] 연속 접속 스트릭 ============
+  function updateStreak() {
+    try {
+      const todayStr = new Date().toDateString();
+      const lastVisit = localStorage.getItem('planetMerge_lastVisit');
+      let streak = parseInt(localStorage.getItem('planetMerge_streak') || '0', 10);
+      if (lastVisit === todayStr) {
+        // 오늘 이미 방문 - 변화 없음
+      } else {
+        const yesterday = new Date(); yesterday.setDate(yesterday.getDate() - 1);
+        streak = (lastVisit === yesterday.toDateString()) ? streak + 1 : 1;
+        localStorage.setItem('planetMerge_streak', String(streak));
+        localStorage.setItem('planetMerge_lastVisit', todayStr);
+      }
+      return streak;
+    } catch (e) { return 1; }
+  }
+
+  // ============ [신규] 오늘의 미션 ============
+  const DAILY_MISSIONS = [
+    { id: 'merge_dwarf', label: '왜행성 2번 만들기', targetLevel: 4, targetCount: 2 },
+    { id: 'merge_planet', label: '행성 1번 만들기', targetLevel: 5, targetCount: 1 },
+    { id: 'merge_gas', label: '가스행성 1번 만들기', targetLevel: 6, targetCount: 1 },
+    { id: 'score_1500', label: '한 판에 1500점 넘기기', scoreTarget: 1500 },
+    { id: 'merge_star', label: '항성 1번 만들기', targetLevel: 7, targetCount: 1 }
+  ];
+  function getTodayMission() {
+    const todayStr = new Date().toDateString();
+    const dayIndex = Math.floor(Date.now() / 86400000);
+    const mission = DAILY_MISSIONS[dayIndex % DAILY_MISSIONS.length];
+    const saved = JSON.parse(localStorage.getItem('planetMerge_missionState') || '{}');
+    if (saved.date !== todayStr) {
+      const fresh = { date: todayStr, missionId: mission.id, progress: 0, done: false };
+      localStorage.setItem('planetMerge_missionState', JSON.stringify(fresh));
+      return { mission: mission, state: fresh };
+    }
+    return { mission: mission, state: saved };
+  }
+  function updateMissionProgress(mergedLevelIdx, currentScore) {
+    const { mission, state } = getTodayMission();
+    if (state.done) return;
+    let changed = false;
+    if (mission.targetLevel !== undefined && mergedLevelIdx === mission.targetLevel) {
+      state.progress = (state.progress || 0) + 1;
+      changed = true;
+      if (state.progress >= mission.targetCount) state.done = true;
+    } else if (mission.scoreTarget !== undefined && currentScore >= mission.scoreTarget) {
+      state.progress = mission.scoreTarget;
+      state.done = true;
+      changed = true;
+    }
+    if (changed) {
+      localStorage.setItem('planetMerge_missionState', JSON.stringify(state));
+      renderMissionBadge();
+      if (state.done) showMissionCompleteToast(mission.label);
+    }
+  }
+  function renderMissionBadge() {
+    const el = document.getElementById('daily-mission-badge');
+    if (!el) return;
+    const { mission, state } = getTodayMission();
+    const progressText = mission.scoreTarget !== undefined
+      ? (state.done ? '완료!' : '진행중')
+      : (Math.min(state.progress || 0, mission.targetCount) + '/' + mission.targetCount);
+    el.innerHTML = (state.done ? '✅ ' : '🎯 ') + '오늘의 미션: ' + mission.label + ' (' + progressText + ')';
+    el.classList.toggle('mission-done', !!state.done);
+  }
+  function showMissionCompleteToast(label) {
+    const toast = document.createElement('div');
+    toast.textContent = '🎉 오늘의 미션 완료! — ' + label;
+    toast.style.cssText = 'position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); background:linear-gradient(135deg,#7b5ee6,#d16bd6); color:#fff; padding:14px 22px; border-radius:14px; font-family:Jua; font-size:15px; z-index:999; box-shadow:0 8px 24px rgba(0,0,0,0.4); text-align:center;';
+    document.body.appendChild(toast);
+    setTimeout(function(){ toast.style.transition = 'opacity 0.5s'; toast.style.opacity = '0'; }, 1800);
+    setTimeout(function(){ toast.remove(); }, 2300);
+  }
 
   function buildPlanetInner(levelIdx, sizePx){
     const lv = levels[levelIdx];
@@ -318,14 +466,15 @@
     const bodyEl = document.createElement('div');
     bodyEl.className = 'p-body';
 
-    // [수정] 우주먼지는 index.html 썸네일과 동일한 "눈 달린 구름" 이미지를 그대로 사용
+    // [수정] 우주먼지/운석/행성/은하는 커스텀 캐릭터 이미지를 그대로 사용
     if (lv.cloudImg) {
       bodyEl.style.background = 'transparent';
       bodyEl.style.backgroundImage = 'url("' + lv.cloudImg + '")';
-      bodyEl.style.backgroundSize = '92% 92%';
+      bodyEl.style.backgroundSize = '116% 116%';
       bodyEl.style.backgroundRepeat = 'no-repeat';
       bodyEl.style.backgroundPosition = 'center';
       bodyEl.style.borderRadius = '0';
+      if (lv.glow) bodyEl.style.filter = 'drop-shadow(0 0 ' + (sizePx * 0.18) + 'px ' + lv.glow.replace(/^0 0 \S+px\s*/, '') + ')';
       inner.appendChild(bodyEl);
       setPlanetSize(inner, sizePx);
       return inner;
@@ -413,6 +562,14 @@
     syncAimUI();
   }
 
+  const METEOR_LEVEL = 1; // 운석의 레벨 인덱스
+  const COMET_LEVEL = 2;  // 혜성의 레벨 인덱스 (0=우주먼지, 1=운석, 2=혜성...)
+  const TRAIL_STYLES = {
+    1: 'radial-gradient(circle, rgba(255,220,140,0.9), rgba(255,120,40,0.35) 55%, transparent 75%)', // 운석: 불꽃
+    2: 'radial-gradient(circle, rgba(200,245,255,0.85), rgba(140,220,255,0.25) 60%, transparent 75%)' // 혜성: 얼음
+  };
+  let lastTrailSpawn = 0;
+
   function syncVisualPositions(){
     const scale = canvasContainer.clientWidth / W;
     animalVisuals.forEach(function(entry){
@@ -420,7 +577,36 @@
       const x = b.position.x * scale;
       const y = b.position.y * scale;
       entry.div.style.transform = 'translate(' + x + 'px,' + y + 'px) translate(-50%,-50%) rotate(' + b.angle + 'rad)';
+
+      // [신규] 운석(불꽃)·혜성(얼음)이 빠르게 떨어지는 동안 뒤로 트레일을 흩뿌린다
+      const trailStyle = TRAIL_STYLES[entry.level];
+      if (trailStyle) {
+        const speed = Math.sqrt(b.velocity.x * b.velocity.x + b.velocity.y * b.velocity.y);
+        if (speed > 3) {
+          const now = performance.now();
+          if (now - lastTrailSpawn > 45) {
+            lastTrailSpawn = now;
+            spawnFallTrail(x, y, levels[entry.level].radius * scale, trailStyle);
+          }
+        }
+      }
     });
+  }
+
+  function spawnFallTrail(x, y, r, gradientStyle){
+    const trail = document.createElement('div');
+    const size = r * (0.55 + Math.random() * 0.35);
+    trail.style.cssText =
+      'position:absolute; left:' + x + 'px; top:' + y + 'px; width:' + size + 'px; height:' + size + 'px;' +
+      'margin:' + (-size/2) + 'px 0 0 ' + (-size/2) + 'px; border-radius:50%; pointer-events:none; z-index:2;' +
+      'background: ' + gradientStyle + ';' +
+      'opacity:0.85; transition: opacity 0.5s ease-out, transform 0.5s ease-out;';
+    canvasContainer.appendChild(trail);
+    requestAnimationFrame(function(){
+      trail.style.opacity = '0';
+      trail.style.transform = 'scale(0.4)';
+    });
+    setTimeout(function(){ trail.remove(); }, 520);
   }
   Events.on(engine, 'afterUpdate', syncVisualPositions);
   window.addEventListener('resize', syncAllSpriteSizes);
@@ -460,6 +646,7 @@
   let canDrop = true;
   let aimX = W / 2;
   let mergeCount = 0;
+  let maxLevelReached = 0; // [신규] 이번 판에서 도달한 가장 높은 천체 단계 (은하 달성 여부 판정용)
   const sessionStart = Date.now();
 
   const scoreVal = document.getElementById('score-val');
@@ -515,11 +702,21 @@
     aimEmoji.style.width = aimSizePx + 'px';
     aimEmoji.style.height = aimSizePx + 'px';
     aimEmoji.appendChild(buildPlanetInner(currentLevel, aimSizePx));
+    markDiscovered(currentLevel);
+    markDiscovered(nextLevel);
 
     nextVal.innerHTML = '';
     nextVal.appendChild(buildPlanetInner(nextLevel, 30));
   }
   syncAimUI();
+
+  // [신규] 연속 접속 스트릭 + 오늘의 미션 배지 초기화
+  (function initStreakAndMission(){
+    const streak = updateStreak();
+    const streakEl = document.getElementById('streak-badge');
+    if (streakEl) streakEl.textContent = '🔥 ' + streak + '일 연속 접속';
+    renderMissionBadge();
+  })();
 
   function clientXToGameX(clientX) {
     const bounds = canvasContainer.getBoundingClientRect();
@@ -527,6 +724,8 @@
     return (clientX - bounds.left) * scale;
   }
 
+  let lastAimX = aimX;
+  let lastWarpTrailSpawn = 0;
   function updateAim(clientX) {
     if (isGameOver) return;
     const radius = levels[currentLevel].radius;
@@ -535,6 +734,37 @@
     aimX = x;
     const pct = (x / W) * 100;
     aimHolder.style.left = pct + '%';
+
+    // [신규] 조준점이 빠르게 이동할 때 뒤로 빛의 잔상(워프 트레일)을 남긴다
+    const moveDist = Math.abs(x - lastAimX);
+    lastAimX = x;
+    if (moveDist > 2) {
+      const now = performance.now();
+      if (now - lastWarpTrailSpawn > 35) {
+        lastWarpTrailSpawn = now;
+        const scale = canvasContainer.clientWidth / W;
+        spawnWarpTrail(x * scale, radius * scale);
+      }
+    }
+  }
+
+  function spawnWarpTrail(x, r){
+    const bounds = canvasContainer.getBoundingClientRect();
+    const holderBounds = aimHolder.getBoundingClientRect();
+    const relY = (holderBounds.top - bounds.top) + holderBounds.height / 2;
+    const trail = document.createElement('div');
+    const size = Math.max(10, r * 1.1);
+    trail.style.cssText =
+      'position:absolute; left:' + x + 'px; top:' + relY + 'px; width:' + size + 'px; height:' + size + 'px;' +
+      'margin:' + (-size/2) + 'px 0 0 ' + (-size/2) + 'px; border-radius:50%; pointer-events:none; z-index:2;' +
+      'background: radial-gradient(circle, rgba(0,240,255,0.75), rgba(168,85,247,0.35) 60%, transparent 75%);' +
+      'opacity:0.8; transition: opacity 0.4s ease-out, transform 0.4s ease-out;';
+    canvasContainer.appendChild(trail);
+    requestAnimationFrame(function(){
+      trail.style.opacity = '0';
+      trail.style.transform = 'scale(0.3)';
+    });
+    setTimeout(function(){ trail.remove(); }, 420);
   }
 
   window.addEventListener('pointermove', function(e){ updateAim(e.clientX); });
@@ -555,7 +785,7 @@
 
     const lvl = currentLevel;
     const animal = Bodies.circle(aimX, 40, levels[lvl].radius, {
-      restitution: 0.15, friction: 0.3, frictionAir: 0.001,
+      restitution: 0.02, friction: 0.7, frictionAir: 0.0008, frictionStatic: 0.9,
       label: 'animal_' + lvl
     });
     Composite.add(engine.world, animal);
@@ -589,8 +819,11 @@
           mergeCount += 1;
 
           const mergedLevel = level + 1;
+          if (mergedLevel > maxLevelReached) maxLevelReached = mergedLevel;
+          markDiscovered(mergedLevel);
+          updateMissionProgress(mergedLevel, score);
           const newAnimal = Bodies.circle(newX, newY, levels[mergedLevel].radius, {
-            label: 'animal_' + mergedLevel, restitution: 0.15, friction: 0.3, frictionAir: 0.001
+            label: 'animal_' + mergedLevel, restitution: 0.02, friction: 0.7, frictionAir: 0.0008, frictionStatic: 0.9
           });
           Composite.add(engine.world, newAnimal);
           createAnimalVisual(newAnimal, mergedLevel);
@@ -656,6 +889,9 @@
       if (gameOverTimer > 180) {
         isGameOver = true;
         Runner.stop(runner);
+        const reachedGalaxy = maxLevelReached === GALAXY_LEVEL;
+        document.getElementById('galaxy-achieve-banner').style.display = reachedGalaxy ? 'block' : 'none';
+        document.getElementById('share-achievement-btn').style.display = reachedGalaxy ? 'block' : 'none';
         document.getElementById('game-over-modal').style.display = 'flex';
       }
     } else {
@@ -668,18 +904,20 @@
   document.getElementById('info-btn').addEventListener('click', function(){
     const container = document.getElementById('evo-tree-container');
     container.innerHTML = '';
+    const discovered = getDiscoveredSet();
     levels.forEach(function(lv, idx){
+      const isUnlocked = discovered.has(idx) || idx <= 1; // 처음 2단계는 항상 공개
       const item = document.createElement('div');
-      item.className = 'evo-item';
+      item.className = 'evo-item' + (isUnlocked ? '' : ' locked');
       const holder = document.createElement('div');
       holder.className = 'evo-planet-holder';
       holder.appendChild(buildPlanetInner(idx, 40));
       const textSpan = document.createElement('span');
       textSpan.className = 'evo-text';
-      textSpan.textContent = lv.name + ' Lv.' + (idx+1);
+      textSpan.textContent = isUnlocked ? (lv.name + ' Lv.' + (idx+1)) : ('??? Lv.' + (idx+1));
       const personalitySpan = document.createElement('span');
       personalitySpan.className = 'evo-personality';
-      personalitySpan.textContent = lv.personality;
+      personalitySpan.textContent = isUnlocked ? lv.personality : '아직 만나지 못했어요';
       item.appendChild(holder);
       item.appendChild(textSpan);
       item.appendChild(personalitySpan);
@@ -692,6 +930,8 @@
     document.getElementById('info-modal').style.display = 'none';
   });
 
+  const GALAXY_LEVEL = levels.length - 1; // 최종 진화형(은하) 레벨 인덱스
+
   document.getElementById('rank-btn').addEventListener('click', async function(){
     document.getElementById('rank-modal').style.display = 'flex';
     const container = document.getElementById('rank-list-container');
@@ -700,9 +940,9 @@
     if (!supabase) {
       // 오프라인/DB 미연동 상태의 임시 표시 데이터(점수 우선, 동점시 시간 빠른 순)
       const fallback = [
-        ['관리자', 9999, 95], ['유저', 8500, 130]
+        ['관리자', 9999, 95, GALAXY_LEVEL], ['유저', 8500, 130, 8]
       ];
-      fallback.forEach(function(row, i){ appendRankRow(container, i+1, row[0], row[1], row[2]); });
+      fallback.forEach(function(row, i){ appendRankRow(container, i+1, row[0], row[1], row[2], row[3]); });
       const note = document.createElement('div');
       note.style.cssText = 'font-size:12px;color:#999;margin-top:8px;';
       note.textContent = '(DB 미연동 — 임시 데이터)';
@@ -712,24 +952,50 @@
 
     container.textContent = '데이터 로딩 중...';
     try {
+      // [신규] 은하(최종 진화형) 달성자 중 가장 빠른 기록을 랭킹 최상단에 별도로 고정 표시
+      const galaxyRes = await supabase
+        .from('planet_scores')
+        .select('username, score, elapsed_sec, max_level')
+        .eq('max_level', GALAXY_LEVEL)
+        .order('elapsed_sec', { ascending: true })
+        .limit(1);
+
       // 정렬 기준: 점수 내림차순 → 동점이면 소요시간(elapsed_sec) 오름차순(더 빠른 사람이 위)
-      // ※ Supabase의 rankings 테이블에 elapsed_sec(정수, 초 단위) 컬럼이 있어야 함.
+      // ※ Supabase의 planet_scores 테이블에 elapsed_sec, max_level 컬럼이 있어야 함.
       const { data, error } = await supabase
         .from('planet_scores')
-        .select('username, score, elapsed_sec')
+        .select('username, score, elapsed_sec, max_level')
         .order('score', { ascending: false })
         .order('elapsed_sec', { ascending: true })
         .limit(5);
       if (error) throw error;
       container.innerHTML = '';
-      data.forEach(function(row, i){ appendRankRow(container, i+1, row.username, row.score, row.elapsed_sec); });
+
+      if (!galaxyRes.error && galaxyRes.data && galaxyRes.data.length > 0) {
+        const g = galaxyRes.data[0];
+        const badge = document.createElement('div');
+        badge.style.cssText = 'background:linear-gradient(135deg,#7b5ee6,#d16bd6); border-radius:10px; padding:8px 12px; margin-bottom:10px; color:#fff; font-size:13px; display:flex; justify-content:space-between; align-items:center;';
+        badge.innerHTML = '<span>🌌 은하 달성 — <b>' + escapeHtml(String(g.username)) + '</b></span><span>' + formatElapsed(g.elapsed_sec) + '</span>';
+        container.appendChild(badge);
+      }
+
+      data.forEach(function(row, i){ appendRankRow(container, i+1, row.username, row.score, row.elapsed_sec, row.max_level); });
     } catch (e) {
       container.textContent = '데이터 불러오기 실패';
     }
   });
 
-  function appendRankRow(container, rank, username, scoreVal, elapsedSec){
+  function escapeHtml(str){
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+  }
+
+  function appendRankRow(container, rank, username, scoreVal, elapsedSec, maxLevel){
     const row = document.createElement('div');
+    row.style.cssText = 'display:flex; flex-direction:column; padding:4px 0;';
+    const topLine = document.createElement('div');
+    topLine.style.cssText = 'display:flex; justify-content:space-between; width:100%;';
     const left = document.createElement('span');
     left.textContent = rank + '. ' + String(username);
     const right = document.createElement('span');
@@ -742,8 +1008,18 @@
       timeSpan.textContent = ' (' + formatElapsed(elapsedSec) + ')';
       right.appendChild(timeSpan);
     }
-    row.appendChild(left);
-    row.appendChild(right);
+    topLine.appendChild(left);
+    topLine.appendChild(right);
+    row.appendChild(topLine);
+
+    // [신규] 이 판에서 도달한 최고 천체를 이름 아래 작은 글씨로 표시
+    if (maxLevel !== undefined && maxLevel !== null && levels[maxLevel]) {
+      const sub = document.createElement('div');
+      const reachedGalaxy = maxLevel === GALAXY_LEVEL;
+      sub.style.cssText = 'font-size:10.5px; color:' + (reachedGalaxy ? '#c084fc' : '#9a90b8') + '; margin-top:1px;';
+      sub.textContent = (reachedGalaxy ? '🌌 ' : '최고: ') + levels[maxLevel].name;
+      row.appendChild(sub);
+    }
     container.appendChild(row);
   }
 
@@ -760,7 +1036,7 @@
 
     if (supabase && plausible) {
       try {
-        await supabase.from('planet_scores').insert([{ username: name, score: score, elapsed_sec: elapsedSec }]);
+        await supabase.from('planet_scores').insert([{ username: name, score: score, elapsed_sec: elapsedSec, max_level: maxLevelReached }]);
       } catch (e) { console.error('Save Error', e); }
     } else if (supabase && !plausible) {
       console.warn('비정상 점수로 판단되어 저장을 건너뜁니다.');
@@ -813,6 +1089,29 @@
             buttons: [
                 { title: '합체하러 가기', link: { mobileWebUrl: 'https://spacewarp.co.kr/planet_merge.html', webUrl: 'https://spacewarp.co.kr/planet_merge.html' } },
             ],
+        });
+    }
+
+    // [신규] 은하 달성 전용 자랑 공유
+    const shareAchBtn = document.getElementById('share-achievement-btn');
+    if (shareAchBtn) {
+        shareAchBtn.addEventListener('click', function () {
+            if (!Kakao.isInitialized || !Kakao.isInitialized()) {
+                alert('카카오 공유 기능을 준비 중입니다. 잠시 후 다시 시도해주세요.');
+                return;
+            }
+            Kakao.Share.sendDefault({
+                objectType: 'feed',
+                content: {
+                    title: '🌌 나 은하 만들었다! - 스웦(SPACEWARP)',
+                    description: '행성 합체에서 최종 진화형 "은하"까지 도달했어요! 너도 도전해볼래?',
+                    imageUrl: 'https://spacewarp.co.kr/og-image.png',
+                    link: { mobileWebUrl: 'https://spacewarp.co.kr/planet_merge.html', webUrl: 'https://spacewarp.co.kr/planet_merge.html' },
+                },
+                buttons: [
+                    { title: '나도 도전하기', link: { mobileWebUrl: 'https://spacewarp.co.kr/planet_merge.html', webUrl: 'https://spacewarp.co.kr/planet_merge.html' } },
+                ],
+            });
         });
     }
 </script>

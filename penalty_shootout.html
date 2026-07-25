@@ -599,6 +599,7 @@
         realAudio.anticipation.loop = true;
     }
     // 짧은 효과음(휘슬/킥/함성/탄식)은 겹쳐 재생될 수 있으므로 매번 복제해서 재생한다
+    let activeSfxClones = [];
     function playRealOneShot(key, vol) {
         if (!realAudioReady || !soundSettings.sfxOn) return;
         const base = realAudio[key];
@@ -607,7 +608,15 @@
             const node = base.cloneNode();
             node.volume = (vol != null ? vol : base.volume) * soundSettings.sfxVolume;
             node.play().catch(() => {});
+            activeSfxClones.push(node);
+            node.addEventListener('ended', () => {
+                activeSfxClones = activeSfxClones.filter(n => n !== node);
+            });
         } catch (e) {}
+    }
+    function stopAllSfxClones() {
+        activeSfxClones.forEach(n => { try { n.pause(); } catch (e) {} });
+        activeSfxClones = [];
     }
     function playMenuMusic() {
         if (!realAudioReady || !soundSettings.bgmOn) return;
@@ -618,7 +627,7 @@
         try { realAudio.menuMusic.pause(); } catch (e) {}
     }
     function playEndingCheer() {
-        if (!realAudioReady) return;
+        if (!realAudioReady || !soundSettings.sfxOn) return;
         try { realAudio.endingCheer.currentTime = 0; realAudio.endingCheer.play().catch(() => {}); } catch (e) {}
     }
     function stopEndingCheer() {
@@ -697,7 +706,7 @@
         sfxToggle.addEventListener('change', () => {
             soundSettings.sfxOn = sfxToggle.checked;
             saveSoundSettings();
-            if (!soundSettings.sfxOn) stopAmbient(150);
+            if (!soundSettings.sfxOn) { stopAmbient(150); stopEndingCheer(); stopAllSfxClones(); }
         });
         bgmVolumeSlider.addEventListener('input', () => {
             soundSettings.bgmVolume = bgmVolumeSlider.value / 100;

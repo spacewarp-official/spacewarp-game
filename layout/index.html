@@ -166,6 +166,9 @@
   #icCard .acts .btn { flex: 1; flex-direction: column; min-height: 62px; gap: 3px; font-size: 13px; font-weight: 500; }
   #icCard .acts .btn svg { width: 24px; height: 24px; }
 
+  .switch { -webkit-appearance: none; appearance: none; width: 51px; height: 31px; border-radius: 16px; background: var(--fill); position: relative; transition: background .2s; cursor: pointer; flex: none; border: 0; margin: 0; }
+  .switch::after { content: ''; position: absolute; top: 2px; left: 2px; width: 27px; height: 27px; border-radius: 50%; background: #fff; box-shadow: 0 2px 4px rgba(0,0,0,0.3); transition: transform .2s; }
+  .switch:checked { background: var(--green); } .switch:checked::after { transform: translateX(20px); }
   .thumb { width: 72px; height: 72px; border-radius: 12px; object-fit: cover; background: var(--fill); display: block; margin: 0 0 10px; }
   details summary { list-style: none; } details summary::-webkit-details-marker { display: none; }
   textarea.field { font: inherit; line-height: 1.4; }
@@ -228,6 +231,11 @@
     <div id="shareCard" class="tcard glass" hidden>
       <p>공유받은 배치예요. 내 저장본은 그대로 있어요.</p>
       <div class="acts"><button class="btn sm" id="shBack">내 저장본 보기</button><button class="btn sm primary" id="shImport">내 것으로 가져오기</button></div>
+    </div>
+    <div id="planCard" class="tcard glass" hidden>
+      <p id="pcText"></p>
+      <div class="row2" id="pcLen" hidden><span class="lb" style="font-size:15px">실제 길이</span><span><span class="stepper"><button type="button" data-d="-10" data-t="pcCm" aria-label="줄이기">−</button><input type="number" id="pcCm" inputmode="numeric" min="10" max="3000" value="300"><button type="button" data-d="10" data-t="pcCm" aria-label="늘리기">+</button></span><span class="unit">cm</span></span></div>
+      <div class="acts"><button class="btn sm primary" id="pcApply" hidden>적용</button><button class="btn sm" id="pcCancel">취소</button></div>
     </div>
     <div id="calibCard" class="tcard glass" hidden>
       <div id="cbDiagram"></div>
@@ -299,6 +307,20 @@
         </div>
         <button class="btn block" id="rMeasure" data-ic="ruler" style="margin-top:12px">카메라로 방 재기<span class="beta">베타</span></button>
         <p class="note">휴대폰 센서로 바닥 모서리 4곳을 비춰서 재요. 안쪽 벽 길이를 알 때는 직접 입력하는 게 더 정확해요.</p>
+      </div>
+
+      <div class="h">내 집 평면도</div>
+      <div class="card">
+        <div style="display:flex;gap:8px"><input class="field" id="apQuery" type="search" placeholder="아파트 이름 또는 주소" aria-label="아파트 이름 또는 주소" style="flex:1;min-width:0"><button class="btn" id="apSearch" style="min-height:46px">평면도 찾기</button></div>
+        <p class="note">검색 결과에서 내 평형의 평면도를 캡처하거나 저장해서 아래에서 올려요. 올린 평면도 위에 가구를 놓을 수 있어요.</p>
+        <button class="btn block" id="apUpload" data-ic="photo" style="margin-top:10px">평면도 이미지 올리기</button>
+        <div id="apOpts" hidden>
+          <p class="note" id="apState" style="margin-top:10px"></p>
+          <div class="row2" style="margin-top:6px"><span class="lb">평면도 보이기</span><input type="checkbox" class="switch" id="apShow" aria-label="평면도 보이기"></div>
+          <button class="btn block" id="apRecal" style="margin-top:8px">크기 기준 다시 정하기</button>
+          <button class="btn danger block" id="apClear" style="margin-top:8px">평면도 지우기</button>
+        </div>
+        <p class="note">평면도 이미지는 이 폰에만 저장되고 공유 링크에는 들어가지 않아요. 건설사나 부동산 사이트의 이미지는 개인이 참고하는 용도로만 쓰세요.</p>
       </div>
 
       <div class="h">방 사진 (사진 화면용)</div>
@@ -386,6 +408,7 @@
 
 <input type="file" id="fileCam" accept="image/*" capture="environment" hidden>
 <input type="file" id="fileLib" accept="image/*" hidden>
+<input type="file" id="filePlan" accept="image/*" hidden>
 
 <script>
 (function () {
@@ -451,6 +474,8 @@
   var zoom = 1, panX = 0, panY = 0, viewBase = { s: 1, ox: 0, oy: 0 };
   var guides = { x: null, y: null };
   var iconImgs = {}, NAME_ICON = {};
+  var planImg = null, planData = '', planShow = true, planCal = { stage: 'idle', pts: [], fresh: false };
+  var planRect = { x: 0, y: 0, w: 1, h: 1, k: 1 };
 
   function $(id) { return document.getElementById(id); }
   function clamp(v, lo, hi) { return Math.min(hi, Math.max(lo, v)); }
@@ -699,6 +724,7 @@
     ctx.fillStyle = TH.canvas; ctx.fillRect(0, 0, cw, ch);
     updateChrome();
     if (viewMode === 'photo') { renderPhoto(cw, ch, forExport); return; }
+    if (planCal.stage !== 'idle') { renderPlanCal(cw, ch); return; }
     computeView(cw, ch);
     var s = view.s, rw = state.room.w * s, rd = state.room.d * s;
 
@@ -707,7 +733,9 @@
     ctx.fillStyle = TH.floor; ctx.fillRect(view.ox, view.oy, rw, rd);
     ctx.restore();
 
-    if (photo && photo.complete && photo.naturalWidth) {
+    if (planImg && planShow && planImg.naturalWidth) {
+      ctx.drawImage(planImg, view.ox, view.oy, rw, rd);
+    } else if (photo && photo.complete && photo.naturalWidth) {
       ctx.save(); ctx.beginPath(); ctx.rect(view.ox, view.oy, rw, rd); ctx.clip();
       var k = Math.max(rw / photo.naturalWidth, rd / photo.naturalHeight);
       var pw = photo.naturalWidth * k, ph = photo.naturalHeight * k;
@@ -806,7 +834,7 @@
   function updateFloat(forExport) {
     var fb = $('floatbar');
     var it = selectedId == null ? null : getItem(selectedId);
-    if (!it || forExport || (drag && drag.moved) || calib.stage === 'tapping' || measureOpen()) { fb.style.display = 'none'; return; }
+    if (!it || forExport || (drag && drag.moved) || calib.stage === 'tapping' || planCal.stage !== 'idle' || measureOpen()) { fb.style.display = 'none'; return; }
     var box, i;
     if (viewMode === 'photo') {
       var g = cam ? itemGeom(it) : null;
@@ -839,7 +867,7 @@
     } else wb.hidden = true;
   }
   function updateChrome() {
-    var busy = sheetPane || $('icWrap').classList.contains('on') || measureOpen() || (calib.stage === 'tapping');
+    var busy = sheetPane || $('icWrap').classList.contains('on') || measureOpen() || (calib.stage === 'tapping') || planCal.stage !== 'idle';
     $('emptyCard').hidden = !(viewMode === 'plan' && state.items.length === 0 && !busy && !fromShare);
     $('photoEmpty').hidden = !(viewMode === 'photo' && !photo);
     $('fitBtn').hidden = !(viewMode === 'plan' && zoom > 1.01);
@@ -1209,6 +1237,7 @@
     $('menu').hidden = true;
     var r = cv.getBoundingClientRect(), px = e.clientX - r.left, py = e.clientY - r.top;
     ptrs[e.pointerId] = { x: px, y: py };
+    if (viewMode === 'plan' && planCal.stage === 'pick') { addPlanPoint(px, py); return; }
     if (viewMode === 'plan' && Object.keys(ptrs).length === 2) { startPinch(); return; }
     if (Object.keys(ptrs).length > 2) return;
     if (viewMode === 'photo') {
@@ -1596,6 +1625,130 @@
     lkSay('치수를 찾았어요: 가로 ' + (d.w != null ? d.w : '-') + ' · 세로 ' + (d.d != null ? d.d : '-') + ' · 높이 ' + (d.h != null ? d.h : '-') + ' cm. 맞는지 확인해 주세요.');
   });
 
+  /* ================= own floor plan picture (upload + set the scale) ================= */
+  var PLAN_KEY = 'spacewarp_plan_v1';
+  function updatePlanUi() {
+    $('apOpts').hidden = !planImg;
+    $('apShow').checked = planShow;
+    $('apState').textContent = planImg ? (planShow ? '평면도가 방 크기에 맞춰 깔려 있어요.' : '평면도를 숨겼어요.') : '';
+    var c = $('planCard');
+    if (planCal.stage === 'idle') c.hidden = true;
+    else {
+      c.hidden = false;
+      $('pcText').textContent = planCal.stage === 'pick'
+        ? '평면도에서 길이를 아는 두 곳을 눌러요 (' + (planCal.pts.length + 1) + '/2). 예: 방 한쪽 벽의 양 끝'
+        : '두 곳 사이의 실제 길이를 넣어요. 모르면 줄자로 잰 방 한 변의 길이를 넣어요.';
+      $('pcLen').hidden = planCal.stage !== 'enter'; $('pcApply').hidden = planCal.stage !== 'enter';
+    }
+    updateChrome();
+  }
+  function persistPlan() {
+    if (fromShare || !planData) return;
+    try { localStorage.setItem(PLAN_KEY, JSON.stringify({ d: planData, s: planShow ? 1 : 0 })); } catch (e) { toast('평면도가 커서 이 폰에 저장하지 못했어요'); }
+  }
+  function setPlan(url, fresh) {
+    var img = new Image();
+    img.onload = function () {
+      planImg = img; planData = url;
+      if (fresh) startPlanCal(true); else { updatePlanUi(); render(); }
+    };
+    img.onerror = function () { toast('이미지를 열 수 없어요'); };
+    img.src = url;
+  }
+  function loadPlanFile(f) {
+    var rd = new FileReader();
+    rd.onload = function () {
+      var im = new Image();
+      im.onload = function () {
+        var k = Math.min(1, 1600 / Math.max(im.naturalWidth, im.naturalHeight));
+        var c = document.createElement('canvas');
+        c.width = Math.max(1, Math.round(im.naturalWidth * k)); c.height = Math.max(1, Math.round(im.naturalHeight * k));
+        var cx = c.getContext('2d'); cx.fillStyle = '#fff'; cx.fillRect(0, 0, c.width, c.height); cx.drawImage(im, 0, 0, c.width, c.height);
+        setPlan(c.toDataURL('image/jpeg', 0.78), true);
+      };
+      im.onerror = function () { toast('이미지를 열 수 없어요'); };
+      im.src = rd.result;
+    };
+    rd.readAsDataURL(f);
+  }
+  function startPlanCal(fresh) {
+    if (!planImg) return;
+    planCal = { stage: 'pick', pts: [], fresh: !!fresh };
+    selectedId = null; resetZoomQuiet(); closeSheet(); setMode('plan'); updatePlanUi(); render();
+  }
+  function resetZoomQuiet() { zoom = 1; panX = 0; panY = 0; }
+  function cancelPlanCal() {
+    var wasFresh = planCal.fresh;
+    planCal = { stage: 'idle', pts: [], fresh: false };
+    if (wasFresh) clearPlan(); else { updatePlanUi(); render(); }
+  }
+  function clearPlan() {
+    planImg = null; planData = ''; planCal = { stage: 'idle', pts: [], fresh: false };
+    try { localStorage.removeItem(PLAN_KEY); } catch (e) {}
+    updatePlanUi(); render();
+  }
+  function renderPlanCal(cw, ch) {
+    updateFloat(true); showWarn({ nOverlap: 0, nOut: 0, nZone: 0 }, true);
+    if (!planImg || !planImg.naturalWidth) return;
+    var k = Math.min(cw * 0.94 / planImg.naturalWidth, ch * 0.94 / planImg.naturalHeight), w = planImg.naturalWidth * k, h = planImg.naturalHeight * k;
+    planRect = { x: (cw - w) / 2, y: (ch - h) / 2, w: w, h: h, k: k };
+    ctx.save(); ctx.shadowColor = 'rgba(0,0,0,0.2)'; ctx.shadowBlur = 16; ctx.shadowOffsetY = 3; ctx.fillStyle = '#fff'; ctx.fillRect(planRect.x, planRect.y, w, h); ctx.restore();
+    ctx.drawImage(planImg, planRect.x, planRect.y, w, h);
+    var P = planCal.pts.map(function (p) { return { x: planRect.x + p.x * w, y: planRect.y + p.y * h }; });
+    if (P.length === 2) { ctx.beginPath(); ctx.moveTo(P[0].x, P[0].y); ctx.lineTo(P[1].x, P[1].y); ctx.lineWidth = 3; ctx.strokeStyle = '#007aff'; ctx.stroke(); }
+    P.forEach(function (q, i) {
+      ctx.beginPath(); ctx.arc(q.x, q.y, 13, 0, Math.PI * 2); ctx.fillStyle = 'rgba(255,255,255,0.95)'; ctx.fill();
+      ctx.lineWidth = 2.5; ctx.strokeStyle = '#007aff'; ctx.stroke();
+      ctx.fillStyle = '#1c1c1e'; ctx.font = '700 13px ' + FONT; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(String(i + 1), q.x, q.y + 0.5);
+    });
+  }
+  function addPlanPoint(px, py) {
+    if (planCal.pts.length >= 2) return;
+    var p = { x: clamp((px - planRect.x) / planRect.w, 0, 1), y: clamp((py - planRect.y) / planRect.h, 0, 1) };
+    if (planCal.pts.length === 1) {
+      var a = planCal.pts[0];
+      if (Math.hypot((p.x - a.x) * planRect.w, (p.y - a.y) * planRect.h) < 24) { toast('두 곳이 너무 가까워요. 멀리 떨어진 두 곳을 눌러 주세요'); return; }
+    }
+    planCal.pts.push(p);
+    if (planCal.pts.length === 2) planCal.stage = 'enter';
+    updatePlanUi(); render();
+  }
+  function applyPlanScale() {
+    var len = num($('pcCm').value, 10, 3000, 0);
+    if (!len || planCal.pts.length !== 2 || !planImg) { toast('실제 길이를 확인해 주세요'); return; }
+    var a = planCal.pts[0], b = planCal.pts[1];
+    var dpx = Math.hypot((b.x - a.x) * planImg.naturalWidth, (b.y - a.y) * planImg.naturalHeight);
+    var kcm = len / dpx, W = planImg.naturalWidth * kcm, D = planImg.naturalHeight * kcm, mx = Math.max(W, D), note = '';
+    if (mx > 3000) { var f = 3000 / mx; W *= f; D *= f; note = ' (3,000cm가 넘어서 줄였어요)'; }
+    if (Math.min(W, D) < 100) { toast('너무 작은 크기예요. 실제 길이를 다시 확인해 주세요'); return; }
+    state.room.w = Math.round(W); state.room.d = Math.round(D);
+    planCal = { stage: 'idle', pts: [], fresh: false }; planShow = true;
+    resetZoomQuiet(); commit(); syncRoomInputs(); persistPlan(); updatePlanUi(); render();
+    toast('방 크기를 ' + state.room.w + '×' + state.room.d + ' cm로 맞췄어요' + note);
+  }
+  function loadSavedPlan() {
+    if (fromShare) return;
+    try {
+      var raw = localStorage.getItem(PLAN_KEY); if (!raw) return;
+      var o = JSON.parse(raw);
+      if (!o || typeof o.d !== 'string' || o.d.indexOf('data:image/') !== 0) return;
+      planShow = o.s !== 0; setPlan(o.d, false);
+    } catch (e) {}
+  }
+  $('apSearch').addEventListener('click', function () {
+    var q = $('apQuery').value.trim();
+    if (!q) { toast('아파트 이름이나 주소를 입력해 주세요'); return; }
+    window.open('https://search.naver.com/search.naver?where=image&query=' + encodeURIComponent(q + ' 평면도'), '_blank', 'noopener');
+  });
+  $('apQuery').addEventListener('keydown', function (e) { if (e.key === 'Enter') $('apSearch').click(); });
+  $('apUpload').addEventListener('click', function () { $('filePlan').click(); });
+  $('filePlan').addEventListener('change', function () { var f = this.files && this.files[0]; if (f) loadPlanFile(f); this.value = ''; });
+  $('apShow').addEventListener('change', function () { planShow = this.checked; persistPlan(); updatePlanUi(); render(); });
+  $('apRecal').addEventListener('click', function () { startPlanCal(false); });
+  $('apClear').addEventListener('click', function () { if (confirm('올린 평면도를 지울까요? 방 크기와 가구는 그대로 남아요.')) clearPlan(); });
+  $('pcApply').addEventListener('click', applyPlanScale);
+  $('pcCancel').addEventListener('click', cancelPlanCal);
+
   /* ================= top bar actions ================= */
   $('segPlan').addEventListener('click', function () { setMode('plan'); });
   $('segPhoto').addEventListener('click', function () { setMode('photo'); });
@@ -1816,7 +1969,7 @@
       $('shareCard').hidden = true; toast('내 저장본으로 가져왔어요'); updateChrome();
     });
 
-    pushHistory(); syncRoomInputs(); renderCart(); updatePhotoUi(); loadSavedPhoto();
+    pushHistory(); syncRoomInputs(); renderCart(); updatePhotoUi(); loadSavedPhoto(); loadSavedPlan();
     window.addEventListener('resize', resize);
     resize();
     if (typeof ResizeObserver !== 'undefined') new ResizeObserver(resize).observe($('stage'));

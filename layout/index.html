@@ -85,6 +85,8 @@
   #toast { bottom: 62px; opacity: 0; transition: opacity .25s, transform .25s; transform: translate(-50%, 8px); pointer-events: none; }
   #toast.on { opacity: 1; transform: translate(-50%, 0); }
   #warn { bottom: 12px; color: var(--red); font-weight: 600; background: var(--glass); }
+  #fitBtn { position: absolute; left: 12px; bottom: 12px; z-index: 5; width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center; color: var(--blue); box-shadow: var(--shadow); border: 0.5px solid var(--glass-line); }
+  #fitBtn:active { opacity: 0.7; }
   #savePill { top: 10px; left: auto; right: 10px; transform: none; padding: 5px 12px; font-size: 13px; color: var(--green); font-weight: 600; opacity: 0; transition: opacity .25s; pointer-events: none; z-index: 2; }
   #savePill.on { opacity: 1; }
 
@@ -260,6 +262,7 @@
     <button id="fEdit" data-ic="edit"><span>치수</span></button>
     <button id="fDel" class="del" data-ic="trash"><span>삭제</span></button>
   </div>
+  <button id="fitBtn" class="glass" aria-label="화면에 맞추기" data-ic="fit" hidden></button>
   <div id="savePill" class="pill glass">저장됨</div>
   <div id="warn" class="pill" hidden></div>
   <div id="toast" class="pill glass" role="status" aria-live="polite"></div>
@@ -406,6 +409,7 @@
     camera: '<path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/>',
     photo: '<rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="9" cy="10" r="1.6"/><path d="m4 18 5-5 4 4 3-3 4 4"/>',
     plus: '<path d="M12 5v14M5 12h14"/>',
+    fit: '<path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/>',
     ruler: '<rect x="3" y="8" width="18" height="8" rx="1.5"/><path d="M7 8v3M11 8v4M15 8v3M19 8v4"/>',
     bed: '<path d="M3 18V7"/><path d="M21 18v-5a3 3 0 0 0-3-3H9v8"/><path d="M3 15h18"/><circle cx="6.5" cy="11.5" r="1.8"/>',
     desk: '<rect x="3" y="8" width="18" height="3" rx="1"/><path d="M5 11v9M19 11v9"/><path d="M14 11v4h5"/>',
@@ -429,6 +433,9 @@
   var ctx = cv.getContext('2d');
   var view = { s: 1, ox: 0, oy: 0 };
   var dpr = 1;
+  var zoom = 1, panX = 0, panY = 0, viewBase = { s: 1, ox: 0, oy: 0 };
+  var guides = { x: null, y: null };
+  var iconImgs = {}, NAME_ICON = {};
 
   function $(id) { return document.getElementById(id); }
   function clamp(v, lo, hi) { return Math.min(hi, Math.max(lo, v)); }
@@ -584,12 +591,41 @@
     return res;
   }
   function snapPos(it) {
-    var d = effDims(it), T = 8;
+    var d = effDims(it), T = Math.max(3, 8 / zoom);
     var l = it.x - d.w / 2, r = it.x + d.w / 2, t = it.y - d.d / 2, b = it.y + d.d / 2;
-    if (Math.abs(l) < T) it.x = d.w / 2; else if (Math.abs(r - state.room.w) < T) it.x = state.room.w - d.w / 2;
-    if (Math.abs(t) < T) it.y = d.d / 2; else if (Math.abs(b - state.room.d) < T) it.y = state.room.d - d.d / 2;
+    var wallX = false, wallY = false;
+    guides.x = null; guides.y = null;
+    if (Math.abs(l) < T) { it.x = d.w / 2; wallX = true; } else if (Math.abs(r - state.room.w) < T) { it.x = state.room.w - d.w / 2; wallX = true; }
+    if (Math.abs(t) < T) { it.y = d.d / 2; wallY = true; } else if (Math.abs(b - state.room.d) < T) { it.y = state.room.d - d.d / 2; wallY = true; }
+    if (isFurn(it)) {
+      // align or touch the edges of other furniture
+      l = it.x - d.w / 2; r = it.x + d.w / 2; t = it.y - d.d / 2; b = it.y + d.d / 2;
+      var bx = null, by = null;
+      state.items.forEach(function (o) {
+        if (o === it || !isFurn(o)) return;
+        var od = effDims(o), ol = o.x - od.w / 2, orr = o.x + od.w / 2, ot = o.y - od.d / 2, ob = o.y + od.d / 2;
+        [[l, ol], [l, orr], [r, ol], [r, orr], [it.x, o.x]].forEach(function (p) {
+          var df = p[1] - p[0]; if (Math.abs(df) <= T && (bx === null || Math.abs(df) < Math.abs(bx.df))) bx = { df: df, at: p[1] };
+        });
+        [[t, ot], [t, ob], [b, ot], [b, ob], [it.y, o.y]].forEach(function (p) {
+          var df = p[1] - p[0]; if (Math.abs(df) <= T && (by === null || Math.abs(df) < Math.abs(by.df))) by = { df: df, at: p[1] };
+        });
+      });
+      if (bx && !wallX) { it.x += bx.df; guides.x = bx.at; }
+      if (by && !wallY) { it.y += by.df; guides.y = by.at; }
+    }
     it.x = clamp(Math.round(it.x), -50, state.room.w + 50);
     it.y = clamp(Math.round(it.y), -50, state.room.d + 50);
+  }
+  function glyph(name) {
+    if (!name || !ICONS[name]) return null;
+    var im = iconImgs[name];
+    if (!im) {
+      im = new Image(); iconImgs[name] = im;
+      im.onload = function () { render(); };
+      im.src = 'data:image/svg+xml;utf8,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#1c1c1e" stroke-opacity="0.6" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">' + ICONS[name] + '</svg>');
+    }
+    return (im.complete && im.naturalWidth) ? im : null;
   }
   function snapPosSoft(it) {
     it.x = clamp(it.x, -50, state.room.w + 50); it.y = clamp(it.y, -50, state.room.d + 50);
@@ -607,10 +643,24 @@
     var padX = 44, padTop = 40, padBottom = 54;
     var s = Math.min((cw - padX * 2) / state.room.w, (ch - padTop - padBottom) / state.room.d);
     if (!(s > 0)) s = 0.1;
-    view.s = s;
-    view.ox = (cw - state.room.w * s) / 2;
-    view.oy = padTop + (ch - padTop - padBottom - state.room.d * s) / 2;
+    var ox0 = (cw - state.room.w * s) / 2, oy0 = padTop + (ch - padTop - padBottom - state.room.d * s) / 2;
+    viewBase = { s: s, ox: ox0, oy: oy0 };
+    view.s = s * zoom;
+    view.ox = cw / 2 + (ox0 - cw / 2) * zoom + panX;
+    view.oy = ch / 2 + (oy0 - ch / 2) * zoom + panY;
   }
+  // zoom so that world point w stays under screen point (sx, sy)
+  function zoomAt(z, w, sx, sy) {
+    var cw = cv.width / dpr, ch = cv.height / dpr;
+    zoom = clamp(z, 1, 6);
+    if (zoom <= 1.001) { zoom = 1; panX = 0; panY = 0; return; }
+    var bx = viewBase.ox + w.x * viewBase.s, by = viewBase.oy + w.y * viewBase.s;
+    panX = sx - cw / 2 - (bx - cw / 2) * zoom;
+    panY = sy - ch / 2 - (by - ch / 2) * zoom;
+    var lim = Math.max(cw, ch) * zoom;
+    panX = clamp(panX, -lim, lim); panY = clamp(panY, -lim, lim);
+  }
+  function resetZoom() { zoom = 1; panX = 0; panY = 0; render(); }
   function w2p(x, y) { return { x: view.ox + x * view.s, y: view.oy + y * view.s }; }
   function p2w(px, py) { return { x: (px - view.ox) / view.s, y: (py - view.oy) / view.s }; }
   function rr(x, y, w, h, r) {
@@ -697,13 +747,36 @@
         ctx.fillStyle = '#1c1c1e'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
         var cx = px + W / 2, cy = py + H / 2;
         ctx.font = '600 14px ' + FONT;
-        if (H > 38) {
+        var gi = (H > 76 && W > 60) ? glyph(NAME_ICON[it.name]) : null;
+        if (gi) {
+          ctx.drawImage(gi, cx - 13, cy - 38, 26, 26);
+          ctx.fillText(it.name, cx, cy + 4);
+          ctx.font = '12px ' + FONT; ctx.fillStyle = 'rgba(28,28,30,0.72)'; ctx.fillText(it.w + '×' + it.d, cx, cy + 21);
+        } else if (H > 38) {
           ctx.fillText(it.name, cx, cy - 8);
           ctx.font = '12px ' + FONT; ctx.fillStyle = 'rgba(28,28,30,0.72)'; ctx.fillText(it.w + '×' + it.d, cx, cy + 9);
         } else ctx.fillText(it.name, cx, cy);
         ctx.restore();
       }
     });
+    // snap guides and distance to the walls while dragging
+    if (!forExport && drag && drag.moved) {
+      var dg = getItem(drag.id);
+      if (dg && isFurn(dg)) {
+        var gd = effDims(dg), gl = dg.x - gd.w / 2, gr = dg.x + gd.w / 2, gt = dg.y - gd.d / 2, gb = dg.y + gd.d / 2;
+        ctx.save();
+        ctx.strokeStyle = TH.blue; ctx.lineWidth = 1.2; ctx.setLineDash([5, 4]);
+        if (guides.x !== null) { var gp = w2p(guides.x, 0); ctx.beginPath(); ctx.moveTo(gp.x, view.oy - 12); ctx.lineTo(gp.x, view.oy + rd + 12); ctx.stroke(); }
+        if (guides.y !== null) { var gq = w2p(0, guides.y); ctx.beginPath(); ctx.moveTo(view.ox - 12, gq.y); ctx.lineTo(view.ox + rw + 12, gq.y); ctx.stroke(); }
+        ctx.setLineDash([]);
+        var cxs = w2p(dg.x, dg.y), hx = (gl <= state.room.w - gr) ? [view.ox, w2p(gl, 0).x, gl] : [w2p(gr, 0).x, view.ox + rw, state.room.w - gr];
+        var vy = (gt <= state.room.d - gb) ? [view.oy, w2p(0, gt).y, gt] : [w2p(0, gb).y, view.oy + rd, state.room.d - gb];
+        ctx.beginPath(); ctx.moveTo(hx[0], cxs.y); ctx.lineTo(hx[1], cxs.y); ctx.moveTo(cxs.x, vy[0]); ctx.lineTo(cxs.x, vy[1]); ctx.stroke();
+        ctx.restore();
+        if (hx[2] > 0.5) pillText(Math.round(hx[2]) + '', (hx[0] + hx[1]) / 2, cxs.y);
+        if (vy[2] > 0.5) pillText(Math.round(vy[2]) + '', cxs.x, (vy[0] + vy[1]) / 2);
+      }
+    }
     // size labels for the selected piece
     var sel = (!forExport && selectedId != null) ? getItem(selectedId) : null;
     if (sel && isFurn(sel)) {
@@ -754,6 +827,7 @@
     var busy = sheetPane || $('icWrap').classList.contains('on') || measureOpen() || (calib.stage === 'tapping');
     $('emptyCard').hidden = !(viewMode === 'plan' && state.items.length === 0 && !busy && !fromShare);
     $('photoEmpty').hidden = !(viewMode === 'photo' && !photo);
+    $('fitBtn').hidden = !(viewMode === 'plan' && zoom > 1.01);
     $('btnUndo').disabled = hist.length < 2;
   }
 
@@ -1119,6 +1193,9 @@
   cv.addEventListener('pointerdown', function (e) {
     $('menu').hidden = true;
     var r = cv.getBoundingClientRect(), px = e.clientX - r.left, py = e.clientY - r.top;
+    ptrs[e.pointerId] = { x: px, y: py };
+    if (viewMode === 'plan' && Object.keys(ptrs).length === 2) { startPinch(); return; }
+    if (Object.keys(ptrs).length > 2) return;
     if (viewMode === 'photo') {
       if (calib.stage === 'tapping') { addCalibPoint(px, py); return; }
       if (!cam) return;
@@ -1132,10 +1209,16 @@
       var w = toWorld(px, py);
       drag = { id: it.id, dx: it.x - w.x, dy: it.y - w.y, moved: false };
       capture(e);
-    } else { selectedId = null; drag = null; }
+    } else {
+      selectedId = null; drag = null;
+      if (viewMode === 'plan' && zoom > 1.01) { panDrag = { x: px, y: py, px: panX, py: panY }; capture(e); }
+    }
     render();
   });
   cv.addEventListener('pointermove', function (e) {
+    if (ptrs[e.pointerId]) { var rp = cv.getBoundingClientRect(); ptrs[e.pointerId] = { x: e.clientX - rp.left, y: e.clientY - rp.top }; }
+    if (gest) { updatePinch(); return; }
+    if (panDrag) { panX = panDrag.px + (ptrs[e.pointerId].x - panDrag.x); panY = panDrag.py + (ptrs[e.pointerId].y - panDrag.y); render(); return; }
     if (cdrag >= 0) {
       var r0 = cv.getBoundingClientRect();
       calib.pts[cdrag] = { x: clamp((e.clientX - r0.left - photoRect.x) / photoRect.w, -1, 2), y: clamp((e.clientY - r0.top - photoRect.y) / photoRect.h, -1, 2) };
@@ -1147,11 +1230,32 @@
     it.x = w.x + drag.dx; it.y = w.y + drag.dy;
     snapPos(it); drag.moved = true; render();
   });
-  function endDrag() {
+  var ptrs = {}, gest = null, panDrag = null;
+  function startPinch() {
+    var ids = Object.keys(ptrs), a = ptrs[ids[0]], b = ptrs[ids[1]];
+    var mid = { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
+    gest = { d0: Math.max(10, Math.hypot(a.x - b.x, a.y - b.y)), z0: zoom, w0: p2w(mid.x, mid.y), ids: ids };
+    drag = null; panDrag = null; cdrag = -1; guides.x = guides.y = null; render();
+  }
+  function updatePinch() {
+    var a = ptrs[gest.ids[0]], b = ptrs[gest.ids[1]]; if (!a || !b) return;
+    var mid = { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 }, dist = Math.hypot(a.x - b.x, a.y - b.y);
+    zoomAt(gest.z0 * dist / gest.d0, gest.w0, mid.x, mid.y); render();
+  }
+  function endDrag(e) {
+    if (e && e.pointerId != null) delete ptrs[e.pointerId];
+    if (gest) { if (Object.keys(ptrs).length < 2) gest = null; render(); return; }
+    if (panDrag) { if (Object.keys(ptrs).length === 0) panDrag = null; render(); return; }
     if (cdrag >= 0) { cdrag = -1; persistPhoto(); }
     if (drag && drag.moved) commit();
-    drag = null; render();
+    drag = null; guides.x = guides.y = null; render();
   }
+  cv.addEventListener('wheel', function (e) {
+    if (viewMode !== 'plan') return;
+    e.preventDefault();
+    var r = cv.getBoundingClientRect(), px = e.clientX - r.left, py = e.clientY - r.top;
+    zoomAt(zoom * Math.exp(-e.deltaY * 0.0016), p2w(px, py), px, py); render();
+  }, { passive: false });
   cv.addEventListener('pointerup', endDrag);
   cv.addEventListener('pointercancel', endDrag);
 
@@ -1359,10 +1463,11 @@
     else window.prompt('이 링크를 복사하세요', url);
   }
   function doPng() {
-    var prevSel = selectedId; selectedId = null; render(true);
+    var prevSel = selectedId, z0 = zoom, px0 = panX, py0 = panY;
+    selectedId = null; zoom = 1; panX = 0; panY = 0; render(true);
     var a = document.createElement('a'); a.download = 'spacewarp-layout.png'; a.href = exportUrl();
     document.body.appendChild(a); a.click(); a.remove();
-    selectedId = prevSel; render();
+    selectedId = prevSel; zoom = z0; panX = px0; panY = py0; render();
   }
   function doReset() {
     if (!state.items.length) { toast('지울 가구가 없어요'); return; }
@@ -1534,6 +1639,8 @@
   /* ================= init ================= */
   function init() {
     readTheme();
+    PALETTE.forEach(function (p) { NAME_ICON[p.name] = p.icon; });
+    $('fitBtn').addEventListener('click', resetZoom);
     var mq = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)');
     if (mq && mq.addEventListener) mq.addEventListener('change', function () { readTheme(); render(); });
     Array.prototype.forEach.call(document.querySelectorAll('[data-ic]'), function (el) { el.insertAdjacentHTML('afterbegin', iconSvg(el.getAttribute('data-ic'))); });

@@ -166,6 +166,9 @@
   #icCard .acts .btn { flex: 1; flex-direction: column; min-height: 62px; gap: 3px; font-size: 13px; font-weight: 500; }
   #icCard .acts .btn svg { width: 24px; height: 24px; }
 
+  .thumb { width: 72px; height: 72px; border-radius: 12px; object-fit: cover; background: var(--fill); display: block; margin: 0 0 10px; }
+  details summary { list-style: none; } details summary::-webkit-details-marker { display: none; }
+  textarea.field { font: inherit; line-height: 1.4; }
   /* ---- camera measure overlay ---- */
   #measure { position: fixed; inset: 0; z-index: 40; background: #101012; color: #fff; overflow: hidden; }
   #mVideo { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; background: #101012; }
@@ -343,7 +346,18 @@
   <div id="icCard" role="dialog" aria-label="가구 정보">
     <div class="grabber"></div>
     <div class="top"><h2 id="icTitle">치수</h2><button class="btn sm primary" id="icDone">완료</button></div>
+    <div class="card" id="icImport" hidden>
+      <div class="h" style="margin:0 0 8px">링크로 채우기</div>
+      <div style="display:flex;gap:8px"><input class="field" id="lkUrl" type="url" inputmode="url" placeholder="상품 링크를 붙여넣어요" aria-label="상품 링크" style="flex:1;min-width:0"><button class="btn" id="lkGo" style="min-height:46px">불러오기</button></div>
+      <p class="note" id="lkStatus" hidden></p>
+      <details style="margin-top:10px"><summary style="font-size:15px;color:var(--blue);cursor:pointer">치수를 못 찾았다면: 상품 설명 붙여넣기</summary>
+        <textarea class="field" id="lkPaste" rows="3" placeholder="상품 상세의 사이즈/규격 글을 복사해서 붙여넣어요. 예: 가로 120cm 세로 60cm 높이 75cm" style="height:auto;padding:10px 14px;margin-top:8px;resize:vertical"></textarea>
+        <button class="btn sm" id="lkParse" style="margin-top:8px">치수 찾기</button>
+      </details>
+      <p class="note">링크 주소는 페이지를 읽어 주는 외부 서비스(r.jina.ai)로 전달돼요. 로그인이 필요한 페이지나 접속을 막는 쇼핑몰은 읽지 못할 수 있어요.</p>
+    </div>
     <div class="card">
+      <img id="icThumb" class="thumb" alt="" hidden>
       <input class="field" id="icName" type="text" maxlength="30" placeholder="이름 (예: 5단 서랍장)" aria-label="이름">
       <div class="row2" style="margin-top:8px"><span class="lb">가로</span><span><span class="stepper" data-step="5" data-min="5" data-max="1000"><button type="button" data-d="-5" data-t="icW" aria-label="가로 줄이기">−</button><input type="number" id="icW" inputmode="numeric"><button type="button" data-d="5" data-t="icW" aria-label="가로 늘리기">+</button></span><span class="unit">cm</span></span></div>
       <div class="row2"><span class="lb">세로</span><span><span class="stepper"><button type="button" data-d="-5" data-t="icD" aria-label="세로 줄이기">−</button><input type="number" id="icD" inputmode="numeric"><button type="button" data-d="5" data-t="icD" aria-label="세로 늘리기">+</button></span><span class="unit">cm</span></span></div>
@@ -410,6 +424,7 @@
     photo: '<rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="9" cy="10" r="1.6"/><path d="m4 18 5-5 4 4 3-3 4 4"/>',
     plus: '<path d="M12 5v14M5 12h14"/>',
     fit: '<path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/>',
+    link: '<path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/>',
     ruler: '<rect x="3" y="8" width="18" height="8" rx="1.5"/><path d="M7 8v3M11 8v4M15 8v3M19 8v4"/>',
     bed: '<path d="M3 18V7"/><path d="M21 18v-5a3 3 0 0 0-3-3H9v8"/><path d="M3 15h18"/><circle cx="6.5" cy="11.5" r="1.8"/>',
     desk: '<rect x="3" y="8" width="18" height="3" rx="1"/><path d="M5 11v9M19 11v9"/><path d="M14 11v4h5"/>',
@@ -482,7 +497,7 @@
         rot: r.rot ? 1 : 0,
         x: clamp(parseFloat(r.x) || 0, -100, out.room.w + 100),
         y: clamp(parseFloat(r.y) || 0, -100, out.room.d + 100),
-        color: cleanColor(r.color), link: safeLink(r.link),
+        color: cleanColor(r.color), link: safeLink(r.link), img: safeLink(r.img),
         kind: (r.kind === 'door' || r.kind === 'win') ? r.kind : 'furn',
         price: num(r.price, 0, 100000000, 0)
       });
@@ -533,7 +548,7 @@
       room: state.room,
       items: state.items.map(function (it) {
         return { name: it.name, w: it.w, d: it.d, h: it.h, rot: it.rot, x: Math.round(it.x), y: Math.round(it.y),
-                 color: it.color, link: it.link, kind: it.kind, price: it.price };
+                 color: it.color, link: it.link, img: it.img || '', kind: it.kind, price: it.price };
       })
     };
   }
@@ -1285,7 +1300,7 @@
       id: state.nextId++, name: cleanName(spec.name),
       w: num(spec.w, 5, 1000, 50), d: num(spec.d, 5, 1000, 50), h: num(spec.h, 0, 500, 50),
       rot: 0, x: state.room.w / 2 + n * 15, y: state.room.d / 2 + n * 15,
-      color: cleanColor(spec.color), link: safeLink(spec.link || ''),
+      color: cleanColor(spec.color), link: safeLink(spec.link || ''), img: safeLink(spec.img || ''),
       kind: (spec.kind === 'door' || spec.kind === 'win') ? spec.kind : 'furn', price: num(spec.price, 0, 100000000, 0)
     };
     if (!isFurn(it)) { it.x = state.room.w * (it.kind === 'door' ? 0.25 : 0.75); it.y = it.d / 2; }
@@ -1321,6 +1336,10 @@
     $('palette').appendChild(b);
   });
   (function () {
+    var l = document.createElement('button'); l.className = 'tile dashed'; l.setAttribute('aria-label', '링크로 가져오기');
+    l.innerHTML = iconSvg('link') + '<b>링크로 가져오기</b><small>상품 주소</small>';
+    l.addEventListener('click', function () { openItemCard('new', { link: true }); });
+    $('palette').appendChild(l);
     var b = document.createElement('button'); b.className = 'tile dashed'; b.setAttribute('aria-label', '직접 만들기');
     b.innerHTML = iconSvg('plus') + '<b>직접 만들기</b><small>치수 입력</small>';
     b.addEventListener('click', function () { openItemCard('new'); });
@@ -1337,6 +1356,12 @@
       total += it.price || 0; if (!it.price) missing++;
       var row = document.createElement('div'); row.className = 'cartrow';
       var sw = document.createElement('div'); sw.className = 'sw'; sw.style.background = it.color;
+      if (it.img) {
+        var si = document.createElement('img'); si.src = it.img; si.alt = ''; si.referrerPolicy = 'no-referrer';
+        si.style.cssText = 'width:100%;height:100%;object-fit:cover;border-radius:9px;display:block';
+        si.onerror = function () { si.remove(); };
+        sw.appendChild(si);
+      }
       var nm = document.createElement('div'); nm.className = 'nm';
       var b = document.createElement('b'); b.textContent = it.name;
       var sm = document.createElement('small'); sm.textContent = it.w + '×' + it.d + '×' + it.h + ' cm';
@@ -1404,17 +1429,20 @@
 
   /* ================= item card ================= */
   var icMode = 'edit';
-  function openItemCard(mode) {
+  function openItemCard(mode, opt) {
+    opt = opt || {};
     icMode = mode;
     var it = mode === 'edit' && selectedId != null ? getItem(selectedId) : null;
     if (mode === 'edit' && !it) return;
-    $('icTitle').textContent = mode === 'edit' ? '치수와 정보' : '직접 만들기';
+    $('icTitle').textContent = mode === 'edit' ? '치수와 정보' : (opt.link ? '링크로 가져오기' : '직접 만들기');
+    setThumb(it ? it.img : '');
+    $('icImport').hidden = mode !== 'new'; $('lkUrl').value = ''; $('lkPaste').value = ''; lkSay('');
     $('icName').value = it ? it.name : ''; $('icW').value = it ? it.w : 80; $('icD').value = it ? it.d : 40; $('icH').value = it ? it.h : 100;
     $('icPrice').value = it && it.price ? it.price : ''; $('icLink').value = it ? it.link : '';
     $('icEditActs').hidden = mode !== 'edit'; $('icPlace').hidden = mode !== 'new';
     var a = $('icOpen'); if (it && it.link) { a.href = it.link; a.hidden = false; } else a.hidden = true;
     $('icWrap').classList.add('on'); $('icWrap').setAttribute('aria-hidden', 'false'); updateChrome();
-    if (mode === 'new') setTimeout(function () { $('icName').focus(); }, 380);
+    if (mode === 'new') setTimeout(function () { (opt.link ? $('lkUrl') : $('icName')).focus(); }, 380);
   }
   function closeItemCard() { $('icWrap').classList.remove('on'); $('icWrap').setAttribute('aria-hidden', 'true'); if (document.activeElement && document.activeElement.blur) document.activeElement.blur(); updateChrome(); render(); }
   function editField(fn) { if (icMode === 'edit') withSel(fn); }
@@ -1436,7 +1464,7 @@
   $('icDel').addEventListener('click', deleteSel);
   $('icPlace').addEventListener('click', function () {
     var link = $('icLink').value.trim(); if (link && !safeLink(link)) { toast('http:// 또는 https:// 로 시작하는 링크만 저장돼요'); link = ''; }
-    addItem({ name: $('icName').value.trim() || '내 가구', w: $('icW').value, d: $('icD').value, h: $('icH').value, price: $('icPrice').value, link: link,
+    addItem({ name: $('icName').value.trim() || '내 가구', w: $('icW').value, d: $('icD').value, h: $('icH').value, price: $('icPrice').value, link: link, img: icImgUrl,
               color: CUSTOM_COLORS[state.items.length % CUSTOM_COLORS.length] });
     closeSheet(); closeItemCard();
   });
@@ -1444,6 +1472,129 @@
   $('fDup').addEventListener('click', dupSel);
   $('fDel').addEventListener('click', deleteSel);
   $('fEdit').addEventListener('click', function () { openItemCard('edit'); });
+
+  /* ---- fill a new piece from a product link (or pasted description) ---- */
+  var icImgUrl = '';
+  function setThumb(url) {
+    var im = $('icThumb');
+    icImgUrl = safeLink(url || '');
+    if (icImgUrl) { im.referrerPolicy = 'no-referrer'; im.src = icImgUrl; im.hidden = false; }
+    else { im.removeAttribute('src'); im.hidden = true; }
+  }
+  $('icThumb').addEventListener('error', function () { $('icThumb').hidden = true; icImgUrl = ''; });
+  function lkSay(msg, bad) { var el = $('lkStatus'); el.textContent = msg; el.style.color = bad ? 'var(--red)' : ''; el.hidden = !msg; }
+
+  function normText(t) {
+    return String(t == null ? '' : t).replace(/https?:\/\/\S+/g, ' ').replace(/[×✕＊*ｘＸX]/g, 'x').replace(/，/g, ',').slice(0, 60000);
+  }
+  function numOf(s) { return parseFloat(String(s).replace(/,/g, '')); }
+  function toCmList(vals, units) {
+    var unit = '';
+    for (var i = 0; i < units.length; i++) if (units[i]) { unit = String(units[i]).toLowerCase(); break; }
+    var mx = Math.max.apply(null, vals);
+    return vals.map(function (v) { return unit === 'mm' ? v / 10 : unit === 'm' ? v * 100 : unit === 'cm' ? v : (mx > 300 ? v / 10 : v); });
+  }
+  function okCm(v) { return v >= 3 && v <= 600; }
+  function parseDims(raw) {
+    var t = normText(raw), res = { w: null, d: null, h: null, how: '' }, m;
+    var NUM = '(\\d{1,4}(?:[.,]\\d{1,2})?)(?!\\d)', U = '(?:\\s*(mm|cm|m)(?![a-z]))?';
+    var NOIN = '(?!\\s*(?:in\\b|inch|인치|["″]))';
+    function lab(names) {
+      var mm = new RegExp('(?:' + names + ')\\s*[:：=]?\\s*' + NUM + U + NOIN, 'i').exec(t);
+      return mm ? { v: numOf(mm[1]), u: mm[2] } : null;
+    }
+    var lw = lab('가로|폭|너비|width|(?<![a-z])w'), ld = lab('세로|깊이|depth|length|(?<![a-z])d|(?<![a-z])l'), lh = lab('높이|height|(?<![a-z])h');
+    if (lw && ld && lh) {
+      var c = toCmList([lw.v, ld.v, lh.v], [lw.u, ld.u, lh.u]);
+      if (c.every(okCm)) { res.w = c[0]; res.d = c[1]; res.h = c[2]; res.how = 'label'; return finishDims(res); }
+    }
+    var re3 = new RegExp(NUM + U + '\\s*x\\s*' + NUM + U + '\\s*x\\s*' + NUM + U, 'gi');
+    while ((m = re3.exec(t))) {
+      var c3 = toCmList([numOf(m[1]), numOf(m[3]), numOf(m[5])], [m[2], m[4], m[6]]);
+      if (c3.every(okCm)) { res.w = c3[0]; res.d = c3[1]; res.h = c3[2]; res.how = 'triple'; return finishDims(res); }
+    }
+    var re2 = new RegExp(NUM + U + '\\s*x\\s*' + NUM + U, 'gi');
+    while ((m = re2.exec(t))) {
+      var c2 = toCmList([numOf(m[1]), numOf(m[3])], [m[2], m[4]]);
+      if (c2.every(okCm) && c2[0] >= 15 && c2[1] >= 15) {
+        res.w = c2[0]; res.d = c2[1]; res.how = 'double';
+        if (lh) { var ch = toCmList([lh.v], [lh.u, m[2], m[4]])[0]; if (okCm(ch)) res.h = ch; }
+        return finishDims(res);
+      }
+    }
+    var any = false;
+    [['w', lw], ['d', ld], ['h', lh]].forEach(function (p) {
+      if (p[1]) { var cv2 = toCmList([p[1].v], [p[1].u])[0]; if (okCm(cv2)) { res[p[0]] = cv2; any = true; } }
+    });
+    if (any) res.how = 'partial';
+    return finishDims(res);
+  }
+  function finishDims(r) { ['w', 'd', 'h'].forEach(function (k) { if (r[k] != null) r[k] = Math.round(r[k]); }); return r; }
+  var TYPE_GUESS = [
+    [/침대|베드|bed\b|매트리스/i, { w: 150, d: 200, h: 45 }],
+    [/소파|쇼파|sofa|카우치/i, { w: 200, d: 90, h: 80 }],
+    [/식탁|다이닝|dining/i, { w: 140, d: 80, h: 75 }],
+    [/책상|데스크|desk/i, { w: 120, d: 60, h: 73 }],
+    [/테이블|table/i, { w: 100, d: 60, h: 45 }],
+    [/의자|체어|chair|스툴|stool/i, { w: 45, d: 45, h: 85 }],
+    [/책장|선반|서가|shelf|bookcase/i, { w: 80, d: 30, h: 180 }],
+    [/옷장|행거|wardrobe/i, { w: 100, d: 55, h: 180 }],
+    [/서랍|수납|장식장|cabinet|drawer|tv ?장|티비장/i, { w: 80, d: 40, h: 100 }],
+    [/조명|스탠드|램프|lamp|light/i, { w: 40, d: 40, h: 150 }],
+    [/거울|mirror/i, { w: 50, d: 5, h: 150 }]
+  ];
+  function guessType(text) { for (var i = 0; i < TYPE_GUESS.length; i++) if (TYPE_GUESS[i][0].test(text)) return TYPE_GUESS[i][1]; return null; }
+  function parseReaderText(txt) {
+    txt = String(txt || '').slice(0, 300000);
+    var out = { title: '', image: '', price: 0, error: '' };
+    var wm = /^Warning:\s*Target URL returned error\s*(\d+)/m.exec(txt); if (wm) out.error = wm[1];
+    var tm = /^Title:\s*(.+)$/m.exec(txt); if (tm) out.title = tm[1].replace(/\s+[|\-–]\s+[^|\-–]{1,20}$/, '').trim();
+    var imgRe = /!\[[^\]]*\]\((https?:\/\/[^)\s]+)\)/g, im;
+    while ((im = imgRe.exec(txt))) { if (!/logo|icon|sprite|banner|\.svg|\.gif|blank|loading/i.test(im[1])) { out.image = im[1]; break; } }
+    var pm = /([0-9]{1,3}(?:,[0-9]{3})+)\s*원/.exec(txt); if (pm) out.price = numOf(pm[1]);
+    return out;
+  }
+  function fetchReader(url) {
+    var ctrl = typeof AbortController !== 'undefined' ? new AbortController() : null;
+    var timer = setTimeout(function () { if (ctrl) ctrl.abort(); }, 15000);
+    return fetch('https://r.jina.ai/' + url, { signal: ctrl ? ctrl.signal : undefined, headers: { 'Accept': 'text/plain' } }).then(function (r) {
+      clearTimeout(timer); if (!r.ok) throw new Error('http ' + r.status); return r.text();
+    }, function (e) { clearTimeout(timer); throw e; });
+  }
+  function fillDims(d) {
+    if (d.w != null) $('icW').value = d.w; if (d.d != null) $('icD').value = d.d; if (d.h != null) $('icH').value = d.h;
+  }
+  $('lkGo').addEventListener('click', function () {
+    var url = safeLink($('lkUrl').value);
+    if (!url) { lkSay('http:// 또는 https:// 로 시작하는 상품 링크를 넣어 주세요', true); return; }
+    var btn = $('lkGo'); btn.disabled = true; lkSay('상품 정보를 읽는 중이에요. 최대 15초 걸려요.');
+    fetchReader(url).then(function (txt) {
+      var info = parseReaderText(txt);
+      if (info.error) { lkSay('이 쇼핑몰은 읽지 못했어요 (접속 제한 ' + info.error + '). 아래에 상품 설명을 붙여넣거나 치수를 직접 입력해 주세요.', true); $('icLink').value = url; return; }
+      var found = [], dims = parseDims(info.title + '\n' + txt);
+      if (info.title) { $('icName').value = cleanName(info.title); found.push('이름'); }
+      if (info.price) { $('icPrice').value = info.price; found.push('가격'); }
+      if (info.image) { setThumb(info.image); if (icImgUrl) found.push('사진'); }
+      $('icLink').value = url;
+      var how;
+      if (dims.w != null && dims.d != null) { fillDims(dims); found.push('치수'); how = '치수는 상품 글에서 찾은 값이에요. 다른 상품 글이 섞였을 수 있으니 꼭 확인해 주세요.'; }
+      else {
+        var g = guessType(info.title);
+        if (g) { fillDims(g); how = '치수는 못 찾아서 가구 종류로 추정한 값이에요. 실제 치수로 고쳐 주세요.'; }
+        else how = '치수를 못 찾았어요. 아래에 상품 설명을 붙여넣거나 직접 입력해 주세요.';
+      }
+      lkSay((found.length ? '찾은 정보: ' + found.join(', ') + '. ' : '찾은 정보가 없어요. ') + how, !found.length);
+    }).catch(function () {
+      lkSay('링크를 읽지 못했어요 (인터넷 연결이나 쇼핑몰 제한 때문일 수 있어요). 아래에 상품 설명을 붙여넣거나 치수를 직접 입력해 주세요.', true);
+      $('icLink').value = url;
+    }).then(function () { btn.disabled = false; });
+  });
+  $('lkParse').addEventListener('click', function () {
+    var d = parseDims($('lkPaste').value);
+    if (d.w == null && d.d == null && d.h == null) { lkSay("치수를 못 찾았어요. '가로 120cm 세로 60cm 높이 75cm' 또는 '1200x600x750mm' 같은 글이 필요해요.", true); return; }
+    fillDims(d);
+    lkSay('치수를 찾았어요: 가로 ' + (d.w != null ? d.w : '-') + ' · 세로 ' + (d.d != null ? d.d : '-') + ' · 높이 ' + (d.h != null ? d.h : '-') + ' cm. 맞는지 확인해 주세요.');
+  });
 
   /* ================= top bar actions ================= */
   $('segPlan').addEventListener('click', function () { setMode('plan'); });

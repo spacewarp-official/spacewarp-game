@@ -313,6 +313,16 @@
       <div class="card">
         <div style="display:flex;gap:8px"><input class="field" id="apQuery" type="search" placeholder="아파트 이름 또는 주소" aria-label="아파트 이름 또는 주소" style="flex:1;min-width:0"><button class="btn" id="apSearch" style="min-height:46px">평면도 찾기</button></div>
         <p class="note">검색 결과에서 내 평형의 평면도를 캡처하거나 저장해서 아래에서 올려요. 올린 평면도 위에 가구를 놓을 수 있어요.</p>
+        <div class="h" style="margin:14px 0 6px;font-size:13px">평면도가 없을 때: 전용면적으로 어림하기</div>
+        <div class="chips">
+          <button class="chip" data-area="49">49㎡</button>
+          <button class="chip" data-area="59">59㎡</button>
+          <button class="chip" data-area="74">74㎡</button>
+          <button class="chip" data-area="84">84㎡</button>
+          <button class="chip" data-area="101">101㎡</button>
+          <button class="chip" data-area="114">114㎡</button>
+        </div>
+        <p class="note" id="areaNote">집 전체를 직사각형으로 어림해서 방 크기를 정해요. 실제 모양과 달라서 대략적인 크기 확인용이에요.</p>
         <button class="btn block" id="apUpload" data-ic="photo" style="margin-top:10px">평면도 이미지 올리기</button>
         <div id="apOpts" hidden>
           <p class="note" id="apState" style="margin-top:10px"></p>
@@ -1438,6 +1448,13 @@
   $('rD').addEventListener('change', onRoomChange);
   Array.prototype.forEach.call(document.querySelectorAll('.chip[data-pw]'), function (c) {
     c.addEventListener('click', function () { $('rW').value = c.getAttribute('data-pw'); $('rD').value = c.getAttribute('data-pd'); onRoomChange(); });
+  });
+  Array.prototype.forEach.call(document.querySelectorAll('.chip[data-area]'), function (c) {
+    c.addEventListener('click', function () {
+      var a = parseFloat(c.getAttribute('data-area')), w = Math.sqrt(a * 1.4) * 100, d = a * 10000 / w;
+      $('rW').value = Math.round(w / 10) * 10; $('rD').value = Math.round(d / 10) * 10; onRoomChange();
+      $('areaNote').textContent = '전용 ' + a + '㎡를 가로 ' + $('rW').value + ' x 세로 ' + $('rD').value + 'cm 직사각형으로 어림했어요. 실제 평면과 달라요. 정확하게 하려면 평면도를 올려주세요.';
+    });
   });
   $('rFocal').addEventListener('input', function () { calib.fscale = clamp((parseInt(this.value, 10) || 100) / 100, 0.5, 2); updatePhotoUi(); render(); });
   $('rFocal').addEventListener('change', persistPhoto);

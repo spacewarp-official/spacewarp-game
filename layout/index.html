@@ -1,0 +1,1185 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="robots" content="noindex, nofollow">
+<title>SPACEWARP 가구배치</title>
+<style>
+  :root {
+    --bg: #f4f5f7; --panel: #ffffff; --ink: #1d2433; --sub: #5b6475;
+    --brand: #4f6fdc; --brand-ink: #ffffff; --line: #d9dde5;
+    --warn: #d6403a; --warn2: #e0892b;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; }
+  body {
+    font-family: -apple-system, "Apple SD Gothic Neo", "Malgun Gothic", "Noto Sans KR", sans-serif;
+    background: var(--bg); color: var(--ink); font-size: 16px;
+    display: flex; flex-direction: column; overflow: hidden;
+  }
+  header {
+    display: flex; align-items: center; gap: 8px; padding: 8px 12px;
+    background: var(--panel); border-bottom: 1px solid var(--line); flex-wrap: wrap;
+  }
+  header h1 { font-size: 17px; margin: 0 6px 0 0; }
+  header { gap: 6px; padding: 6px 10px; }
+  header button { min-height: 38px; padding: 0 10px; font-size: 15px; }
+  button {
+    font: inherit; min-height: 44px; padding: 0 14px; border-radius: 10px;
+    border: 1px solid var(--line); background: var(--panel); color: var(--ink); cursor: pointer;
+  }
+  button.primary { background: var(--brand); color: var(--brand-ink); border-color: var(--brand); }
+  button.danger { color: var(--warn); }
+  button:disabled { opacity: .4; cursor: default; }
+  button.tab.active { background: var(--ink); color: #fff; border-color: var(--ink); }
+  #stage { flex: 1; min-height: 160px; position: relative; background: #e9ebf0; touch-action: none; }
+  canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; }
+  #toast {
+    position: absolute; left: 50%; top: 12px; transform: translateX(-50%);
+    background: rgba(29,36,51,.92); color: #fff; padding: 10px 16px; border-radius: 10px;
+    font-size: 15px; display: none; max-width: 90%; text-align: center; z-index: 5;
+  }
+  #warnbar {
+    position: absolute; left: 8px; right: 8px; bottom: 8px; background: #fff3f2;
+    border: 1px solid var(--warn); color: var(--warn); border-radius: 10px;
+    padding: 8px 12px; font-size: 15px; display: none;
+  }
+  #bottom { max-height: 40vh; overflow-y: auto; border-top: 1px solid var(--line); background: var(--panel); }
+  #selbar input[type=number] { width: 84px; }
+  #selbar input[type=text] { width: 150px; }
+  #selbar input.wide { width: 100%; min-width: 180px; }
+  #selbar label.grow { flex: 1; min-width: 180px; }
+  #sheet { background: var(--panel); }
+  #tabs { display: flex; gap: 6px; padding: 8px 12px 0; position: sticky; top: 0; background: var(--panel); }
+  #tabs { overflow-x: auto; }
+  button.tab { white-space: nowrap; padding: 0 10px; flex: none; }
+  .pane { display: none; padding: 10px 12px 14px; }
+  .pane.active { display: block; }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip { min-height: 52px; padding: 0 14px; text-align: left; line-height: 1.25; }
+  .chip small { display: block; color: var(--sub); font-size: 13px; }
+  .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: flex-end; margin-bottom: 8px; }
+  label { display: flex; flex-direction: column; font-size: 14px; color: var(--sub); gap: 4px; }
+  input[type=text], input[type=number], input[type=url] {
+    font: inherit; min-height: 44px; padding: 0 10px; border: 1px solid var(--line);
+    border-radius: 10px; width: 120px; background: #fff; color: var(--ink);
+  }
+  input.wide { width: 220px; }
+  .hint { color: var(--sub); font-size: 14px; margin: 6px 0 0; }
+  #selbar { display: none; padding: 8px 12px; background: #eef2ff; border-top: 1px solid var(--line); }
+  #selbar.on { display: block; }
+  #selbar .row { margin-bottom: 0; }
+  a.link { color: var(--brand); font-size: 15px; }
+  .cartrow { display: flex; gap: 8px; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--line); }
+  .cartrow .nm { flex: 1; cursor: pointer; }
+  .cartrow .nm small { display: block; color: var(--sub); font-size: 13px; }
+  .cartrow .pr { min-width: 90px; text-align: right; }
+  .cartrow button { min-height: 36px; padding: 0 10px; }
+  #cartTotal { font-weight: bold; font-size: 18px; padding: 10px 0; }
+  #sharebar {
+    position: absolute; left: 8px; right: 8px; top: 8px; background: #eef2ff; border: 1px solid var(--brand);
+    border-radius: 10px; padding: 8px 10px; font-size: 15px; display: none; gap: 8px; align-items: center; flex-wrap: wrap; z-index: 4;
+  }
+  #sharebar button { min-height: 36px; padding: 0 10px; }
+  button.mode.active { background: var(--ink); color: #fff; border-color: var(--ink); }
+  #calibbar {
+    position: absolute; left: 8px; right: 8px; top: 8px; background: #fff8e6; border: 1px solid var(--warn2);
+    border-radius: 10px; padding: 8px 10px; font-size: 15px; display: none; gap: 8px; align-items: center; flex-wrap: wrap; z-index: 4;
+  }
+  #calibbar button { min-height: 36px; padding: 0 10px; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>SPACEWARP 가구배치</h1>
+  <button id="btnPlan" class="mode active">평면</button>
+  <button id="btnPhoto" class="mode">사진</button>
+  <button id="btnUndo" title="되돌리기 (Ctrl+Z)">되돌리기</button>
+  <button id="btnShare" class="primary" title="공유 링크 복사">링크 공유</button>
+  <button id="btnPng" title="이미지로 저장">이미지</button>
+  <button id="btnReset" class="danger" title="놓은 가구 모두 지우기">지우기</button>
+</header>
+
+<div id="stage">
+  <canvas id="cv"></canvas>
+  <div id="toast"></div>
+  <div id="warnbar"></div>
+  <div id="calibbar">
+    <span id="cbText"></span>
+    <button id="cbGo" class="primary">찍기 시작</button>
+    <button id="cbCancel">취소</button>
+  </div>
+  <div id="sharebar">
+    <span>공유받은 배치입니다. 내 저장본은 그대로 있습니다.</span>
+    <button id="shBack">내 저장본 보기</button>
+    <button id="shImport">내 저장본으로 가져오기</button>
+  </div>
+</div>
+
+<div id="bottom">
+<div id="selbar">
+  <div class="row">
+    <label>이름<input type="text" id="sName"></label>
+    <label>가로(cm)<input type="number" id="sW" min="5" max="1000" step="1" inputmode="numeric"></label>
+    <label>세로(cm)<input type="number" id="sD" min="5" max="1000" step="1" inputmode="numeric"></label>
+    <label>높이(cm)<input type="number" id="sH" min="0" max="500" step="1" inputmode="numeric"></label>
+    <label>가격(원)<input type="number" id="sPrice" min="0" max="100000000" step="1000" inputmode="numeric" style="width:120px"></label>
+    <label class="grow">상품 링크(선택)<input type="url" id="sLink" class="wide" placeholder="https://"></label>
+  </div>
+  <div class="row" style="margin-top:8px">
+    <button id="bRot">90° 회전</button>
+    <button id="bDup">복제</button>
+    <button id="bDel" class="danger">삭제</button>
+    <a id="bOpen" class="link" target="_blank" rel="noopener noreferrer" style="display:none">상품 페이지 열기</a>
+  </div>
+</div>
+
+<div id="sheet">
+  <div id="tabs">
+    <button class="tab active" data-pane="pAdd">가구 추가</button>
+    <button class="tab" data-pane="pCustom">내 가구 만들기</button>
+    <button class="tab" data-pane="pCart">장바구니</button>
+    <button class="tab" data-pane="pRoom">방 설정</button>
+  </div>
+
+  <div class="pane active" id="pAdd">
+    <div class="chips" id="palette"></div>
+    <p class="hint">누르면 방 가운데에 놓입니다. 치수는 흔한 기본값이라 놓은 뒤 실제 치수로 고쳐 주세요.</p>
+  </div>
+
+  <div class="pane" id="pCustom">
+    <div class="row">
+      <label>이름<input type="text" id="cName" class="wide" placeholder="예: 5단 서랍장"></label>
+      <label>가로(cm)<input type="number" id="cW" value="80" min="5" max="1000" inputmode="numeric"></label>
+      <label>세로(cm)<input type="number" id="cD" value="40" min="5" max="1000" inputmode="numeric"></label>
+      <label>높이(cm)<input type="number" id="cH" value="100" min="0" max="500" inputmode="numeric"></label>
+      <label>가격(원)<input type="number" id="cPrice" min="0" max="100000000" step="1000" inputmode="numeric" placeholder="선택"></label>
+    </div>
+    <div class="row">
+      <label>상품 링크(선택)<input type="url" id="cLink" class="wide" placeholder="https://"></label>
+      <button id="cAdd" class="primary">방에 놓기</button>
+    </div>
+    <p class="hint">쇼핑몰 상품 페이지의 치수를 보고 직접 입력하세요. 링크는 공유 링크에 같이 저장됩니다.</p>
+  </div>
+
+  <div class="pane" id="pCart">
+    <div id="cartList"></div>
+    <div id="cartTotal"></div>
+    <div class="row"><button id="cartCopy">목록 복사</button></div>
+    <p class="hint">방에 놓은 가구가 자동으로 모입니다. 가격은 가구를 눌러 선택한 뒤 직접 입력하세요. 합계는 입력한 가격만 더한 값이라 실제 구매가와 다를 수 있습니다.</p>
+  </div>
+
+  <div class="pane" id="pRoom">
+    <div class="row">
+      <label>방 가로(cm)<input type="number" id="rW" min="100" max="3000" inputmode="numeric"></label>
+      <label>방 세로(cm)<input type="number" id="rD" min="100" max="3000" inputmode="numeric"></label>
+    </div>
+    <div class="row">
+      <label>참고 사진(선택)<input type="file" id="rPhoto" accept="image/*"></label>
+      <button id="rPhotoClear">사진 지우기</button>
+    </div>
+    <div class="row">
+      <button id="rCalib">바닥 모서리 다시 찍기</button>
+      <label>원근 보정(%)<input type="range" id="rFocal" min="50" max="200" step="5" value="100" style="width:170px"></label>
+    </div>
+    <p class="hint">사진 위 배치: 사진을 올린 뒤 바닥의 네 모서리를 먼쪽 왼쪽 → 먼쪽 오른쪽 → 가까운쪽 오른쪽 → 가까운쪽 왼쪽 순서로 탭하세요. 먼쪽 벽 길이를 방 가로에, 옆 벽 길이를 방 세로에 입력해야 합니다. 가구가 사진 속에서 기울어져 보이면 원근 보정을 조절하세요. 사진은 이 기기에만 저장되고 공유 링크에는 들어가지 않습니다. 현재는 직사각형 방만 지원합니다.</p>
+  </div>
+</div>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  var STORE_KEY = 'spacewarp_layout_v1';
+  var SHARE_KEY = 'spacewarp_layout_shared_v1';
+  var fromShare = false, shareToken = '';
+  var PALETTE = [
+    { name: '침대',   w: 150, d: 200, h: 45,  color: '#9db4f0' },
+    { name: '소파',   w: 200, d: 90,  h: 80,  color: '#f0b79d' },
+    { name: '책상',   w: 120, d: 60,  h: 73,  color: '#c7e0a8' },
+    { name: '의자',   w: 45,  d: 45,  h: 85,  color: '#f0d99d' },
+    { name: '선반',   w: 80,  d: 30,  h: 180, color: '#d3b8e8' },
+    { name: '주방',   w: 180, d: 60,  h: 85,  color: '#a8dde0' },
+    { name: '조명',   w: 40,  d: 40,  h: 150, color: '#f5ec9a' },
+    { name: '문',     w: 90,  d: 10,  h: 210, color: '#b98a5a', kind: 'door' },
+    { name: '창문',   w: 150, d: 10,  h: 120, color: '#7ec8ee', kind: 'win' }
+  ];
+  var CUSTOM_COLORS = ['#b8d8ff', '#ffd1a8', '#c9f0c0', '#ffc2d6', '#e0d1ff', '#fff0a8'];
+
+  var state = { room: { w: 400, d: 300 }, items: [], nextId: 1 };
+  var selectedId = null;
+  var history = [];
+  var photo = null; // HTMLImageElement, not saved
+  var cv = document.getElementById('cv');
+  var ctx = cv.getContext('2d');
+  var view = { s: 1, ox: 0, oy: 0 };
+
+  function $(id) { return document.getElementById(id); }
+
+  // ---------- utils ----------
+  function clamp(v, lo, hi) { return Math.min(hi, Math.max(lo, v)); }
+  function num(v, lo, hi, dflt) {
+    var n = parseFloat(v);
+    if (!isFinite(n)) return dflt;
+    return clamp(Math.round(n), lo, hi);
+  }
+  function safeLink(s) {
+    if (typeof s !== 'string') return '';
+    s = s.trim();
+    if (s.length > 500) return '';
+    try {
+      var u = new URL(s);
+      if (u.protocol === 'http:' || u.protocol === 'https:') return u.href;
+    } catch (e) {}
+    return '';
+  }
+  function cleanName(s) {
+    return String(s == null ? '' : s).replace(/[\u0000-\u001f]/g, '').slice(0, 30) || '가구';
+  }
+  function cleanColor(s) {
+    return /^#[0-9a-fA-F]{6}$/.test(s) ? s : '#cccccc';
+  }
+  function effDims(it) { return it.rot ? { w: it.d, d: it.w } : { w: it.w, d: it.d }; }
+  function getItem(id) {
+    for (var i = 0; i < state.items.length; i++) if (state.items[i].id === id) return state.items[i];
+    return null;
+  }
+
+  // sanitize any state (from localStorage or URL hash: untrusted)
+  function sanitize(raw) {
+    if (!raw || typeof raw !== 'object') return null;
+    var room = raw.room || {};
+    var out = { room: { w: num(room.w, 100, 3000, 400), d: num(room.d, 100, 3000, 300) }, items: [], nextId: 1 };
+    var arr = Array.isArray(raw.items) ? raw.items.slice(0, 100) : [];
+    arr.forEach(function (r) {
+      if (!r || typeof r !== 'object') return;
+      var it = {
+        id: out.nextId++,
+        name: cleanName(r.name),
+        w: num(r.w, 5, 1000, 50), d: num(r.d, 5, 1000, 50), h: num(r.h, 0, 500, 50),
+        rot: r.rot ? 1 : 0,
+        x: clamp(parseFloat(r.x) || 0, -100, out.room.w + 100),
+        y: clamp(parseFloat(r.y) || 0, -100, out.room.d + 100),
+        color: cleanColor(r.color),
+        link: safeLink(r.link),
+        kind: (r.kind === 'door' || r.kind === 'win') ? r.kind : 'furn',
+        price: num(r.price, 0, 100000000, 0)
+      };
+      out.items.push(it);
+    });
+    return out;
+  }
+
+  // ---------- persistence ----------
+  function snapshot() { return JSON.stringify(state); }
+  function pushHistory() {
+    history.push(snapshot());
+    if (history.length > 60) history.shift();
+    $('btnUndo').disabled = history.length < 2;
+  }
+  function save() {
+    try {
+      if (fromShare) localStorage.setItem(SHARE_KEY, JSON.stringify({ h: shareToken, s: state }));
+      else localStorage.setItem(STORE_KEY, snapshot());
+    } catch (e) {}
+  }
+  function commit() { pushHistory(); save(); renderCart(); }
+
+  function b64urlEncode(str) {
+    var bytes = new TextEncoder().encode(str), bin = '';
+    for (var i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
+    return btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  }
+  function b64urlDecode(s) {
+    s = s.replace(/-/g, '+').replace(/_/g, '/');
+    while (s.length % 4) s += '=';
+    var bin = atob(s), bytes = new Uint8Array(bin.length);
+    for (var i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+    return new TextDecoder().decode(bytes);
+  }
+  function compactState() {
+    return {
+      room: state.room,
+      items: state.items.map(function (it) {
+        return { name: it.name, w: it.w, d: it.d, h: it.h, rot: it.rot,
+                 x: Math.round(it.x), y: Math.round(it.y), color: it.color, link: it.link,
+                 kind: it.kind, price: it.price };
+      })
+    };
+  }
+  function shareUrl() {
+    var base = location.href.split('#')[0];
+    return base + '#s=' + b64urlEncode(JSON.stringify(compactState()));
+  }
+
+  // ---------- toast ----------
+  var toastTimer = null;
+  function toast(msg) {
+    var t = $('toast'); t.textContent = msg; t.style.display = 'block';
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { t.style.display = 'none'; }, 2600);
+  }
+
+  // ---------- geometry ----------
+  function overlaps(a, b) {
+    var da = effDims(a), db = effDims(b);
+    return Math.abs(a.x - b.x) < (da.w + db.w) / 2 - 0.5 && Math.abs(a.y - b.y) < (da.d + db.d) / 2 - 0.5;
+  }
+  function isFurn(it) { return !it.kind || it.kind === 'furn'; }
+  // door swing area: a square (door width) on the room side of the door
+  function zoneRect(it) {
+    if (it.kind !== 'door') return null;
+    var L = it.w, T = it.d, z = { x0: 0, y0: 0, x1: 0, y1: 0 };
+    if (!it.rot) {
+      z.x0 = it.x - L / 2; z.x1 = it.x + L / 2;
+      if (it.y < state.room.d / 2) { z.y0 = it.y + T / 2; z.y1 = z.y0 + L; }
+      else { z.y1 = it.y - T / 2; z.y0 = z.y1 - L; }
+    } else {
+      z.y0 = it.y - L / 2; z.y1 = it.y + L / 2;
+      if (it.x < state.room.w / 2) { z.x0 = it.x + T / 2; z.x1 = z.x0 + L; }
+      else { z.x1 = it.x - T / 2; z.x0 = z.x1 - L; }
+    }
+    return z;
+  }
+  function hitsZone(z, it) {
+    var d = effDims(it);
+    return it.x - d.w / 2 < z.x1 - 0.5 && it.x + d.w / 2 > z.x0 + 0.5 &&
+           it.y - d.d / 2 < z.y1 - 0.5 && it.y + d.d / 2 > z.y0 + 0.5;
+  }
+  function outside(it) {
+    if (!isFurn(it)) return false;
+    var d = effDims(it);
+    return it.x - d.w / 2 < -0.5 || it.y - d.d / 2 < -0.5 ||
+           it.x + d.w / 2 > state.room.w + 0.5 || it.y + d.d / 2 > state.room.d + 0.5;
+  }
+  function problems() {
+    var res = { overlap: {}, out: {}, zone: {}, nOverlap: 0, nOut: 0, nZone: 0 };
+    var it = state.items;
+    for (var i = 0; i < it.length; i++) {
+      if (outside(it[i])) { res.out[it[i].id] = true; res.nOut++; }
+      if (!isFurn(it[i])) continue;
+      for (var j = i + 1; j < it.length; j++) {
+        if (isFurn(it[j]) && overlaps(it[i], it[j])) {
+          res.overlap[it[i].id] = true; res.overlap[it[j].id] = true; res.nOverlap++;
+        }
+      }
+      for (var k = 0; k < it.length; k++) {
+        var z = zoneRect(it[k]);
+        if (z && hitsZone(z, it[i])) { res.zone[it[i].id] = true; res.nZone++; }
+      }
+    }
+    return res;
+  }
+  function snapPos(it) {
+    var d = effDims(it), T = 8;
+    var l = it.x - d.w / 2, r = it.x + d.w / 2, t = it.y - d.d / 2, b = it.y + d.d / 2;
+    if (Math.abs(l) < T) it.x = d.w / 2;
+    else if (Math.abs(r - state.room.w) < T) it.x = state.room.w - d.w / 2;
+    if (Math.abs(t) < T) it.y = d.d / 2;
+    else if (Math.abs(b - state.room.d) < T) it.y = state.room.d - d.d / 2;
+    it.x = Math.round(it.x); it.y = Math.round(it.y);
+    it.x = clamp(it.x, -50, state.room.w + 50);
+    it.y = clamp(it.y, -50, state.room.d + 50);
+  }
+
+  // ---------- rendering ----------
+  var dpr = 1;
+  function resize() {
+    var r = cv.parentElement.getBoundingClientRect();
+    dpr = window.devicePixelRatio || 1;
+    cv.width = Math.max(1, Math.round(r.width * dpr));
+    cv.height = Math.max(1, Math.round(r.height * dpr));
+    render();
+  }
+  function computeView(cw, ch) {
+    var padX = 56, padTop = 44, padBottom = 28;
+    var s = Math.min((cw - padX * 2) / state.room.w, (ch - padTop - padBottom) / state.room.d);
+    if (!(s > 0)) s = 0.1;
+    view.s = s;
+    view.ox = (cw - state.room.w * s) / 2;
+    view.oy = padTop + (ch - padTop - padBottom - state.room.d * s) / 2;
+  }
+  function w2p(x, y) { return { x: view.ox + x * view.s, y: view.oy + y * view.s }; }
+  function p2w(px, py) { return { x: (px - view.ox) / view.s, y: (py - view.oy) / view.s }; }
+
+  function render(forExport) {
+    var cw = cv.width / dpr, ch = cv.height / dpr;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, cw, ch);
+    ctx.fillStyle = '#e9ebf0'; ctx.fillRect(0, 0, cw, ch);
+    if (viewMode === 'photo') { renderPhoto(cw, ch, forExport); return; }
+    computeView(cw, ch);
+    var s = view.s, rw = state.room.w * s, rd = state.room.d * s;
+
+    // room floor
+    ctx.fillStyle = '#ffffff'; ctx.fillRect(view.ox, view.oy, rw, rd);
+
+    // photo (reference)
+    if (photo && photo.complete && photo.naturalWidth) {
+      ctx.save();
+      ctx.beginPath(); ctx.rect(view.ox, view.oy, rw, rd); ctx.clip();
+      var k = Math.max(rw / photo.naturalWidth, rd / photo.naturalHeight);
+      var pw = photo.naturalWidth * k, ph = photo.naturalHeight * k;
+      ctx.globalAlpha = 0.35;
+      ctx.drawImage(photo, view.ox + (rw - pw) / 2, view.oy + (rd - ph) / 2, pw, ph);
+      ctx.restore();
+    }
+
+    // grid: 10cm faint (only if zoomed enough), 50cm medium, 100cm strong
+    ctx.save();
+    ctx.beginPath(); ctx.rect(view.ox, view.oy, rw, rd); ctx.clip();
+    function gridLines(step, color, width) {
+      ctx.strokeStyle = color; ctx.lineWidth = width; ctx.beginPath();
+      for (var gx = step; gx < state.room.w; gx += step) {
+        var px = Math.round(view.ox + gx * s) + 0.5; ctx.moveTo(px, view.oy); ctx.lineTo(px, view.oy + rd);
+      }
+      for (var gy = step; gy < state.room.d; gy += step) {
+        var py = Math.round(view.oy + gy * s) + 0.5; ctx.moveTo(view.ox, py); ctx.lineTo(view.ox + rw, py);
+      }
+      ctx.stroke();
+    }
+    if (10 * s >= 8) gridLines(10, 'rgba(0,0,0,0.05)', 1);
+    gridLines(50, 'rgba(0,0,0,0.10)', 1);
+    gridLines(100, 'rgba(0,0,0,0.22)', 1);
+    ctx.restore();
+
+    // walls
+    ctx.strokeStyle = '#1d2433'; ctx.lineWidth = 4;
+    ctx.strokeRect(view.ox, view.oy, rw, rd);
+
+    // dimension labels
+    ctx.fillStyle = '#1d2433'; ctx.font = 'bold 15px sans-serif';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
+    ctx.fillText(state.room.w + ' cm', view.ox + rw / 2, view.oy - 10);
+    ctx.save();
+    ctx.translate(view.ox - 12, view.oy + rd / 2); ctx.rotate(-Math.PI / 2);
+    ctx.textBaseline = 'bottom'; ctx.fillText(state.room.d + ' cm', 0, 0);
+    ctx.restore();
+
+    // items
+    var pr = problems();
+    state.items.forEach(function (it) {
+      var z = zoneRect(it);
+      if (!z) return;
+      var zp = w2p(z.x0, z.y0), zw = (z.x1 - z.x0) * s, zh = (z.y1 - z.y0) * s;
+      ctx.fillStyle = 'rgba(185,138,90,0.15)'; ctx.fillRect(zp.x, zp.y, zw, zh);
+      ctx.strokeStyle = 'rgba(185,138,90,0.9)'; ctx.lineWidth = 1.5; ctx.setLineDash([5, 4]);
+      ctx.strokeRect(zp.x, zp.y, zw, zh); ctx.setLineDash([]);
+      ctx.fillStyle = '#7a5530'; ctx.font = '12px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText('문 열림', zp.x + zw / 2, zp.y + zh / 2);
+    });
+    state.items.forEach(function (it) {
+      var d = effDims(it);
+      var W = Math.max(d.w * s, 6), H = Math.max(d.d * s, 6);
+      var c0 = w2p(it.x, it.y), p = { x: c0.x - W / 2, y: c0.y - H / 2 };
+      ctx.fillStyle = it.color; ctx.globalAlpha = 0.92;
+      ctx.fillRect(p.x, p.y, W, H); ctx.globalAlpha = 1;
+
+      var isSel = (!forExport && it.id === selectedId), bad = pr.overlap[it.id] || pr.zone[it.id], out = pr.out[it.id];
+      ctx.lineWidth = isSel ? 3 : 1.5;
+      ctx.strokeStyle = bad ? '#d6403a' : (out ? '#e0892b' : (isSel ? '#4f6fdc' : 'rgba(0,0,0,0.45)'));
+      if (out && !bad) ctx.setLineDash([6, 4]); else ctx.setLineDash([]);
+      ctx.strokeRect(p.x, p.y, W, H); ctx.setLineDash([]);
+      if (bad) { ctx.fillStyle = 'rgba(214,64,58,0.18)'; ctx.fillRect(p.x, p.y, W, H); }
+
+      // label (clipped to the rect)
+      ctx.save();
+      ctx.beginPath(); ctx.rect(p.x, p.y, W, H); ctx.clip();
+      ctx.fillStyle = '#1d2433'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.font = 'bold 14px sans-serif';
+      var cx = p.x + W / 2, cy = p.y + H / 2;
+      if (!isFurn(it)) {
+        /* door/window: drawn without a label */
+      } else if (H > 36) {
+        ctx.fillText(it.name, cx, cy - 8);
+        ctx.font = '13px sans-serif'; ctx.fillStyle = '#333';
+        ctx.fillText(it.w + '×' + it.d, cx, cy + 9);
+      } else {
+        ctx.fillText(it.name, cx, cy);
+      }
+      ctx.restore();
+    });
+
+    showWarn(pr, forExport);
+  }
+  function showWarn(pr, forExport) {
+    var wb = $('warnbar');
+    if (!forExport && (pr.nOverlap || pr.nOut || pr.nZone)) {
+      var parts = [];
+      if (pr.nOverlap) parts.push('겹친 가구 ' + pr.nOverlap + '쌍');
+      if (pr.nZone) parts.push('문 열림 공간에 걸린 가구 ' + Object.keys(pr.zone).length + '개');
+      if (pr.nOut) parts.push('방 밖으로 나간 가구 ' + pr.nOut + '개');
+      wb.textContent = parts.join(', '); wb.style.display = 'block';
+    } else wb.style.display = 'none';
+  }
+
+  // ---------- interaction ----------
+  var drag = null, cdrag = -1;
+  function toWorld(px, py) {
+    if (viewMode === 'photo') {
+      var q = cam ? applyH(cam.Hinv, px, py) : null;
+      return q || { x: 0, y: 0 };
+    }
+    return p2w(px, py);
+  }
+  function hit(px, py) {
+    if (viewMode === 'photo') return hitPhoto(px, py);
+    var w = p2w(px, py);
+    for (var i = state.items.length - 1; i >= 0; i--) {
+      var it = state.items[i], d = effDims(it), mn = 26 / view.s;
+      if (Math.abs(w.x - it.x) <= Math.max(d.w, mn) / 2 && Math.abs(w.y - it.y) <= Math.max(d.d, mn) / 2) return it;
+    }
+    return null;
+  }
+  cv.addEventListener('pointerdown', function (e) {
+    var r = cv.getBoundingClientRect(), px = e.clientX - r.left, py = e.clientY - r.top;
+    if (viewMode === 'photo') {
+      if (calib.stage === 'tapping') { addCalibPoint(px, py); return; }
+      if (!cam) return;
+      var hi = hitHandle(px, py);
+      if (hi >= 0) { cdrag = hi; cv.setPointerCapture(e.pointerId); return; }
+    }
+    var it = hit(px, py);
+    if (it) {
+      selectedId = it.id;
+      // bring to front
+      var idx = state.items.indexOf(it); state.items.splice(idx, 1); state.items.push(it);
+      var w = toWorld(px, py);
+      drag = { id: it.id, dx: it.x - w.x, dy: it.y - w.y, moved: false };
+      cv.setPointerCapture(e.pointerId);
+    } else {
+      selectedId = null; drag = null;
+    }
+    syncSel(); render();
+  });
+  cv.addEventListener('pointermove', function (e) {
+    if (cdrag >= 0) {
+      var r0 = cv.getBoundingClientRect();
+      var np = { x: (e.clientX - r0.left - photoRect.x) / photoRect.w, y: (e.clientY - r0.top - photoRect.y) / photoRect.h };
+      calib.pts[cdrag] = { x: clamp(np.x, -1, 2), y: clamp(np.y, -1, 2) };
+      render(); return;
+    }
+    if (!drag) return;
+    var it = getItem(drag.id); if (!it) return;
+    var r = cv.getBoundingClientRect(), w = toWorld(e.clientX - r.left, e.clientY - r.top);
+    it.x = w.x + drag.dx; it.y = w.y + drag.dy;
+    snapPos(it); drag.moved = true; render();
+  });
+  function endDrag() {
+    if (cdrag >= 0) { cdrag = -1; persistPhoto(); }
+    if (drag && drag.moved) commit();
+    drag = null;
+  }
+  cv.addEventListener('pointerup', endDrag);
+  cv.addEventListener('pointercancel', endDrag);
+
+  // ---------- selection panel ----------
+  function syncSel() {
+    var it = selectedId == null ? null : getItem(selectedId);
+    $('selbar').classList.toggle('on', !!it);
+    if (!it) return;
+    if (document.activeElement !== $('sName')) $('sName').value = it.name;
+    if (document.activeElement !== $('sW')) $('sW').value = it.w;
+    if (document.activeElement !== $('sD')) $('sD').value = it.d;
+    if (document.activeElement !== $('sH')) $('sH').value = it.h;
+    if (document.activeElement !== $('sPrice')) $('sPrice').value = it.price || '';
+    if (document.activeElement !== $('sLink')) $('sLink').value = it.link;
+    var a = $('bOpen');
+    if (it.link) { a.href = it.link; a.style.display = 'inline'; } else { a.style.display = 'none'; }
+  }
+  function withSel(fn, doCommit) {
+    var it = selectedId == null ? null : getItem(selectedId);
+    if (!it) return;
+    fn(it);
+    snapPosSoft(it);
+    if (doCommit !== false) commit();
+    syncSel(); render();
+  }
+  function snapPosSoft(it) {
+    it.x = clamp(it.x, -50, state.room.w + 50); it.y = clamp(it.y, -50, state.room.d + 50);
+  }
+  $('sName').addEventListener('change', function () { withSel(function (it) { it.name = cleanName($('sName').value); }); });
+  $('sW').addEventListener('change', function () { withSel(function (it) { it.w = num($('sW').value, 5, 1000, it.w); }); });
+  $('sD').addEventListener('change', function () { withSel(function (it) { it.d = num($('sD').value, 5, 1000, it.d); }); });
+  $('sH').addEventListener('change', function () { withSel(function (it) { it.h = num($('sH').value, 0, 500, it.h); }); });
+  $('sPrice').addEventListener('change', function () { withSel(function (it) { it.price = num($('sPrice').value, 0, 100000000, 0); }); });
+  $('sLink').addEventListener('change', function () {
+    var raw = $('sLink').value.trim(), ok = safeLink(raw);
+    if (raw && !ok) toast('http:// 또는 https:// 로 시작하는 링크만 저장됩니다');
+    withSel(function (it) { it.link = ok; });
+  });
+  $('bRot').addEventListener('click', rotateSel);
+  function rotateSel() { withSel(function (it) { it.rot = it.rot ? 0 : 1; }); }
+  $('bDup').addEventListener('click', function () {
+    var it = selectedId == null ? null : getItem(selectedId); if (!it) return;
+    if (state.items.length >= 100) { toast('가구는 100개까지 놓을 수 있습니다'); return; }
+    var c = JSON.parse(JSON.stringify(it)); c.id = state.nextId++; c.x += 20; c.y += 20;
+    state.items.push(c); selectedId = c.id; commit(); syncSel(); render();
+  });
+  $('bDel').addEventListener('click', deleteSel);
+  function deleteSel() {
+    if (selectedId == null) return;
+    state.items = state.items.filter(function (i) { return i.id !== selectedId; });
+    selectedId = null; commit(); syncSel(); render();
+  }
+
+  // ---------- adding items ----------
+  function addItem(spec) {
+    if (state.items.length >= 100) { toast('가구는 100개까지 놓을 수 있습니다'); return; }
+    var n = state.items.length % 6;
+    var it = {
+      id: state.nextId++, name: cleanName(spec.name),
+      w: num(spec.w, 5, 1000, 50), d: num(spec.d, 5, 1000, 50), h: num(spec.h, 0, 500, 50),
+      rot: 0, x: state.room.w / 2 + n * 15, y: state.room.d / 2 + n * 15,
+      color: cleanColor(spec.color), link: safeLink(spec.link || ''),
+      kind: (spec.kind === 'door' || spec.kind === 'win') ? spec.kind : 'furn',
+      price: num(spec.price, 0, 100000000, 0)
+    };
+    if (!isFurn(it)) { it.x = state.room.w * (it.kind === 'door' ? 0.25 : 0.75); it.y = it.d / 2; }
+    state.items.push(it); selectedId = it.id; commit(); syncSel(); render();
+  }
+  var pal = $('palette');
+  PALETTE.forEach(function (p) {
+    var b = document.createElement('button');
+    b.className = 'chip';
+    var t = document.createElement('span'); t.textContent = p.name;
+    var s = document.createElement('small'); s.textContent = p.w + '×' + p.d + 'cm';
+    b.appendChild(t); b.appendChild(s);
+    b.addEventListener('click', function () { addItem(p); });
+    pal.appendChild(b);
+  });
+  $('cAdd').addEventListener('click', function () {
+    var link = $('cLink').value.trim();
+    if (link && !safeLink(link)) { toast('http:// 또는 https:// 로 시작하는 링크만 저장됩니다'); link = ''; }
+    addItem({
+      name: $('cName').value.trim() || '내 가구', w: $('cW').value, d: $('cD').value, h: $('cH').value,
+      link: link, price: $('cPrice').value, color: CUSTOM_COLORS[state.items.length % CUSTOM_COLORS.length]
+    });
+  });
+
+  // ---------- room settings ----------
+  function syncRoomInputs() { $('rW').value = state.room.w; $('rD').value = state.room.d; }
+  function onRoomChange() {
+    state.room.w = num($('rW').value, 100, 3000, state.room.w);
+    state.room.d = num($('rD').value, 100, 3000, state.room.d);
+    commit(); syncRoomInputs(); render();
+  }
+  $('rW').addEventListener('change', onRoomChange);
+  $('rD').addEventListener('change', onRoomChange);
+  // ---------- photo mode (perspective overlay) ----------
+  var PHOTO_KEY = 'spacewarp_photo_v1';
+  var viewMode = 'plan';
+  var photoData = '';
+  var calib = { pts: [], stage: 'idle', fscale: 1, prev: [] };
+  var photoRect = { x: 0, y: 0, w: 1, h: 1 };
+  var cam = null;
+  var persistWarned = false;
+  var STEPS = ['먼쪽 왼쪽', '먼쪽 오른쪽', '가까운쪽 오른쪽', '가까운쪽 왼쪽'];
+
+  function solve8(A, b) {
+    var n = 8, i, j, k;
+    for (i = 0; i < n; i++) A[i].push(b[i]);
+    for (i = 0; i < n; i++) {
+      var piv = i;
+      for (j = i + 1; j < n; j++) if (Math.abs(A[j][i]) > Math.abs(A[piv][i])) piv = j;
+      if (Math.abs(A[piv][i]) < 1e-12) return null;
+      var tmp = A[i]; A[i] = A[piv]; A[piv] = tmp;
+      for (j = i + 1; j < n; j++) {
+        var f = A[j][i] / A[i][i];
+        for (k = i; k <= n; k++) A[j][k] -= f * A[i][k];
+      }
+    }
+    var x = new Array(n);
+    for (i = n - 1; i >= 0; i--) {
+      var s = A[i][n];
+      for (j = i + 1; j < n; j++) s -= A[i][j] * x[j];
+      x[i] = s / A[i][i];
+    }
+    return x;
+  }
+  function homography(src, dst) {
+    var A = [], b = [];
+    for (var i = 0; i < 4; i++) {
+      var X = src[i].x, Y = src[i].y, u = dst[i].x, v = dst[i].y;
+      A.push([X, Y, 1, 0, 0, 0, -u * X, -u * Y]); b.push(u);
+      A.push([0, 0, 0, X, Y, 1, -v * X, -v * Y]); b.push(v);
+    }
+    var h = solve8(A, b);
+    return h ? [h[0], h[1], h[2], h[3], h[4], h[5], h[6], h[7], 1] : null;
+  }
+  function inv3(m) {
+    var a = m[0], b = m[1], c = m[2], d = m[3], e = m[4], f = m[5], g = m[6], h = m[7], i = m[8];
+    var A = e * i - f * h, B = -(d * i - f * g), C = d * h - e * g;
+    var det = a * A + b * B + c * C;
+    if (!isFinite(det) || Math.abs(det) < 1e-14) return null;
+    return [A / det, -(b * i - c * h) / det, (b * f - c * e) / det,
+            B / det, (a * i - c * g) / det, -(a * f - c * d) / det,
+            C / det, -(a * h - b * g) / det, (a * e - b * d) / det];
+  }
+  function applyH(m, x, y) {
+    var w = m[6] * x + m[7] * y + m[8];
+    if (Math.abs(w) < 1e-12) return null;
+    var r = { x: (m[0] * x + m[1] * y + m[2]) / w, y: (m[3] * x + m[4] * y + m[5]) / w };
+    return (isFinite(r.x) && isFinite(r.y)) ? r : null;
+  }
+  function cross3(a, b) { return [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]]; }
+
+  function computePhotoRect(cw, ch) {
+    if (!photo || !photo.naturalWidth) return false;
+    // while tapping the corners the photo is drawn smaller so corners outside the picture can be reached
+    var fit = calib.stage === 'tapping' ? 0.6 : 0.9;
+    var k = Math.min(cw * fit / photo.naturalWidth, ch * fit / photo.naturalHeight);
+    var w = photo.naturalWidth * k, h = photo.naturalHeight * k;
+    photoRect = { x: (cw - w) / 2, y: (ch - h) / 2, w: w, h: h };
+    return true;
+  }
+  function calibPx(p) { return { x: photoRect.x + p.x * photoRect.w, y: photoRect.y + p.y * photoRect.h }; }
+
+  function computeCam() {
+    cam = null;
+    if (calib.stage !== 'ready' || calib.pts.length !== 4) return;
+    var W = state.room.w, D = state.room.d;
+    var src = [{ x: 0, y: 0 }, { x: W, y: 0 }, { x: W, y: D }, { x: 0, y: D }];
+    var H = homography(src, calib.pts.map(calibPx));
+    if (!H) return;
+    var Hinv = inv3(H); if (!Hinv) return;
+    var cx = photoRect.x + photoRect.w / 2, cy = photoRect.y + photoRect.h / 2;
+    var L = Math.max(photoRect.w, photoRect.h);
+    // homography with the principal point moved to the origin
+    var a = H[0] - cx * H[6], b = H[1] - cx * H[7], c = H[2] - cx * H[8];
+    var d = H[3] - cy * H[6], e = H[4] - cy * H[7], f2 = H[5] - cy * H[8];
+    var g = H[6], h = H[7], i = H[8];
+    // focal length from r1 . r2 = 0 (square pixels, centered principal point); fallback to a typical phone lens
+    var fa = 0.75 * L, q = -(a * b + d * e) / (g * h);
+    if (isFinite(q) && q > 0) { var fc = Math.sqrt(q); if (fc > 0.3 * L && fc < 3 * L) fa = fc; }
+    var f = fa * calib.fscale;
+    var m1 = [a / f, d / f, g], m2 = [b / f, e / f, h], m3 = [c / f, f2 / f, i];
+    var n1 = Math.sqrt(m1[0] * m1[0] + m1[1] * m1[1] + m1[2] * m1[2]);
+    var n2 = Math.sqrt(m2[0] * m2[0] + m2[1] * m2[1] + m2[2] * m2[2]);
+    var lam = 2 / (n1 + n2);
+    var r1 = [m1[0] * lam, m1[1] * lam, m1[2] * lam];
+    var r2 = [m2[0] * lam, m2[1] * lam, m2[2] * lam];
+    var t = [m3[0] * lam, m3[1] * lam, m3[2] * lam];
+    if (t[2] < 0) {
+      r1 = [-r1[0], -r1[1], -r1[2]]; r2 = [-r2[0], -r2[1], -r2[2]]; t = [-t[0], -t[1], -t[2]];
+    }
+    var n = cross3(r1, r2), nl = Math.sqrt(n[0] * n[0] + n[1] * n[1] + n[2] * n[2]);
+    if (!(nl > 1e-9) || !(t[2] > 0)) return;
+    n = [n[0] / nl, n[1] / nl, n[2] / nl];
+    if (n[1] > 0) n = [-n[0], -n[1], -n[2]]; // up must point up on screen (camera y is down)
+    cam = { H: H, Hinv: Hinv, r1: r1, r2: r2, n: n, t: t, f: f, cx: cx, cy: cy };
+  }
+  function proj3(X, Y, Z) {
+    var c = cam;
+    var Px = X * c.r1[0] + Y * c.r2[0] + Z * c.n[0] + c.t[0];
+    var Py = X * c.r1[1] + Y * c.r2[1] + Z * c.n[1] + c.t[1];
+    var Pz = X * c.r1[2] + Y * c.r2[2] + Z * c.n[2] + c.t[2];
+    if (!(Pz > 1)) return null;
+    return { x: c.f * Px / Pz + c.cx, y: c.f * Py / Pz + c.cy, cx: Px, cy: Py, cz: Pz };
+  }
+  function itemGeom(it) {
+    var d = effDims(it), x0 = it.x - d.w / 2, x1 = it.x + d.w / 2, y0 = it.y - d.d / 2, y1 = it.y + d.d / 2;
+    var hh = Math.max(it.h, 1), xs = [x0, x1, x1, x0], ys = [y0, y0, y1, y1], B = [], T = [];
+    for (var i = 0; i < 4; i++) {
+      var bp = proj3(xs[i], ys[i], 0), tp = proj3(xs[i], ys[i], hh);
+      if (!bp || !tp) return null;
+      B.push(bp); T.push(tp);
+    }
+    var mid = proj3(it.x, it.y, hh / 2);
+    return { B: B, T: T, mid: mid };
+  }
+  function photoOrder() {
+    var arr = state.items.map(function (it) {
+      var p = proj3(it.x, it.y, 0);
+      return { it: it, z: p ? p.cz : -1 };
+    });
+    arr.sort(function (a, b) { return b.z - a.z; }); // far first
+    return arr.map(function (o) { return o.it; });
+  }
+  function pointInPoly(px, py, poly) {
+    var inside = false;
+    for (var i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+      var xi = poly[i].x, yi = poly[i].y, xj = poly[j].x, yj = poly[j].y;
+      if (((yi > py) !== (yj > py)) && (px < (xj - xi) * (py - yi) / (yj - yi) + xi)) inside = !inside;
+    }
+    return inside;
+  }
+  function hitPhoto(px, py) {
+    if (!cam) return null;
+    var order = photoOrder();
+    for (var k = order.length - 1; k >= 0; k--) {
+      var g = itemGeom(order[k]); if (!g) continue;
+      var polys = [g.B, g.T];
+      for (var i = 0; i < 4; i++) { var j = (i + 1) % 4; polys.push([g.B[i], g.B[j], g.T[j], g.T[i]]); }
+      for (var p = 0; p < polys.length; p++) if (pointInPoly(px, py, polys[p])) return order[k];
+    }
+    return null;
+  }
+  function hitHandle(px, py) {
+    for (var i = 0; i < calib.pts.length; i++) {
+      var q = calibPx(calib.pts[i]);
+      if (Math.hypot(q.x - px, q.y - py) < 22) return i;
+    }
+    return -1;
+  }
+  function polyPath(pts) {
+    ctx.beginPath(); ctx.moveTo(pts[0].x, pts[0].y);
+    for (var i = 1; i < pts.length; i++) ctx.lineTo(pts[i].x, pts[i].y);
+    ctx.closePath();
+  }
+  function haloText(txt, x, y, font) {
+    ctx.font = font || 'bold 14px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.lineWidth = 4; ctx.strokeStyle = 'rgba(255,255,255,0.95)'; ctx.strokeText(txt, x, y);
+    ctx.fillStyle = '#1d2433'; ctx.fillText(txt, x, y);
+  }
+  function drawHandles() {
+    for (var i = 0; i < calib.pts.length; i++) {
+      var q = calibPx(calib.pts[i]);
+      ctx.beginPath(); ctx.arc(q.x, q.y, 12, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(255,255,255,0.92)'; ctx.fill();
+      ctx.lineWidth = 2.5; ctx.strokeStyle = '#4f6fdc'; ctx.stroke();
+      ctx.fillStyle = '#1d2433'; ctx.font = 'bold 13px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText(String(i + 1), q.x, q.y + 0.5);
+    }
+  }
+  function drawItemPhoto(it, selected, pr, forExport) {
+    var g = itemGeom(it); if (!g) return;
+    var c = cam, nrm = [[0, -1], [1, 0], [0, 1], [-1, 0]];
+    var bad = pr.overlap[it.id] || pr.zone[it.id], out = pr.out[it.id];
+    function edge() {
+      ctx.lineWidth = selected ? 3 : 1.5;
+      ctx.strokeStyle = bad ? '#d6403a' : (out ? '#e0892b' : (selected ? '#4f6fdc' : 'rgba(0,0,0,0.55)'));
+      ctx.stroke();
+    }
+    function fillFace(alphaShade) {
+      ctx.globalAlpha = 0.9; ctx.fillStyle = it.color; ctx.fill();
+      if (alphaShade) { ctx.globalAlpha = 1; ctx.fillStyle = 'rgba(0,0,0,' + alphaShade + ')'; ctx.fill(); }
+      if (bad) { ctx.globalAlpha = 1; ctx.fillStyle = 'rgba(214,64,58,0.22)'; ctx.fill(); }
+      ctx.globalAlpha = 1;
+    }
+    for (var i = 0; i < 4; i++) {
+      var n3 = [nrm[i][0] * c.r1[0] + nrm[i][1] * c.r2[0], nrm[i][0] * c.r1[1] + nrm[i][1] * c.r2[1], nrm[i][0] * c.r1[2] + nrm[i][1] * c.r2[2]];
+      var p0 = g.B[i];
+      if (n3[0] * p0.cx + n3[1] * p0.cy + n3[2] * p0.cz >= 0) continue; // back face
+      var j = (i + 1) % 4;
+      polyPath([g.B[i], g.B[j], g.T[j], g.T[i]]); fillFace(0.25); edge();
+    }
+    var tp = g.T[0];
+    if (c.n[0] * tp.cx + c.n[1] * tp.cy + c.n[2] * tp.cz < 0) { polyPath(g.T); fillFace(0); edge(); }
+    else { polyPath(g.B); ctx.lineWidth = 1.5; ctx.strokeStyle = 'rgba(0,0,0,0.4)'; ctx.stroke(); }
+    if (isFurn(it) && g.mid) haloText(it.name, g.mid.x, g.mid.y);
+  }
+
+  function renderPhoto(cw, ch, forExport) {
+    if (!computePhotoRect(cw, ch)) {
+      ctx.fillStyle = '#5b6475'; ctx.font = '16px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText('방 설정 탭에서 사진을 올려 주세요', cw / 2, ch / 2);
+      showWarn({ nOverlap: 0, nOut: 0, nZone: 0 }, true);
+      return;
+    }
+    ctx.drawImage(photo, photoRect.x, photoRect.y, photoRect.w, photoRect.h);
+    computeCam();
+    var pr = problems();
+    if (cam) {
+      var W = state.room.w, D = state.room.d;
+      var q = [proj3(0, 0, 0), proj3(W, 0, 0), proj3(W, D, 0), proj3(0, D, 0)];
+      if (q[0] && q[1] && q[2] && q[3]) {
+        polyPath(q); ctx.fillStyle = 'rgba(79,111,220,0.10)'; ctx.fill();
+        ctx.strokeStyle = 'rgba(255,255,255,0.6)'; ctx.lineWidth = 1.5; ctx.beginPath();
+        var gx, gy, a, b;
+        for (gx = 100; gx < W; gx += 100) { a = proj3(gx, 0, 0); b = proj3(gx, D, 0); if (a && b) { ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); } }
+        for (gy = 100; gy < D; gy += 100) { a = proj3(0, gy, 0); b = proj3(W, gy, 0); if (a && b) { ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); } }
+        ctx.stroke();
+        polyPath(q); ctx.lineWidth = 3.5; ctx.strokeStyle = '#ffffff'; ctx.stroke();
+        ctx.lineWidth = 1.5; ctx.strokeStyle = '#4f6fdc'; ctx.stroke();
+        var m1 = proj3(W / 2, 0, 0), m2 = proj3(0, D / 2, 0);
+        if (m1) haloText(W + ' cm', m1.x, m1.y - 14, 'bold 13px sans-serif');
+        if (m2) haloText(D + ' cm', m2.x - 4, m2.y, 'bold 13px sans-serif');
+      }
+      state.items.forEach(function (it) {
+        var z = zoneRect(it); if (!z) return;
+        var zq = [proj3(z.x0, z.y0, 0), proj3(z.x1, z.y0, 0), proj3(z.x1, z.y1, 0), proj3(z.x0, z.y1, 0)];
+        if (!(zq[0] && zq[1] && zq[2] && zq[3])) return;
+        polyPath(zq); ctx.fillStyle = 'rgba(185,138,90,0.22)'; ctx.fill();
+        ctx.setLineDash([5, 4]); ctx.lineWidth = 1.5; ctx.strokeStyle = '#7a5530'; ctx.stroke(); ctx.setLineDash([]);
+      });
+      photoOrder().forEach(function (it) { drawItemPhoto(it, !forExport && it.id === selectedId, pr, forExport); });
+    }
+    if (!forExport) {
+      if (calib.stage === 'tapping' && calib.pts.length > 1) {
+        ctx.beginPath(); var p0 = calibPx(calib.pts[0]); ctx.moveTo(p0.x, p0.y);
+        for (var i = 1; i < calib.pts.length; i++) { var pp = calibPx(calib.pts[i]); ctx.lineTo(pp.x, pp.y); }
+        ctx.lineWidth = 2; ctx.strokeStyle = '#4f6fdc'; ctx.stroke();
+      }
+      drawHandles();
+    }
+    showWarn(cam ? pr : { nOverlap: 0, nOut: 0, nZone: 0 }, forExport);
+  }
+  function exportUrl() {
+    if (viewMode === 'photo' && photo && photo.naturalWidth) {
+      var t = document.createElement('canvas');
+      t.width = Math.max(1, Math.round(photoRect.w * dpr)); t.height = Math.max(1, Math.round(photoRect.h * dpr));
+      t.getContext('2d').drawImage(cv, photoRect.x * dpr, photoRect.y * dpr, photoRect.w * dpr, photoRect.h * dpr, 0, 0, t.width, t.height);
+      return t.toDataURL('image/png');
+    }
+    return cv.toDataURL('image/png');
+  }
+
+  // ----- calibration flow -----
+  function updateCalibBar() {
+    var bar = $('calibbar');
+    if (viewMode !== 'photo' || !photo || calib.stage === 'ready') { bar.style.display = 'none'; return; }
+    bar.style.top = ($('sharebar').style.display === 'flex') ? '64px' : '8px';
+    bar.style.display = 'flex';
+    if (calib.stage === 'tapping') {
+      var n = calib.pts.length;
+      $('cbText').textContent = '바닥 모서리 ' + (n + 1) + '/4: 사진에서 ' + STEPS[n] + ' 모서리를 탭하세요' + (n === 0 ? ' (먼쪽 벽 길이 = 방 가로)' : '');
+      $('cbGo').style.display = 'none'; $('cbCancel').style.display = '';
+    } else {
+      $('cbText').textContent = '사진 위에 가구를 올리려면 바닥 모서리 4개를 찍어 주세요';
+      $('cbGo').style.display = ''; $('cbCancel').style.display = 'none';
+    }
+  }
+  function setMode(m) {
+    if (m === 'photo' && !photo) {
+      toast('먼저 사진을 올려 주세요');
+      var tb = document.querySelector('button.tab[data-pane=pRoom]'); if (tb) tb.click();
+      return;
+    }
+    viewMode = m;
+    $('btnPlan').classList.toggle('active', m === 'plan');
+    $('btnPhoto').classList.toggle('active', m === 'photo');
+    updateCalibBar(); render();
+  }
+  function startCalib() {
+    if (!photo) { toast('먼저 사진을 올려 주세요'); return; }
+    calib.prev = calib.pts.slice(); calib.pts = []; calib.stage = 'tapping'; cam = null;
+    selectedId = null; syncSel();
+    setMode('photo'); updateCalibBar(); render();
+  }
+  function cancelCalib() {
+    calib.pts = calib.prev.slice(); calib.stage = calib.pts.length === 4 ? 'ready' : 'idle';
+    updateCalibBar(); render();
+  }
+  function addCalibPoint(px, py) {
+    calib.pts.push({ x: clamp((px - photoRect.x) / photoRect.w, -1, 2), y: clamp((py - photoRect.y) / photoRect.h, -1, 2) });
+    if (calib.pts.length === 4) finishCalib();
+    updateCalibBar(); render();
+  }
+  function finishCalib() {
+    var P = calib.pts.map(calibPx), ok = true;
+    for (var i = 0; i < 4; i++) {
+      var a = P[i], b = P[(i + 1) % 4], c = P[(i + 2) % 4];
+      if ((b.x - a.x) * (c.y - b.y) - (b.y - a.y) * (c.x - b.x) <= 0) ok = false;
+    }
+    if (!ok) {
+      toast('모서리 순서가 맞지 않습니다. 먼쪽 왼쪽부터 시계방향으로 다시 찍어 주세요');
+      calib.pts = []; return;
+    }
+    calib.stage = 'ready'; persistPhoto();
+    computePhotoRect(cv.width / dpr, cv.height / dpr); computeCam();
+    if (!cam) { toast('이 모서리로는 계산이 안 됩니다. 다시 찍어 주세요'); calib.pts = []; calib.stage = 'tapping'; return; }
+    toast('모서리를 끌어 위치를 다듬을 수 있습니다');
+  }
+  function persistPhoto() {
+    if (fromShare || !photoData) return;
+    try { localStorage.setItem(PHOTO_KEY, JSON.stringify({ d: photoData, p: calib.pts, f: calib.fscale })); }
+    catch (e) { if (!persistWarned) { persistWarned = true; toast('사진이 커서 이 기기에 저장하지 못했습니다'); } }
+  }
+  function setPhoto(url, fresh) {
+    var img = new Image();
+    img.onload = function () {
+      photo = img; photoData = url;
+      if (fresh) { calib.pts = []; calib.stage = 'idle'; calib.fscale = 1; $('rFocal').value = 100; persistPhoto(); }
+      updateCalibBar(); render();
+      if (fresh) startCalib();
+    };
+    img.onerror = function () { toast('사진을 열 수 없습니다'); };
+    img.src = url;
+  }
+  function loadPhotoFile(f) {
+    var rd = new FileReader();
+    rd.onload = function () {
+      var im = new Image();
+      im.onload = function () {
+        var k = Math.min(1, 1280 / Math.max(im.naturalWidth, im.naturalHeight));
+        var c = document.createElement('canvas');
+        c.width = Math.max(1, Math.round(im.naturalWidth * k)); c.height = Math.max(1, Math.round(im.naturalHeight * k));
+        c.getContext('2d').drawImage(im, 0, 0, c.width, c.height);
+        setPhoto(c.toDataURL('image/jpeg', 0.72), true);
+      };
+      im.onerror = function () { toast('사진을 열 수 없습니다'); };
+      im.src = rd.result;
+    };
+    rd.readAsDataURL(f);
+  }
+  function clearPhoto() {
+    photo = null; photoData = ''; calib.pts = []; calib.stage = 'idle'; cam = null;
+    try { localStorage.removeItem(PHOTO_KEY); } catch (e) {}
+    $('rPhoto').value = '';
+    setMode('plan'); updateCalibBar(); render();
+  }
+  function loadSavedPhoto() {
+    if (fromShare) return;
+    try {
+      var raw = localStorage.getItem(PHOTO_KEY); if (!raw) return;
+      var o = JSON.parse(raw);
+      if (!o || typeof o.d !== 'string' || o.d.indexOf('data:image/') !== 0) return;
+      var pts = Array.isArray(o.p) ? o.p.filter(function (p) { return p && isFinite(p.x) && isFinite(p.y); }).map(function (p) { return { x: clamp(+p.x, -1, 2), y: clamp(+p.y, -1, 2) }; }) : [];
+      calib.fscale = clamp(parseFloat(o.f) || 1, 0.5, 2);
+      calib.pts = pts.length === 4 ? pts : [];
+      calib.stage = pts.length === 4 ? 'ready' : 'idle';
+      $('rFocal').value = Math.round(calib.fscale * 100);
+      setPhoto(o.d, false);
+    } catch (e) {}
+  }
+  $('rPhoto').addEventListener('change', function () {
+    var f = this.files && this.files[0]; if (f) loadPhotoFile(f);
+  });
+  $('rPhotoClear').addEventListener('click', clearPhoto);
+  $('rCalib').addEventListener('click', startCalib);
+  $('rFocal').addEventListener('input', function () { calib.fscale = clamp(parseInt(this.value, 10) / 100 || 1, 0.5, 2); render(); });
+  $('rFocal').addEventListener('change', persistPhoto);
+  $('btnPlan').addEventListener('click', function () { setMode('plan'); });
+  $('btnPhoto').addEventListener('click', function () { setMode('photo'); });
+  $('cbGo').addEventListener('click', startCalib);
+  $('cbCancel').addEventListener('click', cancelCalib);
+  // ---------- header buttons ----------
+  $('btnUndo').addEventListener('click', undo);
+  function undo() {
+    if (history.length < 2) return;
+    history.pop();
+    var prev = sanitizeKeepIds(JSON.parse(history[history.length - 1]));
+    state = prev; selectedId = null; save(); syncRoomInputs(); syncSel(); renderCart(); render();
+    $('btnUndo').disabled = history.length < 2;
+  }
+  // history snapshots are our own data: keep ids as stored
+  function sanitizeKeepIds(raw) {
+    var s = sanitize(raw), maxId = 0;
+    s.items.forEach(function (it, i) { it.id = raw.items[i].id || (i + 1); if (it.id > maxId) maxId = it.id; });
+    s.nextId = Math.max(maxId + 1, raw.nextId || 1);
+    return s;
+  }
+  $('btnReset').addEventListener('click', function () {
+    if (!state.items.length) { toast('지울 가구가 없습니다'); return; }
+    if (!confirm('놓은 가구를 모두 지울까요? (되돌리기로 복구할 수 있습니다)')) return;
+    state.items = []; selectedId = null; commit(); syncSel(); render();
+  });
+  $('btnShare').addEventListener('click', function () {
+    var url = shareUrl();
+    var done = function () { toast('공유 링크를 복사했습니다. 링크 안에 배치가 들어 있습니다'); };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(url).then(done, function () { window.prompt('이 링크를 복사하세요', url); });
+    } else { window.prompt('이 링크를 복사하세요', url); }
+  });
+  function history_replace(url) { window.history.replaceState(null, '', url); }
+  $('btnPng').addEventListener('click', function () {
+    render(true);
+    var a = document.createElement('a');
+    a.download = 'spacewarp-layout.png'; a.href = exportUrl();
+    document.body.appendChild(a); a.click(); a.remove();
+    render();
+  });
+
+  // ---------- tabs ----------
+  Array.prototype.forEach.call(document.querySelectorAll('button.tab'), function (b) {
+    b.addEventListener('click', function () {
+      Array.prototype.forEach.call(document.querySelectorAll('button.tab'), function (x) { x.classList.toggle('active', x === b); });
+      Array.prototype.forEach.call(document.querySelectorAll('.pane'), function (p) { p.classList.toggle('active', p.id === b.getAttribute('data-pane')); });
+      renderCart();
+      setTimeout(resize, 0);
+    });
+  });
+
+  // ---------- cart ----------
+  function won(n) { return Number(n).toLocaleString('ko-KR') + '원'; }
+  function cartItems() { return state.items.filter(isFurn); }
+  function renderCart() {
+    var list = $('cartList'); if (!list) return;
+    while (list.firstChild) list.removeChild(list.firstChild);
+    var items = cartItems(), total = 0, missing = 0;
+    if (!items.length) {
+      var e = document.createElement('p'); e.className = 'hint'; e.textContent = '아직 놓은 가구가 없습니다.'; list.appendChild(e);
+    }
+    items.forEach(function (it) {
+      total += it.price || 0; if (!it.price) missing++;
+      var row = document.createElement('div'); row.className = 'cartrow';
+      var nm = document.createElement('div'); nm.className = 'nm';
+      nm.appendChild(document.createTextNode(it.name));
+      var sm = document.createElement('small'); sm.textContent = it.w + '×' + it.d + '×' + it.h + 'cm';
+      nm.appendChild(sm);
+      nm.addEventListener('click', function () { selectedId = it.id; syncSel(); render(); });
+      var pr = document.createElement('div'); pr.className = 'pr'; pr.textContent = it.price ? won(it.price) : '가격 미입력';
+      row.appendChild(nm); row.appendChild(pr);
+      if (it.link) {
+        var a = document.createElement('a'); a.className = 'link'; a.textContent = '상품';
+        a.href = it.link; a.target = '_blank'; a.rel = 'noopener noreferrer';
+        row.appendChild(a);
+      }
+      list.appendChild(row);
+    });
+    $('cartTotal').textContent = '합계 ' + won(total) + (missing ? ' (가격 미입력 ' + missing + '개 제외)' : '');
+  }
+  $('cartCopy').addEventListener('click', function () {
+    var lines = cartItems().map(function (it) {
+      return '- ' + it.name + ' ' + it.w + 'x' + it.d + 'x' + it.h + 'cm' + (it.price ? ' ' + won(it.price) : '') + (it.link ? ' ' + it.link : '');
+    });
+    var text = lines.join('\n') || '(비어 있음)';
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(function () { toast('목록을 복사했습니다'); }, function () { window.prompt('복사하세요', text); });
+    } else { window.prompt('복사하세요', text); }
+  });
+
+  // ---------- keyboard ----------
+  document.addEventListener('keydown', function (e) {
+    var tag = (document.activeElement && document.activeElement.tagName) || '';
+    if (tag === 'INPUT') return;
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') { e.preventDefault(); undo(); }
+    else if (e.key === 'Delete' || e.key === 'Backspace') { deleteSel(); }
+    else if (e.key.toLowerCase() === 'r') { rotateSel(); }
+  });
+
+  // ---------- init ----------
+  function init() {
+    var loaded = null;
+    var m = /^#s=([A-Za-z0-9_-]+)$/.exec(location.hash);
+    if (m) {
+      try {
+        var saved = JSON.parse(localStorage.getItem(SHARE_KEY) || 'null');
+        if (saved && saved.h === m[1]) loaded = sanitizeKeepIds(saved.s);
+        else loaded = sanitize(JSON.parse(b64urlDecode(m[1])));
+      } catch (e) { loaded = null; }
+      if (loaded) {
+        fromShare = true; shareToken = m[1];
+        $('sharebar').style.display = 'flex';
+      }
+    }
+    if (!loaded) {
+      try { var raw = localStorage.getItem(STORE_KEY); if (raw) loaded = sanitizeKeepIds(JSON.parse(raw)); } catch (e) {}
+    }
+    if (loaded) state = loaded;
+    pushHistory(); syncRoomInputs(); syncSel(); renderCart(); loadSavedPhoto();
+    $('shBack').addEventListener('click', function () {
+      try { window.history.replaceState(null, '', location.pathname + location.search); } catch (e) {}
+      location.reload();
+    });
+    $('shImport').addEventListener('click', function () {
+      if (!confirm('지금 보이는 배치로 내 저장본을 덮어씁니다. 계속할까요?')) return;
+      fromShare = false;
+      try { localStorage.setItem(STORE_KEY, snapshot()); } catch (e) {}
+      try { window.history.replaceState(null, '', location.pathname + location.search); } catch (e) {}
+      $('sharebar').style.display = 'none';
+      toast('내 저장본으로 가져왔습니다');
+    });
+    window.addEventListener('resize', resize);
+    resize();
+    if (typeof ResizeObserver !== 'undefined') new ResizeObserver(resize).observe(cv.parentElement);
+  }
+  init();
+})();
+</script>
+</body>
+</html>

@@ -428,7 +428,7 @@
       <div class="h" style="margin:0 0 8px">링크로 채우기</div>
       <div style="display:flex;gap:8px"><input class="field" id="lkUrl" type="url" inputmode="url" placeholder="상품 링크를 붙여넣어요" aria-label="상품 링크" style="flex:1;min-width:0"><button class="btn" id="lkGo" style="min-height:46px">불러오기</button></div>
       <p class="note" id="lkStatus" hidden></p>
-      <details style="margin-top:10px"><summary style="font-size:15px;color:var(--blue);cursor:pointer">치수를 못 찾았다면: 상품 설명 붙여넣기</summary>
+      <details id="lkMore" style="margin-top:10px"><summary style="font-size:15px;color:var(--blue);cursor:pointer">치수를 못 찾았다면: 상품 설명 붙여넣기</summary>
         <textarea class="field" id="lkPaste" rows="3" placeholder="상품 상세의 사이즈/규격 글을 복사해서 붙여넣어요. 예: 가로 120cm 세로 60cm 높이 75cm" style="height:auto;padding:10px 14px;margin-top:8px;resize:vertical"></textarea>
         <button class="btn sm" id="lkParse" style="margin-top:8px">치수 찾기</button>
       </details>
@@ -1722,7 +1722,8 @@
   function guessType(text) { for (var i = 0; i < TYPE_GUESS.length; i++) if (TYPE_GUESS[i][0].test(text)) return TYPE_GUESS[i][1]; return null; }
   function parseReaderText(txt) {
     txt = String(txt || '').slice(0, 300000);
-    var out = { title: '', image: '', price: 0, error: '' };
+    var out = { title: '', image: '', price: 0, error: '', blocked: false };
+    if (/^Final URL:\s*https?:\/\/(nid\.naver\.com|accounts\.[^\s\/]+|[^\s\/]*login[^\s\/]*)\//mi.test(txt) || /^Title:\s*(Sign in|로그인|Login)/mi.test(txt)) { out.blocked = true; return out; }
     var wm = /^Warning:\s*Target URL returned error\s*(\d+)/m.exec(txt); if (wm) out.error = wm[1];
     var tm = /^Title:\s*(.+)$/m.exec(txt); if (tm) out.title = tm[1].replace(/\s+[|\-–]\s+[^|\-–]{1,20}$/, '').trim();
     var imgRe = /!\[[^\]]*\]\((https?:\/\/[^)\s]+)\)/g, im;
@@ -1743,9 +1744,11 @@
   $('lkGo').addEventListener('click', function () {
     var url = safeLink($('lkUrl').value);
     if (!url) { lkSay('http:// 또는 https:// 로 시작하는 상품 링크를 넣어 주세요', true); return; }
+    try { var uo = new URL(url); ['NaPm', 'fbclid', 'gclid'].forEach(function (k) { uo.searchParams.delete(k); }); Array.from(uo.searchParams.keys()).forEach(function (k) { if (/^utm_/i.test(k)) uo.searchParams.delete(k); }); url = uo.href; $('lkUrl').value = url; } catch (e) {}
     var btn = $('lkGo'); btn.disabled = true; lkSay('상품 정보를 읽는 중이에요. 최대 15초 걸려요.');
     fetchReader(url).then(function (txt) {
       var info = parseReaderText(txt);
+      if (info.blocked) { lkSay('이 쇼핑몰(네이버 등)은 자동으로 읽는 것을 막아 두었어요. 상품 페이지에서 사이즈 글을 복사해 아래에 붙여넣거나, 치수를 직접 입력해 주세요.', true); $('icLink').value = url; $('lkMore').open = true; return; }
       if (info.error) { lkSay('이 쇼핑몰은 읽지 못했어요 (접속 제한 ' + info.error + '). 아래에 상품 설명을 붙여넣거나 치수를 직접 입력해 주세요.', true); $('icLink').value = url; return; }
       var found = [], dims = parseDims(info.title + '\n' + txt);
       if (info.title) { $('icName').value = cleanName(info.title); found.push('이름'); }

@@ -91,7 +91,8 @@
   #savePill.on { opacity: 1; }
 
   /* ---- bottom sheet + tab bar ---- */
-  #sheet { overflow: hidden; max-height: 0; background: var(--bg); transition: max-height .4s cubic-bezier(.2,.8,.2,1); border-radius: 18px 18px 0 0; box-shadow: 0 -6px 24px rgba(0,0,0,0.12); z-index: 8; position: relative; }
+  /* the sheet floats over the stage, so opening it never resizes the plan/photo */
+  #sheet { overflow: hidden; max-height: 0; background: var(--bg); transition: max-height .4s cubic-bezier(.2,.8,.2,1); border-radius: 18px 18px 0 0; box-shadow: 0 -6px 24px rgba(0,0,0,0.12); z-index: 8; position: fixed; left: 0; right: 0; bottom: calc(56px + env(safe-area-inset-bottom)); }
   #sheet.open { max-height: min(46vh, 430px); max-height: min(46dvh, 430px); }
   #sheetBody { height: min(46vh, 430px); height: min(46dvh, 430px); overflow-y: auto; overscroll-behavior: contain; padding: 18px 16px 20px; -webkit-overflow-scrolling: touch; }
   #sheet .grabber { position: absolute; top: 6px; left: 50%; width: 36px; height: 5px; border-radius: 3px; background: var(--fill); transform: translateX(-50%); }
@@ -165,11 +166,21 @@
   #icCard .acts { display: flex; gap: 8px; margin-top: 4px; }
   #icCard .acts .btn { flex: 1; flex-direction: column; min-height: 62px; gap: 3px; font-size: 13px; font-weight: 500; }
   #icCard .acts .btn svg { width: 24px; height: 24px; }
+  #icCard .top { flex-wrap: wrap; }
+  #icCard .top h2 { width: 100%; }
+  #icCard .card { padding: 8px 12px; margin-bottom: 8px; }
+  #icCard .stepper button, #icCard .stepper input { height: 38px; }
+  #icCard .row2 { padding: 2px 0; }
+  #icCard details > summary { font-size: 15px; color: var(--blue); padding: 8px 4px; cursor: pointer; }
+  /* editing a piece: no dimming, the plan stays visible and full size above the card */
+  #icWrap.dock { background: transparent; }
+  #icWrap.dock.on { pointer-events: none; }
+  #icWrap.dock.on #icCard { pointer-events: auto; box-shadow: 0 -6px 24px rgba(0,0,0,0.18); }
 
   .switch { -webkit-appearance: none; appearance: none; width: 51px; height: 31px; border-radius: 16px; background: var(--fill); position: relative; transition: background .2s; cursor: pointer; flex: none; border: 0; margin: 0; }
   .switch::after { content: ''; position: absolute; top: 2px; left: 2px; width: 27px; height: 27px; border-radius: 50%; background: #fff; box-shadow: 0 2px 4px rgba(0,0,0,0.3); transition: transform .2s; }
   .switch:checked { background: var(--green); } .switch:checked::after { transform: translateX(20px); }
-  .thumb { width: 72px; height: 72px; border-radius: 12px; object-fit: cover; background: var(--fill); display: block; margin: 0 0 10px; }
+  .pthumb { width: 72px; height: 72px; border-radius: 12px; object-fit: cover; background: var(--fill); display: block; margin: 0 0 10px; }
   details summary { list-style: none; } details summary::-webkit-details-marker { display: none; }
   textarea.field { font: inherit; line-height: 1.4; }
   /* ---- camera measure overlay ---- */
@@ -207,6 +218,29 @@
     #sheet.open { max-height: 360px; } #sheetBody { height: 360px; }
     #icCard { max-width: 520px; margin: 0 auto; }
     #mCard { max-width: 480px; left: 50%; right: auto; transform: translateX(-50%); width: calc(100% - 20px); }
+  }
+  /* ---- phone held sideways: tab rail on the left, panels slide in from the right over the stage ---- */
+  @media (orientation: landscape) and (max-height: 520px) {
+    body { display: grid; grid-template-columns: calc(64px + env(safe-area-inset-left)) 1fr; grid-template-rows: auto 1fr; }
+    #topbar { grid-column: 1 / -1; padding-top: calc(env(safe-area-inset-top) + 2px); padding-bottom: 2px; }
+    .ibtn { width: 40px; height: 40px; }
+    #seg button { height: 30px; }
+    #stage { grid-column: 2; grid-row: 2; min-height: 0; }
+    #tabbar { grid-column: 1; grid-row: 2; grid-template-columns: 1fr; grid-auto-rows: 64px; align-content: start; border-top: 0; border-right: 0.5px solid var(--line); padding: 4px 0 0 env(safe-area-inset-left); }
+    .tab { height: 64px; }
+    #sheet { left: auto; right: 0; top: var(--topbarh, 50px); bottom: 0; width: min(400px, 46vw); max-height: none; border-radius: 18px 0 0 18px; box-shadow: -6px 0 24px rgba(0,0,0,0.14); transform: translateX(105%); transition: transform .35s cubic-bezier(.2,.8,.2,1); }
+    #sheet.open { max-height: none; transform: none; }
+    #sheetBody { height: 100%; padding: 16px 14px calc(16px + env(safe-area-inset-bottom)); }
+    #sheet .grabber { display: none; }
+    #icWrap { top: var(--topbarh, 50px); justify-content: flex-end; align-items: stretch; }
+    #icCard { width: min(400px, 46vw); max-width: none; margin: 0; max-height: none; height: 100%; border-radius: 18px 0 0 18px; transform: translateX(105%); padding: 12px 14px calc(14px + env(safe-area-inset-bottom)); }
+    #icWrap.on #icCard { transform: none; }
+    #icCard .grabber { display: none; }
+    #toast { bottom: 12px; }
+    #warn { bottom: 12px; left: 12px; transform: none; max-width: calc(100% - 80px); }
+    .centercard > div { padding: 14px 16px 14px; }
+    .centercard h2 { font-size: 18px; }
+    .centercard p { margin-bottom: 10px; }
   }
   @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
 </style>
@@ -389,7 +423,7 @@
 <div id="icWrap" aria-hidden="true">
   <div id="icCard" role="dialog" aria-label="가구 정보">
     <div class="grabber"></div>
-    <div class="top"><h2 id="icTitle">치수</h2><button class="btn sm primary" id="icDone">완료</button></div>
+    <div class="top"><h2 id="icTitle" hidden>치수</h2><input class="field" id="icName" type="text" maxlength="30" placeholder="이름 (예: 5단 서랍장)" aria-label="이름" style="flex:1;min-width:0;height:42px"><button class="btn sm primary" id="icDone">완료</button></div>
     <div class="card" id="icImport" hidden>
       <div class="h" style="margin:0 0 8px">링크로 채우기</div>
       <div style="display:flex;gap:8px"><input class="field" id="lkUrl" type="url" inputmode="url" placeholder="상품 링크를 붙여넣어요" aria-label="상품 링크" style="flex:1;min-width:0"><button class="btn" id="lkGo" style="min-height:46px">불러오기</button></div>
@@ -401,12 +435,13 @@
       <p class="note">링크 주소는 페이지를 읽어 주는 외부 서비스(r.jina.ai)로 전달돼요. 로그인이 필요한 페이지나 접속을 막는 쇼핑몰은 읽지 못할 수 있어요.</p>
     </div>
     <div class="card">
-      <img id="icThumb" class="thumb" alt="" hidden>
-      <input class="field" id="icName" type="text" maxlength="30" placeholder="이름 (예: 5단 서랍장)" aria-label="이름">
-      <div class="row2" style="margin-top:8px"><span class="lb">가로</span><span><span class="stepper" data-step="5" data-min="5" data-max="1000"><button type="button" data-d="-5" data-t="icW" aria-label="가로 줄이기">−</button><input type="number" id="icW" inputmode="numeric"><button type="button" data-d="5" data-t="icW" aria-label="가로 늘리기">+</button></span><span class="unit">cm</span></span></div>
+      <img id="icThumb" class="pthumb" alt="" hidden>
+      <div class="row2"><span class="lb">가로</span><span><span class="stepper" data-step="5" data-min="5" data-max="1000"><button type="button" data-d="-5" data-t="icW" aria-label="가로 줄이기">−</button><input type="number" id="icW" inputmode="numeric"><button type="button" data-d="5" data-t="icW" aria-label="가로 늘리기">+</button></span><span class="unit">cm</span></span></div>
       <div class="row2"><span class="lb">세로</span><span><span class="stepper"><button type="button" data-d="-5" data-t="icD" aria-label="세로 줄이기">−</button><input type="number" id="icD" inputmode="numeric"><button type="button" data-d="5" data-t="icD" aria-label="세로 늘리기">+</button></span><span class="unit">cm</span></span></div>
       <div class="row2"><span class="lb">높이</span><span><span class="stepper"><button type="button" data-d="-5" data-t="icH" aria-label="높이 줄이기">−</button><input type="number" id="icH" inputmode="numeric"><button type="button" data-d="5" data-t="icH" aria-label="높이 늘리기">+</button></span><span class="unit">cm</span></span></div>
     </div>
+    <details id="icMore">
+    <summary>가격, 링크, 회전, 복제, 삭제</summary>
     <div class="card">
       <div class="row2"><span class="lb">가격</span><span><input class="field" id="icPrice" type="number" inputmode="numeric" min="0" placeholder="선택" style="width:150px;text-align:right" aria-label="가격"><span class="unit">원</span></span></div>
       <input class="field" id="icLink" type="url" placeholder="상품 링크 (선택)" style="margin-top:8px" aria-label="상품 링크">
@@ -417,6 +452,7 @@
       <button class="btn" id="icDup" data-ic="copy">복제</button>
       <button class="btn danger" id="icDel" data-ic="trash">삭제</button>
     </div>
+    </details>
     <button class="btn primary block" id="icPlace" style="margin-top:6px" hidden>방에 놓기</button>
   </div>
 </div>
@@ -699,7 +735,8 @@
     dpr = window.devicePixelRatio || 1;
     var w = Math.max(1, Math.round(r.width * dpr)), h = Math.max(1, Math.round(r.height * dpr));
     if (cv.width !== w || cv.height !== h) { cv.width = w; cv.height = h; }
-    render();
+    document.documentElement.style.setProperty('--topbarh', $('topbar').offsetHeight + 'px');
+    if (revealSave || sheetPane || $('icWrap').classList.contains('on')) updateReveal(); else render();
   }
   function computeView(cw, ch) {
     var padX = 44, padTop = 40, padBottom = 54;
@@ -856,7 +893,7 @@
   function updateFloat(forExport) {
     var fb = $('floatbar');
     var it = selectedId == null ? null : getItem(selectedId);
-    if (!it || forExport || (drag && drag.moved) || calib.stage === 'tapping' || planCal.stage !== 'idle' || measureOpen()) { fb.style.display = 'none'; return; }
+    if (!it || forExport || $('icWrap').classList.contains('on') || (drag && drag.moved) || calib.stage === 'tapping' || planCal.stage !== 'idle' || measureOpen()) { fb.style.display = 'none'; return; }
     var box, i;
     if (viewMode === 'photo') {
       var g = cam ? itemGeom(it) : null;
@@ -1279,6 +1316,8 @@
       selectedId = null; drag = null;
       if (viewMode === 'plan' && zoom > 1.01) { panDrag = { x: px, y: py, px: panX, py: panY }; capture(e); }
     }
+    var icw = $('icWrap');
+    if (icw.classList.contains('dock') && icw.classList.contains('on')) { if (selectedId == null) closeItemCard(); else fillItemCard(getItem(selectedId)); }
     render();
   });
   cv.addEventListener('pointermove', function (e) {
@@ -1365,12 +1404,40 @@
     Array.prototype.forEach.call(document.querySelectorAll('.tab'), function (t) { t.setAttribute('aria-selected', String(t.getAttribute('data-pane') === name)); });
     $('sheet').classList.add('open'); $('sheetBody').scrollTop = 0;
     if (name === 'pCart') renderCart();
-    updateChrome();
+    updateChrome(); updateReveal();
   }
   function closeSheet() {
     sheetPane = null; $('sheet').classList.remove('open');
     Array.prototype.forEach.call(document.querySelectorAll('.tab'), function (t) { t.setAttribute('aria-selected', 'false'); });
-    updateChrome();
+    updateChrome(); updateReveal();
+  }
+  /* The panels float over the stage. The plan keeps its size; if the panel would cover the thing being edited, the view slides instead of shrinking. */
+  var revealSave = null;
+  function landscapeMode() { return !!(window.matchMedia && window.matchMedia('(orientation: landscape) and (max-height: 520px)').matches); }
+  function overlayInset() {
+    var r = { b: 0, r: 0 }, sr = $('stage').getBoundingClientRect(), land = landscapeMode(), ic = $('icWrap');
+    if (ic.classList.contains('on') && ic.classList.contains('dock')) {
+      if (land) r.r = $('icCard').offsetWidth; else r.b = Math.max(0, sr.bottom - (window.innerHeight - $('icCard').offsetHeight));
+    } else if (sheetPane) {
+      if (land) r.r = $('sheet').offsetWidth; else r.b = $('sheetBody').offsetHeight;
+    }
+    return r;
+  }
+  function updateReveal() {
+    if (viewMode !== 'plan' || planCal.stage !== 'idle') return;
+    var ins = overlayInset();
+    if (!ins.b && !ins.r) { if (revealSave) { panX = revealSave.x; panY = revealSave.y; revealSave = null; render(); } return; }
+    if (!revealSave) revealSave = { x: panX, y: panY };
+    panX = revealSave.x; panY = revealSave.y;
+    var cw = cv.width / dpr, ch = cv.height / dpr;
+    computeView(cw, ch);
+    var it = selectedId != null ? getItem(selectedId) : null, x0 = 0, y0 = 0, x1 = state.room.w, y1 = state.room.d;
+    if (it) { var d = effDims(it); x0 = it.x - d.w / 2; x1 = it.x + d.w / 2; y0 = it.y - d.d / 2; y1 = it.y + d.d / 2; }
+    var a = w2p(x0, y0), b = w2p(x1, y1);
+    function fit(lo, hi, vlo, vhi) { if (lo >= vlo && hi <= vhi) return 0; if (hi - lo > vhi - vlo) return vlo - lo; return hi > vhi ? vhi - hi : vlo - lo; }
+    panX += fit(a.x, b.x, 12, cw - ins.r - 12);
+    panY += fit(a.y, b.y, 48, ch - ins.b - 12);
+    render();
   }
   Array.prototype.forEach.call(document.querySelectorAll('.tab'), function (t) {
     t.addEventListener('click', function () {
@@ -1487,22 +1554,28 @@
 
   /* ================= item card ================= */
   var icMode = 'edit';
+  function fillItemCard(it) {
+    setThumb(it ? it.img : '');
+    $('icName').value = it ? it.name : ''; $('icW').value = it ? it.w : 80; $('icD').value = it ? it.d : 40; $('icH').value = it ? it.h : 100;
+    $('icPrice').value = it && it.price ? it.price : ''; $('icLink').value = it ? it.link : '';
+    var a = $('icOpen'); if (it && it.link) { a.href = it.link; a.hidden = false; } else a.hidden = true;
+  }
   function openItemCard(mode, opt) {
     opt = opt || {};
     icMode = mode;
     var it = mode === 'edit' && selectedId != null ? getItem(selectedId) : null;
     if (mode === 'edit' && !it) return;
-    $('icTitle').textContent = mode === 'edit' ? '치수와 정보' : (opt.link ? '링크로 가져오기' : '직접 만들기');
-    setThumb(it ? it.img : '');
+    $('icTitle').textContent = opt.link ? '링크로 가져오기' : '직접 만들기'; $('icTitle').hidden = mode === 'edit';
     $('icImport').hidden = mode !== 'new'; $('lkUrl').value = ''; $('lkPaste').value = ''; lkSay('');
-    $('icName').value = it ? it.name : ''; $('icW').value = it ? it.w : 80; $('icD').value = it ? it.d : 40; $('icH').value = it ? it.h : 100;
-    $('icPrice').value = it && it.price ? it.price : ''; $('icLink').value = it ? it.link : '';
+    fillItemCard(it);
     $('icEditActs').hidden = mode !== 'edit'; $('icPlace').hidden = mode !== 'new';
-    var a = $('icOpen'); if (it && it.link) { a.href = it.link; a.hidden = false; } else a.hidden = true;
+    $('icMore').open = mode === 'new';
+    $('icWrap').classList.toggle('dock', mode === 'edit');
     $('icWrap').classList.add('on'); $('icWrap').setAttribute('aria-hidden', 'false'); updateChrome();
+    if (mode === 'edit') updateReveal();
     if (mode === 'new') setTimeout(function () { (opt.link ? $('lkUrl') : $('icName')).focus(); }, 380);
   }
-  function closeItemCard() { $('icWrap').classList.remove('on'); $('icWrap').setAttribute('aria-hidden', 'true'); if (document.activeElement && document.activeElement.blur) document.activeElement.blur(); updateChrome(); render(); }
+  function closeItemCard() { $('icWrap').classList.remove('on'); $('icWrap').setAttribute('aria-hidden', 'true'); if (document.activeElement && document.activeElement.blur) document.activeElement.blur(); updateChrome(); updateReveal(); render(); }
   function editField(fn) { if (icMode === 'edit') withSel(fn); }
   $('icName').addEventListener('change', function () { editField(function (it) { it.name = cleanName($('icName').value); }); });
   $('icW').addEventListener('change', function () { var v = num($('icW').value, 5, 1000, 50); $('icW').value = v; editField(function (it) { it.w = v; }); });

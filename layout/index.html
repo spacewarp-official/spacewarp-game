@@ -267,7 +267,7 @@
       <p id="pcText"></p>
       <div class="row2" id="pcLen" hidden><span class="lb" style="font-size:15px">실제 길이</span><span><span class="stepper"><button type="button" data-d="-10" data-t="pcCm" aria-label="줄이기">−</button><input type="number" id="pcCm" inputmode="numeric" min="10" max="3000" value="300"><button type="button" data-d="10" data-t="pcCm" aria-label="늘리기">+</button></span><span class="unit">cm</span></span></div>
       <div class="acts" id="pcKinds" hidden><button class="btn sm primary" id="pcDoor">문</button><button class="btn sm" id="pcWin">창</button></div>
-      <div class="acts"><button class="btn sm primary" id="pcApply" hidden>적용</button><button class="btn sm primary" id="pcNext" hidden>다음</button><button class="btn sm" id="pcUndo" hidden>한 점 취소</button><button class="btn sm" id="pcCancel">취소</button></div>
+      <div class="acts"><button class="btn sm primary" id="pcApply" hidden>적용</button><button class="btn sm primary" id="pcNext" hidden>다음</button><button class="btn sm" id="pcAuto" hidden>자동으로 찾기</button><button class="btn sm" id="pcClear" hidden>처음부터</button><button class="btn sm" id="pcUndo" hidden>한 점 취소</button><button class="btn sm" id="pcCancel">취소</button></div>
     </div>
     <div id="calibCard" class="tcard glass" hidden>
       <div id="cbDiagram"></div>
@@ -1872,10 +1872,11 @@
         : st === 'enter'
         ? '두 곳 사이의 실제 길이를 넣어요. 모르면 줄자로 잰 방 한 변의 길이를 넣어요.'
         : st === 'trace'
-        ? '방 윤곽선을 따요. 방의 모서리를 순서대로 눌러 주세요 (' + tn + '개). 처음 점을 다시 누르면 닫혀요.'
+        ? (planCal.autoClosed ? '자동으로 찾은 윤곽선이에요 (' + tn + '개 모서리). 맞으면 "다음", 아니면 "처음부터"로 직접 눌러 주세요.' : '방 윤곽선을 따요. 방의 모서리를 순서대로 눌러 주세요 (' + tn + '개). 처음 점을 다시 누르면 닫혀요.')
         : '문과 창을 표시해요 (건너뛰어도 돼요). 문이나 창의 양 끝 두 곳을 눌러요. 표시한 것: ' + on + '개';
       $('pcLen').hidden = st !== 'enter'; $('pcApply').hidden = st !== 'enter';
       $('pcUndo').hidden = !(st === 'trace' || st === 'ops');
+      $('pcAuto').hidden = st !== 'trace'; $('pcClear').hidden = st !== 'trace';
       $('pcNext').hidden = !(st === 'trace' || st === 'ops');
       $('pcNext').textContent = st === 'trace' ? '다음' : '완료';
       $('pcNext').disabled = st === 'trace' && tn < 3;
@@ -1919,10 +1920,183 @@
     planCal = { stage: 'pick', pts: [], fresh: !!fresh };
     selectedId = null; resetZoomQuiet(); closeSheet(); setMode('plan'); updatePlanUi(); render();
   }
+  /* ---- automatic outer outline of a floor plan picture (pure functions on a grey-level array) ---- */
+  function boxDilate(m, W, H, r, wantOn) {
+    // separable box filter: wantOn=1 grows the 'on' pixels (dilate), wantOn=0 shrinks them (erode)
+    var tmp = new Uint8Array(W * H), out = new Uint8Array(W * H), x, y, k, acc;
+    for (y = 0; y < H; y++) {
+      for (x = 0; x < W; x++) {
+        acc = wantOn ? 0 : 1;
+        for (k = -r; k <= r; k++) { var xx = x + k; var v = (xx < 0 || xx >= W) ? (wantOn ? 0 : 1) : m[y * W + xx]; if (wantOn) { if (v) { acc = 1; break; } } else if (!v) { acc = 0; break; } }
+        tmp[y * W + x] = acc;
+      }
+    }
+    for (x = 0; x < W; x++) {
+      for (y = 0; y < H; y++) {
+        acc = wantOn ? 0 : 1;
+        for (k = -r; k <= r; k++) { var yy = y + k; var v2 = (yy < 0 || yy >= H) ? (wantOn ? 0 : 1) : tmp[yy * W + x]; if (wantOn) { if (v2) { acc = 1; break; } } else if (!v2) { acc = 0; break; } }
+        out[y * W + x] = acc;
+      }
+    }
+    return out;
+  }
+  function rdp(P, eps) {
+    if (P.length < 3) return P.slice();
+    var a = P[0], b = P[P.length - 1], dmax = -1, idx = -1, dx = b[0] - a[0], dy = b[1] - a[1], L = Math.hypot(dx, dy) || 1;
+    for (var i = 1; i < P.length - 1; i++) {
+      var d = Math.abs(dy * P[i][0] - dx * P[i][1] + b[0] * a[1] - b[1] * a[0]) / L;
+      if (d > dmax) { dmax = d; idx = i; }
+    }
+    if (dmax <= eps) return [a, b];
+    var l = rdp(P.slice(0, idx + 1), eps), r = rdp(P.slice(idx), eps);
+    return l.slice(0, -1).concat(r);
+  }
+  function dropSmallInk(ink, W, H) {
+    // text and little symbols are small ink pieces: remove them so they cannot stick to the walls when the picture is closed up
+    var N = W * H, seen = new Uint8Array(N), q = new Int32Array(N), lim = Math.max(W, H) * 0.07, i;
+    for (i = 0; i < N; i++) {
+      if (!ink[i] || seen[i]) continue;
+      var qh = 0, qt = 0, x0 = W, y0 = H, x1 = -1, y1 = -1;
+      q[qt++] = i; seen[i] = 1;
+      while (qh < qt) {
+        var p = q[qh++], px = p % W, py = (p - px) / W;
+        if (px < x0) x0 = px; if (px > x1) x1 = px; if (py < y0) y0 = py; if (py > y1) y1 = py;
+        for (var dy = -1; dy <= 1; dy++) for (var dx = -1; dx <= 1; dx++) {
+          var nx = px + dx, ny = py + dy;
+          if (nx < 0 || ny < 0 || nx >= W || ny >= H) continue;
+          var np = ny * W + nx; if (ink[np] && !seen[np]) { seen[np] = 1; q[qt++] = np; }
+        }
+      }
+      if (Math.max(x1 - x0, y1 - y0) < lim) for (var j = 0; j < qt; j++) ink[q[j]] = 0;
+    }
+  }
+  function traceOutline(lum, W, H) {
+    // try a small closing radius first; walls with wide door or balcony openings need a larger one
+    var rfs = [0.012, 0.03, 0.055];
+    var res = [], t, maxA = 0;
+    for (t = 0; t < rfs.length; t++) { var o = traceOutlineR(lum, W, H, rfs[t]); if (o) { res.push(o); if (o.area > maxA) maxA = o.area; } }
+    // a room that leaked through a wall opening is much smaller than the closed footprint: take the smallest radius that already reaches the full size
+    for (t = 0; t < res.length; t++) if (res[t].area >= maxA * 0.92) return res[t].poly;
+    return null;
+  }
+  function traceOutlineR(lum, W, H, rf) {
+    var N = W * H, i, x, y;
+    var ink = new Uint8Array(N), bx0 = W, by0 = H, bx1 = -1, by1 = -1;
+    for (i = 0; i < N; i++) {
+      ink[i] = lum[i] < 150 ? 1 : 0;
+      if (ink[i]) { var ix = i % W, iy = (i - ix) / W; if (ix < bx0) bx0 = ix; if (ix > bx1) bx1 = ix; if (iy < by0) by0 = iy; if (iy > by1) by1 = iy; }
+    }
+    if (bx1 < 0) return null;
+    dropSmallInk(ink, W, H);
+    var inkArea = (bx1 - bx0 + 1) * (by1 - by0 + 1);
+    var r = Math.max(2, Math.round(Math.max(W, H) * rf));
+    var thick = boxDilate(ink, W, H, r, 1);
+    // background = what can be reached from the picture border without crossing ink
+    var bg = new Uint8Array(N), q = new Int32Array(N), qh = 0, qt = 0;
+    function push(p) { if (!thick[p] && !bg[p]) { bg[p] = 1; q[qt++] = p; } }
+    for (x = 0; x < W; x++) { push(x); push((H - 1) * W + x); }
+    for (y = 0; y < H; y++) { push(y * W); push(y * W + W - 1); }
+    while (qh < qt) {
+      var p = q[qh++], px = p % W, py = (p - px) / W;
+      if (px > 0) push(p - 1); if (px < W - 1) push(p + 1); if (py > 0) push(p - W); if (py < H - 1) push(p + W);
+    }
+    var fp = new Uint8Array(N);
+    for (i = 0; i < N; i++) fp[i] = bg[i] ? 0 : 1;
+    // keep only the biggest blob
+    var lab = new Int32Array(N), best = 0, bestId = 0, id = 0;
+    for (i = 0; i < N; i++) {
+      if (!fp[i] || lab[i]) continue;
+      id++; qh = 0; qt = 0; q[qt++] = i; lab[i] = id; var cnt = 0;
+      while (qh < qt) {
+        var p2 = q[qh++], x2 = p2 % W, y2 = (p2 - x2) / W; cnt++;
+        if (x2 > 0 && fp[p2 - 1] && !lab[p2 - 1]) { lab[p2 - 1] = id; q[qt++] = p2 - 1; }
+        if (x2 < W - 1 && fp[p2 + 1] && !lab[p2 + 1]) { lab[p2 + 1] = id; q[qt++] = p2 + 1; }
+        if (y2 > 0 && fp[p2 - W] && !lab[p2 - W]) { lab[p2 - W] = id; q[qt++] = p2 - W; }
+        if (y2 < H - 1 && fp[p2 + W] && !lab[p2 + W]) { lab[p2 + W] = id; q[qt++] = p2 + W; }
+      }
+      if (cnt > best) { best = cnt; bestId = id; }
+    }
+    if (!bestId || best < N * 0.06) return null;
+    var blob = new Uint8Array(N);
+    var kx0 = W, ky0 = H, kx1 = -1, ky1 = -1;
+    for (i = 0; i < N; i++) {
+      blob[i] = lab[i] === bestId ? 1 : 0;
+      if (blob[i]) { var kx = i % W, ky = (i - kx) / W; if (kx < kx0) kx0 = kx; if (kx > kx1) kx1 = kx; if (ky < ky0) ky0 = ky; if (ky > ky1) ky1 = ky; }
+    }
+    blob = boxDilate(blob, W, H, r, 0);   // undo the growth from the ink thickening
+    // Moore-neighbour boundary tracing
+    var start = -1;
+    for (i = 0; i < N; i++) if (blob[i]) { start = i; break; }
+    if (start < 0) return null;
+    var DX = [1, 1, 0, -1, -1, -1, 0, 1], DY = [0, 1, 1, 1, 0, -1, -1, -1];
+    var sx = start % W, sy = (start - sx) / W, cx = sx, cy = sy, dir = 7, pts = [[sx, sy]], guard = 0;
+    function on(a, b) { return a >= 0 && b >= 0 && a < W && b < H && blob[b * W + a] === 1; }
+    do {
+      var found = false, k;
+      for (k = 0; k < 8; k++) {
+        var nd = (dir + 6 + k) % 8, nx = cx + DX[nd], ny = cy + DY[nd];
+        if (on(nx, ny)) { cx = nx; cy = ny; dir = nd; found = true; break; }
+      }
+      if (!found) break;
+      pts.push([cx, cy]);
+      if (++guard > N * 2) break;
+    } while (!(cx === sx && cy === sy && dir !== undefined && guard > 2));
+    if (pts.length < 8) return null;
+    var eps = Math.max(2, Math.max(W, H) * 0.014);
+    var far = 0, fd = -1;
+    pts.forEach(function (pp, j) { var dd = Math.hypot(pp[0] - pts[0][0], pp[1] - pts[0][1]); if (dd > fd) { fd = dd; far = j; } });
+    var ra = rdp(pts.slice(0, far + 1), eps), rb = rdp(pts.slice(far).concat([pts[0]]), eps);
+    var poly = ra.slice(0, -1).concat(rb.slice(0, -1));
+    if (poly.length < 3) return null;
+    // most plans are made of straight horizontal and vertical walls: pull nearly equal coordinates together
+    var tol = Math.max(3, Math.max(W, H) * 0.02);
+    ['0', '1'].forEach(function (ax) {
+      var a = +ax, vals = poly.map(function (p) { return p[a]; }).sort(function (u, v) { return u - v; }), groups = [], g = [vals[0]];
+      for (var j = 1; j < vals.length; j++) { if (vals[j] - g[g.length - 1] <= tol) g.push(vals[j]); else { groups.push(g); g = [vals[j]]; } }
+      groups.push(g);
+      poly.forEach(function (p) {
+        for (var gi = 0; gi < groups.length; gi++) { var gr = groups[gi]; if (p[a] >= gr[0] - 0.01 && p[a] <= gr[gr.length - 1] + 0.01) { p[a] = gr.reduce(function (s, v) { return s + v; }, 0) / gr.length; break; } }
+      });
+    });
+    var clean = [];
+    poly.forEach(function (p) { var l = clean[clean.length - 1]; if (!l || Math.abs(l[0] - p[0]) > 0.5 || Math.abs(l[1] - p[1]) > 0.5) clean.push([p[0], p[1]]); });
+    if (clean.length > 1 && Math.abs(clean[0][0] - clean[clean.length - 1][0]) < 0.5 && Math.abs(clean[0][1] - clean[clean.length - 1][1]) < 0.5) clean.pop();
+    var out = [];
+    for (i = 0; i < clean.length; i++) {
+      var A = clean[(i + clean.length - 1) % clean.length], B = clean[i], C = clean[(i + 1) % clean.length];
+      var col = (Math.abs(A[0] - B[0]) < 0.5 && Math.abs(B[0] - C[0]) < 0.5) || (Math.abs(A[1] - B[1]) < 0.5 && Math.abs(B[1] - C[1]) < 0.5);
+      if (!col) out.push(B);
+    }
+    if (out.length < 3 || out.length > 80) return null;
+    var area = 0;
+    for (i = 0; i < out.length; i++) { var P1 = out[i], P2 = out[(i + 1) % out.length]; area += P1[0] * P2[1] - P2[0] * P1[1]; }
+    if (Math.abs(area) / 2 < N * 0.06) return null;
+    return { poly: out, area: best };
+  }
+  function autoOutlinePts() {
+    if (!planImg || !planImg.naturalWidth) return null;
+    var k = Math.min(1, 700 / Math.max(planImg.naturalWidth, planImg.naturalHeight)), W = Math.max(8, Math.round(planImg.naturalWidth * k)), H = Math.max(8, Math.round(planImg.naturalHeight * k)), pad = 8;
+    var c = document.createElement('canvas'); c.width = W + pad * 2; c.height = H + pad * 2;
+    var cx = c.getContext('2d'); cx.fillStyle = '#fff'; cx.fillRect(0, 0, c.width, c.height); cx.drawImage(planImg, pad, pad, W, H);
+    var d;
+    try { d = cx.getImageData(0, 0, c.width, c.height).data; } catch (e) { return null; }
+    var lum = new Uint8Array(c.width * c.height), i, j;
+    for (i = 0, j = 0; j < lum.length; i += 4, j++) lum[j] = (d[i] * 299 + d[i + 1] * 587 + d[i + 2] * 114) / 1000;
+    var poly = traceOutline(lum, c.width, c.height); if (!poly) return null;
+    return poly.map(function (p) { return { x: clamp((p[0] - pad) / W, 0, 1), y: clamp((p[1] - pad) / H, 0, 1) }; });
+  }
+  function runAutoOutline(silent) {
+    var pts = autoOutlinePts();
+    if (!pts) { if (!silent) toast('윤곽선을 자동으로 찾지 못했어요. 모서리를 직접 눌러 주세요'); return false; }
+    planCal.tpts = pts; planCal.autoClosed = true; planCal.cur = null; updatePlanUi(); render();
+    toast('자동으로 윤곽선을 찾았어요. 맞으면 "다음"을 눌러 주세요');
+    return true;
+  }
   function startTrace() {
     if (!planImg) return;
-    planCal = { stage: 'trace', pts: [], tpts: [], ops: [], cur: null, fresh: false };
+    planCal = { stage: 'trace', pts: [], tpts: [], ops: [], cur: null, fresh: false, autoClosed: false };
     selectedId = null; resetZoomQuiet(); closeSheet(); setMode('plan'); updatePlanUi(); render();
+    setTimeout(function () { if (planCal.stage === 'trace' && !planCal.tpts.length) runAutoOutline(true); }, 60);
   }
   function resetZoomQuiet() { zoom = 1; panX = 0; panY = 0; }
   function cancelPlanCal() {
@@ -1954,7 +2128,7 @@
       P.forEach(function (q, i) { dot(q, i + 1); });
       return;
     }
-    var T = (planCal.tpts || []).map(sp), closed = planCal.stage === 'ops';
+    var T = (planCal.tpts || []).map(sp), closed = planCal.stage === 'ops' || !!planCal.autoClosed;
     if (T.length) {
       ctx.beginPath(); T.forEach(function (q, i) { if (i) ctx.lineTo(q.x, q.y); else ctx.moveTo(q.x, q.y); }); if (closed) ctx.closePath();
       if (closed) { ctx.fillStyle = 'rgba(0,122,255,0.10)'; ctx.fill(); }
@@ -1977,6 +2151,7 @@
         if (Math.hypot((p.x - f.x) * planRect.w, (p.y - f.y) * planRect.h) < 22) { planCal.stage = 'ops'; planCal.cur = null; updatePlanUi(); render(); return; }
       }
       if (T.length >= 80) { toast('점은 80개까지 찍을 수 있어요'); return; }
+      if (planCal.autoClosed) { planCal.autoClosed = false; planCal.tpts = []; T = planCal.tpts; }
       T.push(p); updatePlanUi(); render(); return;
     }
     if (st === 'ops') {
@@ -1995,7 +2170,7 @@
     updatePlanUi(); render();
   }
   function undoPlanPoint() {
-    if (planCal.stage === 'trace') { planCal.tpts.pop(); }
+    if (planCal.stage === 'trace') { planCal.autoClosed = false; planCal.tpts.pop(); }
     else if (planCal.stage === 'ops') { if (planCal.cur) planCal.cur = null; else if (planCal.ops.length) planCal.ops.pop(); else { planCal.stage = 'trace'; } }
     updatePlanUi(); render();
   }
@@ -2161,6 +2336,8 @@
   $('pcApply').addEventListener('click', applyPlanScale);
   $('pcNext').addEventListener('click', nextPlanStage);
   $('pcUndo').addEventListener('click', undoPlanPoint);
+  $('pcAuto').addEventListener('click', function () { runAutoOutline(false); });
+  $('pcClear').addEventListener('click', function () { planCal.tpts = []; planCal.autoClosed = false; updatePlanUi(); render(); });
   $('pcDoor').addEventListener('click', function () { opType = 'd'; updatePlanUi(); render(); });
   $('pcWin').addEventListener('click', function () { opType = 'w'; updatePlanUi(); render(); });
   $('apTrace').addEventListener('click', startTrace);

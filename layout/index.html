@@ -311,8 +311,10 @@
 
       <div class="h">내 집 평면도</div>
       <div class="card">
-        <div style="display:flex;gap:8px"><input class="field" id="apQuery" type="search" placeholder="아파트 이름 또는 주소" aria-label="아파트 이름 또는 주소" style="flex:1;min-width:0"><button class="btn" id="apSearch" style="min-height:46px">평면도 찾기</button></div>
-        <p class="note">검색 결과에서 내 평형의 평면도를 캡처하거나 저장해서 아래에서 올려요. 올린 평면도 위에 가구를 놓을 수 있어요.</p>
+        <div style="display:flex;gap:8px"><input class="field" id="apQuery" type="search" placeholder="아파트 이름 또는 주소" aria-label="아파트 이름 또는 주소" style="flex:1;min-width:0"><button class="btn" id="apSearch" style="min-height:46px">검색</button></div>
+        <div id="apResults"></div>
+        <p class="note">다른 사람이 올려 둔 평면도를 찾아요. 없으면 아래 버튼으로 인터넷에서 찾아 저장한 뒤 올려요.</p>
+        <button class="btn block" id="apWeb" style="margin-top:6px">인터넷에서 평면도 이미지 찾기</button>
         <div class="h" style="margin:14px 0 6px;font-size:13px">평면도가 없을 때: 전용면적으로 어림하기</div>
         <div class="chips">
           <button class="chip" data-area="49">49㎡</button>
@@ -329,6 +331,15 @@
           <div class="row2" style="margin-top:6px"><span class="lb">평면도 보이기</span><input type="checkbox" class="switch" id="apShow" aria-label="평면도 보이기"></div>
           <button class="btn block" id="apRecal" style="margin-top:8px">크기 기준 다시 정하기</button>
           <button class="btn danger block" id="apClear" style="margin-top:8px">평면도 지우기</button>
+          <div id="apShare" style="margin-top:14px">
+            <div class="h" style="margin:0 0 6px;font-size:13px">다른 사람도 쓰게 공유하기</div>
+            <input class="field" id="shComplex" placeholder="단지 이름 (예: 래미안 퍼스티지)" maxlength="60" aria-label="단지 이름">
+            <input class="field" id="shType" placeholder="평형 (예: 84A)" maxlength="20" aria-label="평형" style="margin-top:8px">
+            <input class="field" id="shAddr" placeholder="동네 (예: 서울 서초구 반포동)" maxlength="100" aria-label="동네" style="margin-top:8px">
+            <div class="row2" style="margin-top:8px"><span class="lb" style="font-size:13px;line-height:1.35">내가 올려도 되는 평면도이고, 모두에게 공개되는 것에 동의해요</span><input type="checkbox" class="switch" id="shAgree" aria-label="공개 동의"></div>
+            <button class="btn block" id="shGo" style="margin-top:8px">공유하기</button>
+            <p class="note" id="shNote"></p>
+          </div>
         </div>
         <p class="note">평면도 이미지는 이 폰에만 저장되고 공유 링크에는 들어가지 않아요. 건설사나 부동산 사이트의 이미지는 개인이 참고하는 용도로만 쓰세요.</p>
       </div>
@@ -1752,7 +1763,112 @@
       planShow = o.s !== 0; setPlan(o.d, false);
     } catch (e) {}
   }
-  $('apSearch').addEventListener('click', function () {
+  /* ---- shared plan library (Supabase: public table + public image bucket, anon access only) ---- */
+  var SB = { url: 'https://pvjrbhsgffadiklpiknk.supabase.co', key: 'sb_publishable_d4NBdGqpxrg__1SXiRA-YA_TDutoT7B' };
+  function sbHeaders(extra) {
+    var h = { apikey: SB.key };
+    if (SB.key.indexOf('eyJ') === 0) h.Authorization = 'Bearer ' + SB.key;
+    for (var k in extra) h[k] = extra[k];
+    return h;
+  }
+  function sbImgUrl(path) { return SB.url + '/storage/v1/object/public/floorplans/' + path; }
+  function cleanKw(s) { return String(s || '').replace(/[,()*%\\"'&?#=]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 40); }
+  function renderResults(rows, msg) {
+    var box = $('apResults'); box.textContent = '';
+    if (msg) { var p = document.createElement('p'); p.className = 'note'; p.textContent = msg; box.appendChild(p); }
+    (rows || []).forEach(function (r) {
+      var row = document.createElement('div'); row.className = 'row2'; row.style.alignItems = 'center';
+      var lb = document.createElement('span'); lb.className = 'lb'; lb.style.fontSize = '14px'; lb.style.lineHeight = '1.35';
+      lb.textContent = r.complex + (r.type_label ? ' ' + r.type_label : '') + ' · ' + (r.w_cm / 100).toFixed(1) + '×' + (r.d_cm / 100).toFixed(1) + 'm';
+      var use = document.createElement('button'); use.className = 'btn'; use.textContent = '쓰기'; use.style.minHeight = '40px';
+      use.addEventListener('click', function () { usePlanRow(r); });
+      var rep = document.createElement('button'); rep.className = 'btn'; rep.textContent = '신고'; rep.style.minHeight = '40px'; rep.style.marginLeft = '6px';
+      rep.addEventListener('click', function () { reportPlanRow(r); });
+      var wrap = document.createElement('span'); wrap.style.display = 'flex'; wrap.appendChild(use); wrap.appendChild(rep);
+      row.appendChild(lb); row.appendChild(wrap); box.appendChild(row);
+    });
+  }
+  function searchPlans() {
+    var kw = cleanKw($('apQuery').value);
+    if (kw.length < 2) { toast('아파트 이름이나 동네를 두 글자 이상 입력해 주세요'); return; }
+    renderResults([], '찾는 중이에요…');
+    var u = SB.url + '/rest/v1/floorplans?select=id,complex,addr,type_label,img_path,w_cm,d_cm&hidden=eq.false&or=' +
+      encodeURIComponent('(complex.ilike.*' + kw + '*,addr.ilike.*' + kw + '*)') + '&order=created_at.desc&limit=20';
+    var ctl = new AbortController(), tm = setTimeout(function () { ctl.abort(); }, 12000);
+    fetch(u, { headers: sbHeaders(), signal: ctl.signal }).then(function (r) {
+      clearTimeout(tm);
+      if (!r.ok) throw new Error('http ' + r.status);
+      return r.json();
+    }).then(function (rows) {
+      if (!rows.length) renderResults([], '아직 올라온 평면도가 없어요. 아래에서 인터넷으로 찾아 올려 주시면 다음 사람이 바로 쓸 수 있어요.');
+      else renderResults(rows, '');
+    }).catch(function () { clearTimeout(tm); renderResults([], '공유 평면도를 불러오지 못했어요. 잠시 뒤 다시 해 보세요.'); });
+  }
+  function usePlanRow(r) {
+    toast('평면도를 불러오는 중이에요…');
+    fetch(sbImgUrl(r.img_path)).then(function (x) { if (!x.ok) throw new Error('img'); return x.blob(); }).then(function (b) {
+      var rd = new FileReader();
+      rd.onload = function () {
+        if (state.items.length && !confirm('방 크기가 바뀌어요. 이미 놓은 가구는 그대로 남아요. 계속할까요?')) return;
+        planShow = true; planCal = { stage: 'idle', pts: [], fresh: false };
+        state.room.w = r.w_cm; state.room.d = r.d_cm;
+        resetZoomQuiet(); commit(); syncRoomInputs(); setPlan(rd.result, false);
+        var t = setInterval(function () { if (planImg && planData === rd.result) { clearInterval(t); persistPlan(); updatePlanUi(); render(); toast(r.complex + ' 평면도를 깔았어요'); closeSheet(); } }, 60);
+        setTimeout(function () { clearInterval(t); }, 5000);
+      };
+      rd.readAsDataURL(b);
+    }).catch(function () { toast('평면도를 불러오지 못했어요'); });
+  }
+  function reportPlanRow(r) {
+    if (!confirm('이 평면도를 신고할까요? (저작권, 잘못된 도면, 부적절한 이미지)')) return;
+    fetch(SB.url + '/rest/v1/rpc/report_floorplan', { method: 'POST', headers: sbHeaders({ 'Content-Type': 'application/json' }), body: JSON.stringify({ p_id: r.id }) })
+      .then(function (x) { toast(x.ok ? '신고했어요. 확인해서 정리할게요' : '신고하지 못했어요'); }).catch(function () { toast('신고하지 못했어요'); });
+  }
+  function newId() {
+    if (window.crypto && crypto.randomUUID) return crypto.randomUUID();
+    var h = '0123456789abcdef', s = '';
+    for (var i = 0; i < 36; i++) s += (i === 8 || i === 13 || i === 18 || i === 23) ? '-' : h[Math.floor(Math.random() * 16)];
+    return s;
+  }
+  function planBlob(cb) {
+    var sizes = [[1600, 0.78], [1300, 0.72], [1000, 0.7]], i = 0;
+    (function next() {
+      var k = Math.min(1, sizes[i][0] / Math.max(planImg.naturalWidth, planImg.naturalHeight));
+      var c = document.createElement('canvas'); c.width = Math.max(1, Math.round(planImg.naturalWidth * k)); c.height = Math.max(1, Math.round(planImg.naturalHeight * k));
+      var cx = c.getContext('2d'); cx.fillStyle = '#fff'; cx.fillRect(0, 0, c.width, c.height); cx.drawImage(planImg, 0, 0, c.width, c.height);
+      c.toBlob(function (b) {
+        if (b && b.size <= 1000000) cb(b);
+        else if (++i < sizes.length) next(); else cb(null);
+      }, 'image/jpeg', sizes[i][1]);
+    })();
+  }
+  var lastShareAt = 0;
+  function sharePlan() {
+    var note = $('shNote');
+    var complex = $('shComplex').value.trim(), type = $('shType').value.trim(), addr = $('shAddr').value.trim();
+    if (!planImg) { note.textContent = '먼저 평면도를 올려 주세요.'; return; }
+    if (complex.length < 2) { note.textContent = '단지 이름을 두 글자 이상 적어 주세요.'; return; }
+    if (!$('shAgree').checked) { note.textContent = '공개 동의에 체크해 주세요.'; return; }
+    var ratio = (planImg.naturalWidth / planImg.naturalHeight) / (state.room.w / state.room.d);
+    if (Math.abs(ratio - 1) > 0.03) { note.textContent = '평면도의 크기 기준이 정해져 있지 않아요. "크기 기준 다시 정하기"로 먼저 맞춰 주세요.'; return; }
+    if (Date.now() - lastShareAt < 20000) { note.textContent = '잠시 뒤에 다시 눌러 주세요.'; return; }
+    lastShareAt = Date.now(); $('shGo').disabled = true; note.textContent = '올리는 중이에요…';
+    planBlob(function (blob) {
+      if (!blob) { note.textContent = '이미지가 너무 커서 올리지 못했어요.'; $('shGo').disabled = false; return; }
+      var id = newId(), path = id + '.jpg';
+      fetch(SB.url + '/storage/v1/object/floorplans/' + path, { method: 'POST', headers: sbHeaders({ 'Content-Type': 'image/jpeg' }), body: blob }).then(function (r) {
+        if (!r.ok) throw new Error('up ' + r.status);
+        return fetch(SB.url + '/rest/v1/floorplans', { method: 'POST', headers: sbHeaders({ 'Content-Type': 'application/json', Prefer: 'return=minimal' }),
+          body: JSON.stringify({ id: id, complex: complex, addr: addr || null, type_label: type || null, img_path: path, w_cm: state.room.w, d_cm: state.room.d }) });
+      }).then(function (r) {
+        if (!r.ok) throw new Error('row ' + r.status);
+        note.textContent = '공유했어요. 이제 다른 사람이 "' + complex + '"로 찾을 수 있어요.'; $('shGo').disabled = false;
+      }).catch(function () { note.textContent = '올리지 못했어요. 잠시 뒤 다시 해 보세요.'; $('shGo').disabled = false; });
+    });
+  }
+  $('shGo').addEventListener('click', sharePlan);
+  $('apSearch').addEventListener('click', searchPlans);
+  $('apWeb').addEventListener('click', function () {
     var q = $('apQuery').value.trim();
     if (!q) { toast('아파트 이름이나 주소를 입력해 주세요'); return; }
     window.open('https://search.naver.com/search.naver?where=image&query=' + encodeURIComponent(q + ' 평면도'), '_blank', 'noopener');

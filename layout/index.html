@@ -266,7 +266,8 @@
     <div id="planCard" class="tcard glass" hidden>
       <p id="pcText"></p>
       <div class="row2" id="pcLen" hidden><span class="lb" style="font-size:15px">실제 길이</span><span><span class="stepper"><button type="button" data-d="-10" data-t="pcCm" aria-label="줄이기">−</button><input type="number" id="pcCm" inputmode="numeric" min="10" max="3000" value="300"><button type="button" data-d="10" data-t="pcCm" aria-label="늘리기">+</button></span><span class="unit">cm</span></span></div>
-      <div class="acts"><button class="btn sm primary" id="pcApply" hidden>적용</button><button class="btn sm" id="pcCancel">취소</button></div>
+      <div class="acts" id="pcKinds" hidden><button class="btn sm primary" id="pcDoor">문</button><button class="btn sm" id="pcWin">창</button></div>
+      <div class="acts"><button class="btn sm primary" id="pcApply" hidden>적용</button><button class="btn sm primary" id="pcNext" hidden>다음</button><button class="btn sm" id="pcUndo" hidden>한 점 취소</button><button class="btn sm" id="pcCancel">취소</button></div>
     </div>
     <div id="calibCard" class="tcard glass" hidden>
       <div id="cbDiagram"></div>
@@ -332,6 +333,7 @@
       <div class="card">
         <div class="row2"><span class="lb">가로</span><span><span class="stepper"><button type="button" data-d="-10" data-t="rW" aria-label="가로 줄이기">−</button><input type="number" id="rW" inputmode="numeric" min="100" max="3000"><button type="button" data-d="10" data-t="rW" aria-label="가로 늘리기">+</button></span><span class="unit">cm</span></span></div>
         <div class="row2"><span class="lb">세로</span><span><span class="stepper"><button type="button" data-d="-10" data-t="rD" aria-label="세로 줄이기">−</button><input type="number" id="rD" inputmode="numeric" min="100" max="3000"><button type="button" data-d="10" data-t="rD" aria-label="세로 늘리기">+</button></span><span class="unit">cm</span></span></div>
+        <div class="row2"><span class="lb">천장 높이</span><span><span class="stepper"><button type="button" data-d="-10" data-t="rH" aria-label="천장 높이 줄이기">−</button><input type="number" id="rH" inputmode="numeric" min="180" max="500" placeholder="모름"><button type="button" data-d="10" data-t="rH" aria-label="천장 높이 늘리기">+</button></span><span class="unit">cm</span></span></div>
         <div class="chips">
           <button class="chip" data-pw="250" data-pd="400">원룸 250×400</button>
           <button class="chip" data-pw="300" data-pd="350">방 300×350</button>
@@ -360,21 +362,24 @@
         <button class="btn block" id="apUpload" data-ic="photo" style="margin-top:10px">평면도 이미지 올리기</button>
         <div id="apOpts" hidden>
           <p class="note" id="apState" style="margin-top:10px"></p>
-          <div class="row2" style="margin-top:6px"><span class="lb">평면도 보이기</span><input type="checkbox" class="switch" id="apShow" aria-label="평면도 보이기"></div>
-          <button class="btn block" id="apRecal" style="margin-top:8px">크기 기준 다시 정하기</button>
+          <div id="apImgOnly">
+            <div class="row2" style="margin-top:6px"><span class="lb">평면도 사진 보이기</span><input type="checkbox" class="switch" id="apShow" aria-label="평면도 사진 보이기"></div>
+            <button class="btn block" id="apTrace" style="margin-top:8px">윤곽선 따기 (문, 창 표시)</button>
+            <button class="btn block" id="apRecal" style="margin-top:8px">크기 기준 다시 정하기</button>
+          </div>
           <button class="btn danger block" id="apClear" style="margin-top:8px">평면도 지우기</button>
           <div id="apShare" style="margin-top:14px">
             <div class="h" style="margin:0 0 6px;font-size:13px">다른 사람도 쓰게 공유하기</div>
             <input class="field" id="shComplex" placeholder="단지 이름 (예: 래미안 퍼스티지)" maxlength="60" aria-label="단지 이름">
             <input class="field" id="shType" placeholder="평형 (예: 84A)" maxlength="20" aria-label="평형" style="margin-top:8px">
             <input class="field" id="shAddr" placeholder="동네 (예: 서울 서초구 반포동)" maxlength="100" aria-label="동네" style="margin-top:8px">
-            <div class="row2" style="margin-top:8px"><span class="lb" style="font-size:13px;line-height:1.35">내가 올려도 되는 평면도이고, 모두에게 공개되는 것에 동의해요</span><input type="checkbox" class="switch" id="shAgree" aria-label="공개 동의"></div>
-            <p class="note" style="margin-top:6px">평면도 이미지를 올려 주세요. 권리자가 요청하면 삭제해요.</p>
+            <div class="row2" style="margin-top:8px"><span class="lb" style="font-size:13px;line-height:1.35">내가 올려도 되는 평면도이고, 내가 딴 윤곽선 평면도가 모두에게 공개되는 것에 동의해요</span><input type="checkbox" class="switch" id="shAgree" aria-label="공개 동의"></div>
+            <p class="note" style="margin-top:6px">다른 사람에게는 내가 따 놓은 윤곽선 평면도(모양, 문, 창, 천장 높이)만 보여요. 올린 평면도 사진은 비공개로 보관해요. 권리자가 요청하면 삭제해요.</p>
             <button class="btn block" id="shGo" style="margin-top:8px">공유하기</button>
             <p class="note" id="shNote"></p>
           </div>
         </div>
-        <p class="note">평면도 이미지는 이 폰에만 저장되고 공유 링크에는 들어가지 않아요. 건설사나 부동산 사이트의 이미지는 개인이 참고하는 용도로만 쓰세요.</p>
+        <p class="note">평면도 사진은 "공유하기"를 누르기 전에는 이 폰에만 저장되고, 공유 링크에도 들어가지 않아요.</p>
       </div>
 
       <div class="h">방 사진 (사진 화면용)</div>
@@ -530,6 +535,8 @@
   var guides = { x: null, y: null };
   var iconImgs = {}, NAME_ICON = {};
   var planImg = null, planData = '', planShow = true, planCal = { stage: 'idle', pts: [], fresh: false };
+  var planGeo = null;   // where the picture sits relative to the room origin, in cm: {x, y, w, d}
+  var planVec = null;   // our own traced drawing: { pts: [[x, y] ...], ops: [{ t: 'd'|'w', a: [x, y], b: [x, y] }] } in cm
   var planRect = { x: 0, y: 0, w: 1, h: 1, k: 1 };
 
   function $(id) { return document.getElementById(id); }
@@ -567,7 +574,7 @@
   function sanitize(raw) {
     if (!raw || typeof raw !== 'object') return null;
     var room = raw.room || {};
-    var out = { room: { w: num(room.w, 100, 3000, 400), d: num(room.d, 100, 3000, 300) }, items: [], nextId: 1 };
+    var out = { room: { w: num(room.w, 100, 3000, 400), d: num(room.d, 100, 3000, 300), h: (room.h > 0 ? num(room.h, 180, 500, 0) : 0) }, items: [], nextId: 1 };
     var arr = Array.isArray(raw.items) ? raw.items.slice(0, 100) : [];
     arr.forEach(function (r) {
       if (!r || typeof r !== 'object') return;
@@ -667,7 +674,23 @@
   function outside(it) {
     if (!isFurn(it)) return false;
     var d = effDims(it);
+    if (planVec && planVec.pts.length >= 3) {
+      var cs = [[it.x - d.w / 2, it.y - d.d / 2], [it.x + d.w / 2, it.y - d.d / 2], [it.x + d.w / 2, it.y + d.d / 2], [it.x - d.w / 2, it.y + d.d / 2]];
+      for (var ci = 0; ci < 4; ci++) if (!pointInPoly(cs[ci][0], cs[ci][1], planVec.pts, 0.5)) return true;
+      return false;
+    }
     return it.x - d.w / 2 < -0.5 || it.y - d.d / 2 < -0.5 || it.x + d.w / 2 > state.room.w + 0.5 || it.y + d.d / 2 > state.room.d + 0.5;
+  }
+  function pointInPoly(x, y, P, tol) {
+    var i, j, c = false, n = P.length;
+    for (i = 0, j = n - 1; i < n; j = i++) {
+      var xi = P[i][0], yi = P[i][1], xj = P[j][0], yj = P[j][1];
+      // on an edge counts as inside
+      var dx = xj - xi, dy = yj - yi, L2 = dx * dx + dy * dy, t = L2 ? Math.max(0, Math.min(1, ((x - xi) * dx + (y - yi) * dy) / L2)) : 0;
+      if (Math.hypot(x - (xi + t * dx), y - (yi + t * dy)) <= (tol || 0)) return true;
+      if (((yi > y) !== (yj > y)) && (x < (xj - xi) * (y - yi) / (yj - yi) + xi)) c = !c;
+    }
+    return c;
   }
   function problems() {
     var res = { overlap: {}, out: {}, zone: {}, nOverlap: 0, nOut: 0, nZone: 0 };
@@ -784,13 +807,23 @@
     computeView(cw, ch);
     var s = view.s, rw = state.room.w * s, rd = state.room.d * s;
 
+    var vecOn = !!(planVec && planVec.pts.length >= 3);
+    function vecPath() {
+      ctx.beginPath();
+      planVec.pts.forEach(function (q, qi) { var pp = w2p(q[0], q[1]); if (qi) ctx.lineTo(pp.x, pp.y); else ctx.moveTo(pp.x, pp.y); });
+      ctx.closePath();
+    }
     ctx.save();
     ctx.shadowColor = 'rgba(0,0,0,0.18)'; ctx.shadowBlur = 18; ctx.shadowOffsetY = 4;
-    ctx.fillStyle = TH.floor; ctx.fillRect(view.ox, view.oy, rw, rd);
+    ctx.fillStyle = TH.floor;
+    if (vecOn) { vecPath(); ctx.fill(); } else ctx.fillRect(view.ox, view.oy, rw, rd);
     ctx.restore();
 
     if (planImg && planShow && planImg.naturalWidth) {
-      ctx.drawImage(planImg, view.ox, view.oy, rw, rd);
+      var pg = planGeo || { x: 0, y: 0, w: state.room.w, d: state.room.d };
+      ctx.globalAlpha = vecOn ? 0.45 : 1;
+      ctx.drawImage(planImg, view.ox + pg.x * s, view.oy + pg.y * s, pg.w * s, pg.d * s);
+      ctx.globalAlpha = 1;
     } else if (photo && photo.complete && photo.naturalWidth) {
       ctx.save(); ctx.beginPath(); ctx.rect(view.ox, view.oy, rw, rd); ctx.clip();
       var k = Math.max(rw / photo.naturalWidth, rd / photo.naturalHeight);
@@ -799,7 +832,8 @@
       ctx.restore();
     }
 
-    ctx.save(); ctx.beginPath(); ctx.rect(view.ox, view.oy, rw, rd); ctx.clip();
+    ctx.save();
+    if (vecOn) { vecPath(); ctx.clip(); } else { ctx.beginPath(); ctx.rect(view.ox, view.oy, rw, rd); ctx.clip(); }
     function gridLines(step, alpha) {
       ctx.strokeStyle = 'rgba(' + TH.grid + ',' + alpha + ')'; ctx.lineWidth = 1; ctx.beginPath();
       var gx, gy;
@@ -812,12 +846,22 @@
     gridLines(100, 0.18);
     ctx.restore();
 
-    ctx.strokeStyle = TH.wall; ctx.lineWidth = 3; ctx.lineJoin = 'round'; ctx.strokeRect(view.ox, view.oy, rw, rd);
+    ctx.strokeStyle = TH.wall; ctx.lineWidth = vecOn ? 4 : 3; ctx.lineJoin = 'round';
+    if (vecOn) {
+      vecPath(); ctx.stroke();
+      (planVec.ops || []).forEach(function (op) {
+        var a = w2p(op.a[0], op.a[1]), b = w2p(op.b[0], op.b[1]);
+        ctx.lineCap = 'butt';
+        ctx.strokeStyle = TH.floor; ctx.lineWidth = 7; ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
+        ctx.strokeStyle = op.t === 'd' ? '#c79563' : '#5ab4e6'; ctx.lineWidth = op.t === 'd' ? 4 : 3; ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
+      });
+    } else ctx.strokeRect(view.ox, view.oy, rw, rd);
 
     ctx.fillStyle = TH.ink; ctx.font = '600 14px ' + FONT; ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
     ctx.fillText(state.room.w + ' cm', view.ox + rw / 2, view.oy - 9);
     ctx.save(); ctx.translate(view.ox - 11, view.oy + rd / 2); ctx.rotate(-Math.PI / 2); ctx.textBaseline = 'bottom';
     ctx.fillText(state.room.d + ' cm', 0, 0); ctx.restore();
+    if (state.room.h) { ctx.textAlign = 'center'; ctx.textBaseline = 'top'; ctx.fillStyle = TH.sub || TH.ink; ctx.font = '500 13px ' + FONT; ctx.fillText('천장 높이 ' + state.room.h + ' cm', view.ox + rw / 2, view.oy + rd + 8); ctx.fillStyle = TH.ink; }
 
     var pr = problems();
     // door swing zones
@@ -1293,7 +1337,7 @@
     $('menu').hidden = true;
     var r = cv.getBoundingClientRect(), px = e.clientX - r.left, py = e.clientY - r.top;
     ptrs[e.pointerId] = { x: px, y: py };
-    if (viewMode === 'plan' && planCal.stage === 'pick') { addPlanPoint(px, py); return; }
+    if (viewMode === 'plan' && (planCal.stage === 'pick' || planCal.stage === 'trace' || planCal.stage === 'ops')) { addPlanPoint(px, py); return; }
     if (viewMode === 'plan' && Object.keys(ptrs).length === 2) { startPinch(); return; }
     if (Object.keys(ptrs).length > 2) return;
     if (viewMode === 'photo') {
@@ -1516,14 +1560,16 @@
   });
 
   /* ================= room pane ================= */
-  function syncRoomInputs() { $('rW').value = state.room.w; $('rD').value = state.room.d; }
+  function syncRoomInputs() { $('rW').value = state.room.w; $('rD').value = state.room.d; $('rH').value = state.room.h || ''; }
   function onRoomChange() {
     state.room.w = num($('rW').value, 100, 3000, state.room.w);
     state.room.d = num($('rD').value, 100, 3000, state.room.d);
+    state.room.h = $('rH').value === '' ? 0 : num($('rH').value, 180, 500, state.room.h || 0);
     commit(); syncRoomInputs(); render();
   }
   $('rW').addEventListener('change', onRoomChange);
   $('rD').addEventListener('change', onRoomChange);
+  $('rH').addEventListener('change', onRoomChange);
   Array.prototype.forEach.call(document.querySelectorAll('.chip[data-pw]'), function (c) {
     c.addEventListener('click', function () { $('rW').value = c.getAttribute('data-pw'); $('rD').value = c.getAttribute('data-pd'); onRoomChange(); });
   });
@@ -1726,32 +1772,70 @@
     lkSay('치수를 찾았어요: 가로 ' + (d.w != null ? d.w : '-') + ' · 세로 ' + (d.d != null ? d.d : '-') + ' · 높이 ' + (d.h != null ? d.h : '-') + ' cm. 맞는지 확인해 주세요.');
   });
 
-  /* ================= own floor plan picture (upload + set the scale) ================= */
+  /* ================= own floor plan picture (upload, set the scale, trace the outline) ================= */
   var PLAN_KEY = 'spacewarp_plan_v1';
+  var opType = 'd';
+  function cleanVec(v) {
+    if (!v || !Array.isArray(v.pts) || v.pts.length < 3 || v.pts.length > 80) return null;
+    var pts = [], ops = [], i;
+    for (i = 0; i < v.pts.length; i++) {
+      var p = v.pts[i]; if (!Array.isArray(p)) return null;
+      var x = parseFloat(p[0]), y = parseFloat(p[1]); if (!isFinite(x) || !isFinite(y)) return null;
+      pts.push([clamp(Math.round(x), 0, 3000), clamp(Math.round(y), 0, 3000)]);
+    }
+    (Array.isArray(v.ops) ? v.ops : []).slice(0, 40).forEach(function (o) {
+      if (!o || (o.t !== 'd' && o.t !== 'w') || !Array.isArray(o.a) || !Array.isArray(o.b)) return;
+      var ax = parseFloat(o.a[0]), ay = parseFloat(o.a[1]), bx = parseFloat(o.b[0]), by = parseFloat(o.b[1]);
+      if (![ax, ay, bx, by].every(isFinite)) return;
+      ops.push({ t: o.t, a: [clamp(Math.round(ax), 0, 3000), clamp(Math.round(ay), 0, 3000)], b: [clamp(Math.round(bx), 0, 3000), clamp(Math.round(by), 0, 3000)] });
+    });
+    return { pts: pts, ops: ops };
+  }
+  function vecBox(v) {
+    var w = 0, d = 0; v.pts.forEach(function (p) { w = Math.max(w, p[0]); d = Math.max(d, p[1]); });
+    return { w: clamp(w, 100, 3000), d: clamp(d, 100, 3000) };
+  }
   function updatePlanUi() {
-    $('apOpts').hidden = !planImg;
+    var st = planCal.stage, haveAny = !!(planImg || planVec);
+    $('apOpts').hidden = !haveAny;
     $('apShow').checked = planShow;
-    $('apState').textContent = planImg ? (planShow ? '평면도가 방 크기에 맞춰 깔려 있어요.' : '평면도를 숨겼어요.') : '';
+    $('apImgOnly').hidden = !planImg;
+    $('apShare').hidden = !(planImg && planVec);
+    $('apState').textContent = planVec
+      ? (planImg ? '윤곽선을 따 두었어요. 평면도 사진은 아래에 흐리게 깔려 있어요.' : '윤곽선 평면도가 깔려 있어요.')
+      : (planImg ? (planShow ? '평면도가 방 크기에 맞춰 깔려 있어요. "윤곽선 따기"를 하면 다른 사람과 공유할 수 있어요.' : '평면도를 숨겼어요.') : '');
     var c = $('planCard');
-    if (planCal.stage === 'idle') c.hidden = true;
+    if (st === 'idle') c.hidden = true;
     else {
       c.hidden = false;
-      $('pcText').textContent = planCal.stage === 'pick'
+      var tn = (planCal.tpts || []).length, on = (planCal.ops || []).length;
+      $('pcText').textContent = st === 'pick'
         ? '평면도에서 길이를 아는 두 곳을 눌러요 (' + (planCal.pts.length + 1) + '/2). 예: 방 한쪽 벽의 양 끝'
-        : '두 곳 사이의 실제 길이를 넣어요. 모르면 줄자로 잰 방 한 변의 길이를 넣어요.';
-      $('pcLen').hidden = planCal.stage !== 'enter'; $('pcApply').hidden = planCal.stage !== 'enter';
+        : st === 'enter'
+        ? '두 곳 사이의 실제 길이를 넣어요. 모르면 줄자로 잰 방 한 변의 길이를 넣어요.'
+        : st === 'trace'
+        ? '방 윤곽선을 따요. 방의 모서리를 순서대로 눌러 주세요 (' + tn + '개). 처음 점을 다시 누르면 닫혀요.'
+        : '문과 창을 표시해요 (건너뛰어도 돼요). 문이나 창의 양 끝 두 곳을 눌러요. 표시한 것: ' + on + '개';
+      $('pcLen').hidden = st !== 'enter'; $('pcApply').hidden = st !== 'enter';
+      $('pcUndo').hidden = !(st === 'trace' || st === 'ops');
+      $('pcNext').hidden = !(st === 'trace' || st === 'ops');
+      $('pcNext').textContent = st === 'trace' ? '다음' : '완료';
+      $('pcNext').disabled = st === 'trace' && tn < 3;
+      $('pcKinds').hidden = st !== 'ops';
+      $('pcDoor').classList.toggle('primary', opType === 'd'); $('pcWin').classList.toggle('primary', opType === 'w');
+      $('pcCancel').textContent = (st === 'trace' || st === 'ops') ? '건너뛰기' : '취소';
     }
     updateChrome();
   }
   function persistPlan() {
-    if (fromShare || !planData) return;
-    try { localStorage.setItem(PLAN_KEY, JSON.stringify({ d: planData, s: planShow ? 1 : 0 })); } catch (e) { toast('평면도가 커서 이 폰에 저장하지 못했어요'); }
+    if (fromShare || (!planData && !planVec)) return;
+    try { localStorage.setItem(PLAN_KEY, JSON.stringify({ d: planData, s: planShow ? 1 : 0, g: planGeo, v: planVec })); } catch (e) { toast('평면도가 커서 이 폰에 저장하지 못했어요'); }
   }
   function setPlan(url, fresh) {
     var img = new Image();
     img.onload = function () {
       planImg = img; planData = url;
-      if (fresh) startPlanCal(true); else { updatePlanUi(); render(); }
+      if (fresh) { planGeo = null; planVec = null; startPlanCal(true); } else { updatePlanUi(); render(); }
     };
     img.onerror = function () { toast('이미지를 열 수 없어요'); };
     img.src = url;
@@ -1777,14 +1861,19 @@
     planCal = { stage: 'pick', pts: [], fresh: !!fresh };
     selectedId = null; resetZoomQuiet(); closeSheet(); setMode('plan'); updatePlanUi(); render();
   }
+  function startTrace() {
+    if (!planImg) return;
+    planCal = { stage: 'trace', pts: [], tpts: [], ops: [], cur: null, fresh: false };
+    selectedId = null; resetZoomQuiet(); closeSheet(); setMode('plan'); updatePlanUi(); render();
+  }
   function resetZoomQuiet() { zoom = 1; panX = 0; panY = 0; }
   function cancelPlanCal() {
-    var wasFresh = planCal.fresh;
+    var wasFresh = planCal.fresh, st = planCal.stage;
     planCal = { stage: 'idle', pts: [], fresh: false };
-    if (wasFresh) clearPlan(); else { updatePlanUi(); render(); }
+    if (wasFresh) clearPlan(); else { updatePlanUi(); render(); if (st === 'trace' || st === 'ops') toast('윤곽선은 "내 집 평면도"에서 나중에 따도 돼요'); }
   }
   function clearPlan() {
-    planImg = null; planData = ''; planCal = { stage: 'idle', pts: [], fresh: false };
+    planImg = null; planData = ''; planGeo = null; planVec = null; planCal = { stage: 'idle', pts: [], fresh: false };
     try { localStorage.removeItem(PLAN_KEY); } catch (e) {}
     updatePlanUi(); render();
   }
@@ -1795,17 +1884,50 @@
     planRect = { x: (cw - w) / 2, y: (ch - h) / 2, w: w, h: h, k: k };
     ctx.save(); ctx.shadowColor = 'rgba(0,0,0,0.2)'; ctx.shadowBlur = 16; ctx.shadowOffsetY = 3; ctx.fillStyle = '#fff'; ctx.fillRect(planRect.x, planRect.y, w, h); ctx.restore();
     ctx.drawImage(planImg, planRect.x, planRect.y, w, h);
-    var P = planCal.pts.map(function (p) { return { x: planRect.x + p.x * w, y: planRect.y + p.y * h }; });
-    if (P.length === 2) { ctx.beginPath(); ctx.moveTo(P[0].x, P[0].y); ctx.lineTo(P[1].x, P[1].y); ctx.lineWidth = 3; ctx.strokeStyle = '#007aff'; ctx.stroke(); }
-    P.forEach(function (q, i) {
-      ctx.beginPath(); ctx.arc(q.x, q.y, 13, 0, Math.PI * 2); ctx.fillStyle = 'rgba(255,255,255,0.95)'; ctx.fill();
-      ctx.lineWidth = 2.5; ctx.strokeStyle = '#007aff'; ctx.stroke();
-      ctx.fillStyle = '#1c1c1e'; ctx.font = '700 13px ' + FONT; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(String(i + 1), q.x, q.y + 0.5);
+    function sp(p) { return { x: planRect.x + p.x * w, y: planRect.y + p.y * h }; }
+    function dot(q, label, col) {
+      ctx.beginPath(); ctx.arc(q.x, q.y, 12, 0, Math.PI * 2); ctx.fillStyle = 'rgba(255,255,255,0.95)'; ctx.fill();
+      ctx.lineWidth = 2.5; ctx.strokeStyle = col || '#007aff'; ctx.stroke();
+      ctx.fillStyle = '#1c1c1e'; ctx.font = '700 12px ' + FONT; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(String(label), q.x, q.y + 0.5);
+    }
+    if (planCal.stage === 'pick' || planCal.stage === 'enter') {
+      var P = planCal.pts.map(sp);
+      if (P.length === 2) { ctx.beginPath(); ctx.moveTo(P[0].x, P[0].y); ctx.lineTo(P[1].x, P[1].y); ctx.lineWidth = 3; ctx.strokeStyle = '#007aff'; ctx.stroke(); }
+      P.forEach(function (q, i) { dot(q, i + 1); });
+      return;
+    }
+    var T = (planCal.tpts || []).map(sp), closed = planCal.stage === 'ops';
+    if (T.length) {
+      ctx.beginPath(); T.forEach(function (q, i) { if (i) ctx.lineTo(q.x, q.y); else ctx.moveTo(q.x, q.y); }); if (closed) ctx.closePath();
+      if (closed) { ctx.fillStyle = 'rgba(0,122,255,0.10)'; ctx.fill(); }
+      ctx.lineWidth = 3; ctx.lineJoin = 'round'; ctx.strokeStyle = '#007aff'; ctx.stroke();
+      if (!closed) T.forEach(function (q, i) { dot(q, i + 1); });
+    }
+    (planCal.ops || []).forEach(function (op) {
+      var a = sp(op.a), b = sp(op.b);
+      ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.lineWidth = 6; ctx.lineCap = 'butt'; ctx.strokeStyle = op.t === 'd' ? '#c79563' : '#5ab4e6'; ctx.stroke();
     });
+    if (planCal.cur) { var cq = sp(planCal.cur); ctx.beginPath(); ctx.arc(cq.x, cq.y, 8, 0, Math.PI * 2); ctx.fillStyle = opType === 'd' ? '#c79563' : '#5ab4e6'; ctx.fill(); ctx.lineWidth = 2; ctx.strokeStyle = '#fff'; ctx.stroke(); }
   }
   function addPlanPoint(px, py) {
-    if (planCal.pts.length >= 2) return;
+    var st = planCal.stage;
     var p = { x: clamp((px - planRect.x) / planRect.w, 0, 1), y: clamp((py - planRect.y) / planRect.h, 0, 1) };
+    if (st === 'trace') {
+      var T = planCal.tpts;
+      if (T.length >= 3) {
+        var f = T[0];
+        if (Math.hypot((p.x - f.x) * planRect.w, (p.y - f.y) * planRect.h) < 22) { planCal.stage = 'ops'; planCal.cur = null; updatePlanUi(); render(); return; }
+      }
+      if (T.length >= 80) { toast('점은 80개까지 찍을 수 있어요'); return; }
+      T.push(p); updatePlanUi(); render(); return;
+    }
+    if (st === 'ops') {
+      if (!planCal.cur) { planCal.cur = p; render(); return; }
+      if (Math.hypot((p.x - planCal.cur.x) * planRect.w, (p.y - planCal.cur.y) * planRect.h) < 14) { toast('두 곳이 너무 가까워요'); return; }
+      if (planCal.ops.length >= 40) { toast('문과 창은 40개까지 표시할 수 있어요'); return; }
+      planCal.ops.push({ t: opType, a: planCal.cur, b: p }); planCal.cur = null; updatePlanUi(); render(); return;
+    }
+    if (st !== 'pick' || planCal.pts.length >= 2) return;
     if (planCal.pts.length === 1) {
       var a = planCal.pts[0];
       if (Math.hypot((p.x - a.x) * planRect.w, (p.y - a.y) * planRect.h) < 24) { toast('두 곳이 너무 가까워요. 멀리 떨어진 두 곳을 눌러 주세요'); return; }
@@ -1813,6 +1935,36 @@
     planCal.pts.push(p);
     if (planCal.pts.length === 2) planCal.stage = 'enter';
     updatePlanUi(); render();
+  }
+  function undoPlanPoint() {
+    if (planCal.stage === 'trace') { planCal.tpts.pop(); }
+    else if (planCal.stage === 'ops') { if (planCal.cur) planCal.cur = null; else if (planCal.ops.length) planCal.ops.pop(); else { planCal.stage = 'trace'; } }
+    updatePlanUi(); render();
+  }
+  function nextPlanStage() {
+    if (planCal.stage === 'trace') { if (planCal.tpts.length < 3) return; planCal.stage = 'ops'; planCal.cur = null; updatePlanUi(); render(); }
+    else if (planCal.stage === 'ops') finishTrace();
+  }
+  function finishTrace() {
+    var ext = planGeo ? { w: planGeo.w, d: planGeo.d } : { w: state.room.w, d: state.room.d };
+    var pts = planCal.tpts.map(function (p) { return [p.x * ext.w, p.y * ext.d]; });
+    var minX = 1e9, minY = 1e9, maxX = -1e9, maxY = -1e9;
+    pts.forEach(function (p) { minX = Math.min(minX, p[0]); minY = Math.min(minY, p[1]); maxX = Math.max(maxX, p[0]); maxY = Math.max(maxY, p[1]); });
+    if (maxX - minX < 100 || maxY - minY < 100) { toast('윤곽선이 너무 작아요. 크기 기준을 다시 확인해 주세요'); return; }
+    var norm = function (p) { return [Math.round(p[0] - minX), Math.round(p[1] - minY)]; };
+    var vec = cleanVec({
+      pts: pts.map(norm),
+      ops: planCal.ops.map(function (o) { return { t: o.t, a: norm([o.a.x * ext.w, o.a.y * ext.d]), b: norm([o.b.x * ext.w, o.b.y * ext.d]) }; })
+    });
+    if (!vec) { toast('윤곽선을 만들지 못했어요'); return; }
+    var og = planGeo ? { x: planGeo.x, y: planGeo.y } : { x: 0, y: 0 };
+    // items keep their place relative to the picture: the origin moves to the outline's top-left corner
+    state.items.forEach(function (it) { it.x -= og.x + minX; it.y -= og.y + minY; });
+    planGeo = { x: -minX, y: -minY, w: ext.w, d: ext.d };
+    planVec = vec; var bx = vecBox(vec); state.room.w = bx.w; state.room.d = bx.d;
+    planCal = { stage: 'idle', pts: [], fresh: false }; planShow = true;
+    resetZoomQuiet(); commit(); syncRoomInputs(); persistPlan(); updatePlanUi(); render();
+    toast('윤곽선 평면도를 만들었어요 (' + bx.w + '×' + bx.d + ' cm)');
   }
   function applyPlanScale() {
     var len = num($('pcCm').value, 10, 3000, 0);
@@ -1823,17 +1975,21 @@
     if (mx > 3000) { var f = 3000 / mx; W *= f; D *= f; note = ' (3,000cm가 넘어서 줄였어요)'; }
     if (Math.min(W, D) < 100) { toast('너무 작은 크기예요. 실제 길이를 다시 확인해 주세요'); return; }
     state.room.w = Math.round(W); state.room.d = Math.round(D);
-    planCal = { stage: 'idle', pts: [], fresh: false }; planShow = true;
-    resetZoomQuiet(); commit(); syncRoomInputs(); persistPlan(); updatePlanUi(); render();
+    planGeo = null; planVec = null; planShow = true;
+    resetZoomQuiet(); commit(); syncRoomInputs(); persistPlan();
     toast('방 크기를 ' + state.room.w + '×' + state.room.d + ' cm로 맞췄어요' + note);
+    startTrace();
   }
   function loadSavedPlan() {
     if (fromShare) return;
     try {
       var raw = localStorage.getItem(PLAN_KEY); if (!raw) return;
-      var o = JSON.parse(raw);
-      if (!o || typeof o.d !== 'string' || o.d.indexOf('data:image/') !== 0) return;
-      planShow = o.s !== 0; setPlan(o.d, false);
+      var o = JSON.parse(raw); if (!o) return;
+      var vec = cleanVec(o.v);
+      var geo = (o.g && isFinite(o.g.x) && isFinite(o.g.y) && o.g.w > 0 && o.g.d > 0) ? { x: +o.g.x, y: +o.g.y, w: +o.g.w, d: +o.g.d } : null;
+      planShow = o.s !== 0;
+      if (typeof o.d === 'string' && o.d.indexOf('data:image/') === 0) { planGeo = geo; planVec = vec; setPlan(o.d, false); }
+      else if (vec) { planVec = vec; planGeo = null; updatePlanUi(); render(); }
     } catch (e) {}
   }
   /* ---- shared plan library (Supabase: public table + public image bucket, anon access only) ---- */
@@ -1852,7 +2008,7 @@
     (rows || []).forEach(function (r) {
       var row = document.createElement('div'); row.className = 'row2'; row.style.alignItems = 'center';
       var lb = document.createElement('span'); lb.className = 'lb'; lb.style.fontSize = '14px'; lb.style.lineHeight = '1.35';
-      lb.textContent = r.complex + (r.type_label ? ' ' + r.type_label : '') + ' · ' + (r.w_cm / 100).toFixed(1) + '×' + (r.d_cm / 100).toFixed(1) + 'm';
+      lb.textContent = r.complex + (r.type_label ? ' ' + r.type_label : '') + ' · ' + (r.w_cm / 100).toFixed(1) + '×' + (r.d_cm / 100).toFixed(1) + 'm' + (r.h_cm ? ' · 천장 ' + (r.h_cm / 100).toFixed(2) + 'm' : '');
       var use = document.createElement('button'); use.className = 'btn'; use.textContent = '쓰기'; use.style.minHeight = '40px';
       use.addEventListener('click', function () { usePlanRow(r); });
       var rep = document.createElement('button'); rep.className = 'btn'; rep.textContent = '신고'; rep.style.minHeight = '40px'; rep.style.marginLeft = '6px';
@@ -1865,7 +2021,7 @@
     var kw = cleanKw($('apQuery').value);
     if (kw.length < 2) { toast('아파트 이름이나 동네를 두 글자 이상 입력해 주세요'); return; }
     renderResults([], '찾는 중이에요…');
-    var u = SB.url + '/rest/v1/floorplans?select=id,complex,addr,type_label,img_path,w_cm,d_cm&hidden=eq.false&or=' +
+    var u = SB.url + '/rest/v1/floorplans?select=id,complex,addr,type_label,w_cm,d_cm,h_cm,outline,openings&hidden=eq.false&outline=not.is.null&or=' +
       encodeURIComponent('(complex.ilike.*' + kw + '*,addr.ilike.*' + kw + '*)') + '&order=created_at.desc&limit=20';
     var ctl = new AbortController(), tm = setTimeout(function () { ctl.abort(); }, 12000);
     fetch(u, { headers: sbHeaders(), signal: ctl.signal }).then(function (r) {
@@ -1878,19 +2034,13 @@
     }).catch(function () { clearTimeout(tm); renderResults([], '공유 평면도를 불러오지 못했어요. 잠시 뒤 다시 해 보세요.'); });
   }
   function usePlanRow(r) {
-    toast('평면도를 불러오는 중이에요…');
-    fetch(sbImgUrl(r.img_path)).then(function (x) { if (!x.ok) throw new Error('img'); return x.blob(); }).then(function (b) {
-      var rd = new FileReader();
-      rd.onload = function () {
-        if (state.items.length && !confirm('방 크기가 바뀌어요. 이미 놓은 가구는 그대로 남아요. 계속할까요?')) return;
-        planShow = true; planCal = { stage: 'idle', pts: [], fresh: false };
-        state.room.w = r.w_cm; state.room.d = r.d_cm;
-        resetZoomQuiet(); commit(); syncRoomInputs(); setPlan(rd.result, false);
-        var t = setInterval(function () { if (planImg && planData === rd.result) { clearInterval(t); persistPlan(); updatePlanUi(); render(); toast(r.complex + ' 평면도를 깔았어요'); closeSheet(); } }, 60);
-        setTimeout(function () { clearInterval(t); }, 5000);
-      };
-      rd.readAsDataURL(b);
-    }).catch(function () { toast('평면도를 불러오지 못했어요'); });
+    var vec = cleanVec({ pts: r.outline, ops: r.openings });
+    if (!vec) { toast('이 평면도는 열 수 없어요'); return; }
+    if (state.items.length && !confirm('방 모양이 바뀌어요. 이미 놓은 가구는 그대로 남아요. 계속할까요?')) return;
+    planImg = null; planData = ''; planGeo = null; planVec = vec; planShow = true; planCal = { stage: 'idle', pts: [], fresh: false };
+    var bx = vecBox(vec); state.room.w = bx.w; state.room.d = bx.d; state.room.h = (r.h_cm >= 180 && r.h_cm <= 500) ? Math.round(r.h_cm) : 0;
+    resetZoomQuiet(); commit(); syncRoomInputs(); persistPlan(); updatePlanUi(); render();
+    toast(r.complex + ' 평면도를 깔았어요'); closeSheet();
   }
   function reportPlanRow(r) {
     if (!confirm('이 평면도를 신고할까요? (저작권, 잘못된 도면, 부적절한 이미지)')) return;
@@ -1919,11 +2069,9 @@
   function sharePlan() {
     var note = $('shNote');
     var complex = $('shComplex').value.trim(), type = $('shType').value.trim(), addr = $('shAddr').value.trim();
-    if (!planImg) { note.textContent = '먼저 평면도를 올려 주세요.'; return; }
+    if (!planImg || !planVec) { note.textContent = '먼저 평면도를 올리고 윤곽선을 따 주세요.'; return; }
     if (complex.length < 2) { note.textContent = '단지 이름을 두 글자 이상 적어 주세요.'; return; }
     if (!$('shAgree').checked) { note.textContent = '공개 동의에 체크해 주세요.'; return; }
-    var ratio = (planImg.naturalWidth / planImg.naturalHeight) / (state.room.w / state.room.d);
-    if (Math.abs(ratio - 1) > 0.03) { note.textContent = '평면도의 크기 기준이 정해져 있지 않아요. "크기 기준 다시 정하기"로 먼저 맞춰 주세요.'; return; }
     if (Date.now() - lastShareAt < 20000) { note.textContent = '잠시 뒤에 다시 눌러 주세요.'; return; }
     lastShareAt = Date.now(); $('shGo').disabled = true; note.textContent = '올리는 중이에요…';
     planBlob(function (blob) {
@@ -1932,7 +2080,7 @@
       fetch(SB.url + '/storage/v1/object/floorplans/' + path, { method: 'POST', headers: sbHeaders({ 'Content-Type': 'image/jpeg' }), body: blob }).then(function (r) {
         if (!r.ok) throw new Error('up ' + r.status);
         return fetch(SB.url + '/rest/v1/floorplans', { method: 'POST', headers: sbHeaders({ 'Content-Type': 'application/json', Prefer: 'return=minimal' }),
-          body: JSON.stringify({ id: id, complex: complex, addr: addr || null, type_label: type || null, img_path: path, w_cm: state.room.w, d_cm: state.room.d }) });
+          body: JSON.stringify({ id: id, complex: complex, addr: addr || null, type_label: type || null, img_path: path, w_cm: vecBox(planVec).w, d_cm: vecBox(planVec).d, h_cm: state.room.h || null, outline: planVec.pts, openings: planVec.ops }) });
       }).then(function (r) {
         if (!r.ok) throw new Error('row ' + r.status);
         note.textContent = '공유했어요. 이제 다른 사람이 "' + complex + '"로 찾을 수 있어요.'; $('shGo').disabled = false;
@@ -1953,6 +2101,11 @@
   $('apRecal').addEventListener('click', function () { startPlanCal(false); });
   $('apClear').addEventListener('click', function () { if (confirm('올린 평면도를 지울까요? 방 크기와 가구는 그대로 남아요.')) clearPlan(); });
   $('pcApply').addEventListener('click', applyPlanScale);
+  $('pcNext').addEventListener('click', nextPlanStage);
+  $('pcUndo').addEventListener('click', undoPlanPoint);
+  $('pcDoor').addEventListener('click', function () { opType = 'd'; updatePlanUi(); render(); });
+  $('pcWin').addEventListener('click', function () { opType = 'w'; updatePlanUi(); render(); });
+  $('apTrace').addEventListener('click', startTrace);
   $('pcCancel').addEventListener('click', cancelPlanCal);
 
   /* ================= top bar actions ================= */

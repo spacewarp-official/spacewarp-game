@@ -1797,7 +1797,10 @@
   }
   // OCR often reads the letters 'cm' as zeros or similar shapes
   function ocrFix(t) {
-    return String(t || '').replace(/(\d)\s*(?:crn|cn|em|om|cm\.)(?![a-z])/gi, '$1cm').replace(/(\d{3})00/g, '$1cm');
+    return String(t || '')
+      .replace(/(\d)\s*(?:crn|cn|em|om|cm\.)(?![a-z])/gi, '$1cm')
+      .replace(/(?<!\d)(\d{3})00(?!\d)/g, '$1cm')
+      .replace(/([WwDdHh])\s*[\/|!]\s*(?=\d)/g, '$1');
   }
   function runOcr(file) {
     if (ocrBusy) return; ocrBusy = true; $('lkOcr').disabled = true;

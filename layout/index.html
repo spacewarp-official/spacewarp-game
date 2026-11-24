@@ -1795,6 +1795,10 @@
       im.src = url;
     });
   }
+  // OCR often reads the letters 'cm' as zeros or similar shapes
+  function ocrFix(t) {
+    return String(t || '').replace(/(\d)\s*(?:crn|cn|em|om|cm\.)(?![a-z])/gi, '$1cm').replace(/(\d{3})00/g, '$1cm');
+  }
   function runOcr(file) {
     if (ocrBusy) return; ocrBusy = true; $('lkOcr').disabled = true;
     lkSay('글자 읽는 도구를 준비하고 있어요. 처음 한 번은 몇 MB를 내려받아서 1분쯤 걸려요.');
@@ -1805,7 +1809,7 @@
         logger: function (m) { if (m && m.status === 'recognizing text') lkSay('글자를 읽는 중이에요 ' + Math.round((m.progress || 0) * 100) + '%'); }
       });
     }).then(function (w) { worker = w; return ocrCanvas(file); }).then(function (cv2) { return worker.recognize(cv2); }).then(function (r) {
-      var text = (r && r.data && r.data.text) || '';
+      var text = ocrFix((r && r.data && r.data.text) || '');
       $('lkPaste').value = text; $('lkMore').open = true;
       var d = parseDims(text);
       if (d.w == null && d.d == null && d.h == null) { lkSay('사진에서 치수를 찾지 못했어요. 읽은 글을 아래에 적어 뒀으니 고치거나 직접 입력해 주세요.', true); }
